@@ -474,16 +474,25 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     const card = player.board[r][c];
 
     if (!card || card.isFaceUp) return;
+    
+    console.log("%c[EXPLOSION CHECK] Revelando carta...", "color: yellow; font-weight: bold;", {
+        playerId,
+        r,
+        c,
+        card: player.board[r][c]
+    });
 
     card.isFaceUp = true;
     draft.lastRevealedCard = { playerId, r, c, card: { ...card } };
     draft.explodingCard = null;
 
     if (card.type === 'Bomba') {
+        console.log("%c[EXPLOSION CHECK] ES UNA BOMBA. Disparando EXPLODE_CARD", "color: red; font-weight:bold;");
         triggerAbilities(draft, card, "ON_REVEAL");
         draft.explodingCard = { playerId, r, c, card: { ...card } };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
     } else {
+        console.log("%c[EXPLOSION CHECK] NO es una bomba.", "color: gray;");
         gameSfxApi.playSoundById('flip');
         player.score = getBoardScore(player.board);
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
@@ -503,6 +512,10 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
 export const resolveExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
   const player = draft.players[playerId];
   const centerCard = player.board[r][c];
+  
+  console.log("%c[EXPLOSION ACTION] Iniciando explosión", "color: orange; font-weight: bold;", {
+    explodingCardInfo: draft.explodingCard
+  });
 
   if (!centerCard || centerCard.type !== 'Bomba') {
     draft.explodingCard = null;
@@ -511,6 +524,12 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
 
   player.discardPile.push({ ...centerCard, isFaceUp: true });
   player.board[r][c] = null;
+  
+  console.log("%c[EXPLOSION COMPLETE] Carta eliminada", "color: lightgreen; font-weight:bold;", {
+    r: r,
+    c: c,
+    playerId: playerId
+  });
 
   const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
   const positionsToRefill: { r: number; c: number }[] = [{ r, c }];
