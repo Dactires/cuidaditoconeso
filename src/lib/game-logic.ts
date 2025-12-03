@@ -1,4 +1,5 @@
 
+
 import { GameState, Player, Card } from './types';
 import {
   CARDS_PER_VALUE_COLOR,
@@ -327,6 +328,7 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
+  console.log("CHECKING END GAME...");
   // 1) NUEVA REGLA: tablero lleno de personajes boca arriba
   let someoneHasFullCharacters = false;
   for (const player of draft.players) {
@@ -337,12 +339,13 @@ const checkEndGame = (draft: GameState) => {
           card !== null && card.type === 'Personaje' && card.isFaceUp
       );
     if (isFullOfCharacters) {
+      console.log(`Player ${player.id} has a full board of face-up characters.`);
       someoneHasFullCharacters = true;
       break;
     }
   }
 
-  if (someoneHasFullCharacters) {
+  if (someoneHasFullCharacters && !draft.gameOver) {
     // Final inmediato por tablero lleno de personajes
     draft.gameOver = true;
     draft.turnPhase = 'GAME_OVER';
@@ -351,6 +354,7 @@ const checkEndGame = (draft: GameState) => {
       p.score = getBoardScore(p.board);
     });
     draft.finalScores = draft.players.map((p) => ({ id: p.id, score: p.score }));
+    console.log("FINAL SCORES:", JSON.stringify(draft.finalScores));
 
     const maxScore = Math.max(...draft.finalScores.map((s) => s.score));
     const winners = draft.players.filter((p) => p.score === maxScore);
@@ -364,7 +368,7 @@ const checkEndGame = (draft: GameState) => {
         winners[0].id === 0 ? 'Jugador 1 (Tú)' : `Rival (IA)`;
       draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
     }
-
+    console.log("GAME OVER! Winner:", draft.winner ? `Player ${draft.winner.id}` : 'Tie', 'Message:', draft.gameMessage);
     return; // importante: no seguimos con la lógica de ronda final
   }
 
@@ -564,7 +568,9 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     
     triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
 
-    checkEndGame(draft);
+    // NO llamar a checkEndGame aquí para la habilidad del azul
+    // checkEndGame(draft);
+
     if (!draft.gameOver) {
       return nextTurn(draft);
     }
@@ -657,5 +663,6 @@ export const hideTempReveal = produce((
   }
   draft.tempReveal = null;
 });
+
 
 
