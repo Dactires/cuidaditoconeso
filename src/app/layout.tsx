@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { Press_Start_2P, Inter } from 'next/font/google';
-import '@fontsource/press-start-2p';
+import { Inter, Bangers } from 'next/font/google';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
@@ -11,10 +10,10 @@ export const metadata: Metadata = {
   description: 'A strategic card game of risk and reward.',
 };
 
-const pressStart2P = Press_Start_2P({
+const bangers = Bangers({
   weight: '400',
   subsets: ['latin'],
-  variable: '--font-press-start-2p',
+  variable: '--font-bangers',
 });
 
 const inter = Inter({
@@ -29,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full overflow-hidden">
-      <body className={cn('antialiased h-full bg-background font-sans', pressStart2P.variable, inter.variable)}>
+      <body className={cn('antialiased h-full bg-background font-body', bangers.variable, inter.variable)}>
         <FirebaseClientProvider>
           <main className="h-full">{children}</main>
           <Toaster />

@@ -477,3 +477,17 @@ main {
       text-[10px] md:text-xs text-slate-200/80;
   }
 }
+
+/* Fuerza fuentes tipo cómic en toda la app */
+.font-display {
+  font-family: 'Bangers', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.font-body {
+  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Para asegurarnos: html/body y controles */
+html, body, button, input, select, textarea {
+  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}

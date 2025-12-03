@@ -341,46 +341,34 @@ export default function GamePage() {
             </div>
           </div>
   
-          {/* COLUMNA CENTRAL: arena de tableros */}
-          <div className="flex flex-col items-center gap-6">
+          {/* COLUMNA CENTRAL: solo los dos tableros, limpios */}
+          <div className="flex flex-col items-center justify-center gap-8">
             {/* Tablero rival */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="comic-nameplate bg-red-400 shadow-[0_6px_0_#7f1d1d]">
-                <Bot className="h-4 w-4" />
-                <span>Rival (IA)</span>
-              </div>
-              <GameBoard
-                board={rivalPlayer.board}
-                onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-                isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-                explodingCard={
-                  explodingCard && explodingCard.playerId === rivalPlayer.id
-                    ? { r: explodingCard.r, c: explodingCard.c }
-                    : undefined
-                }
-              />
-            </div>
-  
-            {/* VS */}
-            <Swords className="h-8 w-8 text-slate-400" />
-  
+            <GameBoard
+              board={rivalPlayer.board}
+              onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+              explodingCard={
+                explodingCard && explodingCard.playerId === rivalPlayer.id
+                  ? { r: explodingCard.r, c: explodingCard.c }
+                  : undefined
+              }
+            />
+
+            {/* Pequeño espacio entre tableros, sin textos ni etiquetas */}
+            <div className="h-2" />
+
             {/* Tablero jugador */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="comic-nameplate bg-emerald-400 shadow-[0_6px_0_#065f46]">
-                <User className="h-4 w-4" />
-                <span>Jugador 1 (Tú)</span>
-              </div>
-              <GameBoard
-                board={humanPlayer.board}
-                onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-                isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-                explodingCard={
-                  explodingCard && explodingCard.playerId === humanPlayer.id
-                    ? { r: explodingCard.r, c: explodingCard.c }
-                    : undefined
-                }
-              />
-            </div>
+            <GameBoard
+              board={humanPlayer.board}
+              onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+              explodingCard={
+                explodingCard && explodingCard.playerId === humanPlayer.id
+                  ? { r: explodingCard.r, c: explodingCard.c }
+                  : undefined
+              }
+            />
           </div>
   
           {/* COLUMNA DERECHA: rival + mazo + descarte + mensaje */}

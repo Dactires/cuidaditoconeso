@@ -61,12 +61,16 @@ export default function GameCard({
       animate={baseAnimation}
     >
       {!card.isFaceUp ? (
-        <div className="w-full h-full rounded-2xl bg-[#0b1120] flex items-center justify-center p-2 border-[3px] border-black shadow-[0_8px_0_#020617]">
-          <div className="w-full h-full rounded-xl border-[3px] border-dashed border-sky-400/80 bg-[radial-gradient(circle_at_1px_1px,#1e293b_1px,transparent_0)] bg-[length:8px_8px] flex items-center justify-center">
-            <span className="text-sky-300 font-display font-black text-xl -rotate-8 tracking-[0.3em] select-none drop-shadow-[0_3px_0_#020617]">
-              BOMBERS
-            </span>
-          </div>
+        <div className="w-full h-full rounded-2xl bg-[#0f172a] p-1 border-[3px] border-black shadow-[0_8px_0_#020617]">
+            <div className="relative w-full h-full rounded-xl bg-sky-400 border-[3px] border-black overflow-hidden">
+                <div className="absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_1px_1px,#38bdf8_1px,transparent_0)] bg-[length:8px_8px]" />
+                <div className="relative h-full w-full flex flex-col items-center justify-center gap-1">
+                    <BombIcon className="w-8 h-8 drop-shadow-[0_3px_0_#020617]" />
+                    <span className="font-display text-xs tracking-[0.25em] uppercase text-slate-900 drop-shadow-[0_2px_0_#f9fafb]">
+                        Board Bombers
+                    </span>
+                </div>
+            </div>
         </div>
       ) : (
         <UICard
