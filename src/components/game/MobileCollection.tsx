@@ -7,22 +7,35 @@ import { Lock, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GameCardDef } from "@/lib/card-definitions";
 import Image from "next/image";
+import GameCard from "./GameCard"; // Importa el componente principal de carta
+import type { Card } from "@/lib/types"; // Importa el tipo Card
 
 type SelectedCard = GameCardDef | null;
 
 export default function MobileCollection({ allCards }: { allCards: GameCardDef[] }) {
   const [selected, setSelected] = useState<SelectedCard>(null);
 
-  const deck = allCards.filter(
+  // Mazo actual del jugador (cartas equipadas)
+  const deckDefs = allCards.filter(
     (def) =>
-      ["character", "bomb", "hero", "power"].includes(def.kind) &&
-      def.id !== "power2" // Example: only one power slot for now
+      ['character-rojo', 'character-azul', 'character-verde', 'character-amarillo', 'bomb', 'hero', 'power1'].includes(def.id)
   );
 
-  const collectionUnlocked = allCards.filter(card => !deck.some(d => d.id === card.id) && card.kind !== 'back');
+  const collectionUnlocked = allCards.filter(card => !deckDefs.some(d => d.id === card.id) && card.kind !== 'back');
   const collectionLocked: string[] = [
     // Future locked cards can be added here
   ];
+
+  // Convierte las definiciones a un tipo que GameCard pueda usar
+  const deckAsCards: Card[] = deckDefs.map(def => ({
+    uid: def.id,
+    type: def.kind === 'bomb' ? 'Bomba' : 'Personaje', // Simplificado
+    color: def.color,
+    value: def.value,
+    isFaceUp: true,
+    imageUrl: def.imageUrl,
+  }));
+
 
   return (
     <div className="flex flex-col h-full bg-transparent relative no-scrollbar">
@@ -30,7 +43,7 @@ export default function MobileCollection({ allCards }: { allCards: GameCardDef[]
       <section className="px-3 pt-1 pb-2">
         <div className="flex items-baseline justify-between mb-1">
           <h2 className="comic-title text-white text-sm tracking-[0.22em]">
-            MAZO ({deck.length} / 7)
+            MAZO ({deckDefs.length} / 7)
           </h2>
           <span className="text-[10px] text-slate-300 font-mono">
             Toque una carta para ver detalles
@@ -38,14 +51,19 @@ export default function MobileCollection({ allCards }: { allCards: GameCardDef[]
         </div>
 
         <div className="grid grid-cols-4 gap-2">
-          {deck.map((card) => (
-            <DeckCard
-              key={card.id}
-              card={card}
-              isSelected={selected?.id === card.id}
-              onClick={() => setSelected(card)}
-            />
-          ))}
+          {deckAsCards.map((card) => {
+             const cardDef = allCards.find(d => d.id === card.uid);
+             return (
+                <div key={card.uid} className="w-full aspect-square" onClick={() => cardDef && setSelected(cardDef)}>
+                    <GameCard 
+                        card={card}
+                        onClick={() => {}}
+                        isMobile={true}
+                        isInHand={true}
+                    />
+                </div>
+             )
+          })}
         </div>
       </section>
 
@@ -56,13 +74,27 @@ export default function MobileCollection({ allCards }: { allCards: GameCardDef[]
         </h3>
 
         <div className="grid grid-cols-4 gap-2">
-          {collectionUnlocked.map((card) => (
-            <CollectionCard
-              key={card.id}
-              card={card}
-              onClick={() => setSelected(card)}
-            />
-          ))}
+          {collectionUnlocked.map((cardDef) => {
+            const card: Card = {
+                uid: cardDef.id,
+                type: cardDef.kind === 'bomb' ? 'Bomba' : 'Personaje',
+                color: cardDef.color,
+                value: cardDef.value,
+                isFaceUp: true,
+                imageUrl: cardDef.imageUrl
+            };
+            return (
+                <div key={card.uid} className="w-full aspect-square" onClick={() => setSelected(cardDef)}>
+                    <GameCard 
+                        card={card}
+                        onClick={() => {}}
+                        isMobile={true}
+                        isInHand={true}
+                        isDimmed={true} // Para darles un look de "no equipado"
+                    />
+                </div>
+            )
+          })}
 
           {collectionLocked.map((label, idx) => (
             <LockedCard key={idx} label={label} />
@@ -110,6 +142,16 @@ function CardDetailModal({
   const baseTextColor =
     card.textColor ?? (card.kind === "hero" ? "text-slate-900" : "text-white");
 
+  const cardForDisplay: Card = {
+    uid: card.id,
+    type: card.kind === 'bomb' ? 'Bomba' : 'Personaje',
+    color: card.color,
+    value: card.value,
+    isFaceUp: true,
+    imageUrl: card.imageUrl,
+  };
+
+
   return (
     <motion.div
       className="fixed inset-0 z-40 flex items-center justify-center px-4"
@@ -146,36 +188,7 @@ function CardDetailModal({
           {/* CARTA PROTAGONISTA */}
           <div className="flex flex-col items-center text-center gap-4 md:gap-5">
             <div className="mx-auto mb-4 md:mb-6 w-40 md:w-56">
-              <div className="relative w-full aspect-square rounded-[24px] bg-slate-900 border-[6px] border-black shadow-[0_14px_0_#020617,0_0_30px_rgba(0,0,0,0.7)] overflow-hidden flex items-center justify-center">
-                 {card.imageUrl ? (
-                  <Image src={card.imageUrl} alt={`Imagen de ${card.label}`} fill sizes="33vw" className="object-cover" />
-                ) : (
-                  <div
-                    className={cn(
-                      "absolute inset-0",
-                      card.colorClass
-                    )}
-                  />
-                )}
-
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                   {card.value > 0 && (
-                    <span
-                      className={cn(
-                        "font-display text-5xl md:text-6xl text-white drop-shadow-[0_3px_0_#020617]",
-                        baseTextColor
-                      )}
-                    >
-                      {card.value}
-                    </span>
-                   )}
-
-                  <span className="mt-2 text-[12px] md:text-sm uppercase tracking-[0.18em] bg-black/70 px-4 py-1 rounded-full">
-                    {ribbonText}
-                  </span>
-                </div>
-              </div>
+                <GameCard card={cardForDisplay} onClick={() => {}} />
             </div>
 
             {/* TÍTULO + TEXTO */}
@@ -239,135 +252,8 @@ function CardDetailModal({
 }
 
 /* ─────────────────────
-   CARTAS
+   CARTAS BLOQUEADAS
    ───────────────────── */
-
-function DeckCard({
-  card,
-  isSelected,
-  onClick,
-  smallStatic,
-}: {
-  card: GameCardDef;
-  isSelected?: boolean;
-  onClick?: () => void;
-  smallStatic?: boolean;
-}) {
-  const baseTextColor =
-    card.textColor ?? (card.kind === "hero" ? "text-slate-900" : "text-white");
-
-  const containerClasses = smallStatic ? "h-16" : "h-18 min-h-[70px]";
-
-  return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: onClick ? 0.95 : 1, y: onClick ? 1 : 0 }}
-      onClick={onClick}
-      className={cn(
-        "relative w-full select-none",
-        containerClasses,
-        "rounded-2xl border-[3px] border-black shadow-[0_4px_0_#020617] overflow-hidden bg-slate-900"
-      )}
-    >
-      <div
-        className={cn(
-          "absolute inset-[3px] rounded-[14px] border-[2px] border-black flex flex-col items-center justify-between py-1.5",
-          !card.imageUrl && card.colorClass
-        )}
-      >
-        {card.imageUrl ? (
-            <Image src={card.imageUrl} alt="" fill sizes="25vw" className="object-cover rounded-[14px]" />
-        ) : (
-            <div className={cn("absolute inset-0", card.colorClass)} />
-        )}
-
-        <div className="absolute inset-0 flex flex-col items-center justify-between py-1.5">
-
-            {card.value > 0 && (
-                <span
-                className={cn(
-                    "text-2xl font-display drop-shadow-[0_2px_0_#020617] leading-none",
-                    baseTextColor
-                )}
-                >
-                {card.value}
-                </span>
-            )}
-
-            <div className="flex-grow" />
-
-            <div
-            className={cn(
-                "px-1.5 py-0.5 rounded-full border-[2px] border-black shadow-[0_2px_0_#020617] text-[9px] font-display tracking-[0.18em] uppercase",
-                card.ribbonClass,
-                baseTextColor
-            )}
-            >
-            {card.kind === "character"
-                ? card.shortLabel
-                : card.kind === "bomb"
-                ? "BOMBA"
-                : card.kind === "hero"
-                ? "HÉROE"
-                : "PODER"}
-            </div>
-        </div>
-      </div>
-
-      {isSelected && (
-        <motion.div
-          layoutId={`deck-card-glow-${card.id}`}
-          className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-amber-300/80 shadow-[0_0_15px_rgba(251,191,36,0.8)]"
-        />
-      )}
-    </motion.button>
-  );
-}
-
-function CollectionCard({
-  card,
-  onClick,
-}: {
-  card: GameCardDef;
-  onClick?: () => void;
-}) {
-  return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.96, y: 1 }}
-      onClick={onClick}
-      className="relative h-28 w-full rounded-2xl border-[3px] border-black shadow-[0_4px_0_#020617] overflow-hidden bg-slate-900"
-    >
-       {card.imageUrl ? (
-          <Image src={card.imageUrl} alt="" fill sizes="25vw" className="object-cover" />
-        ) : (
-          <div
-            className={cn(
-              "absolute inset-[4px] rounded-[14px] border-[2px] border-black flex flex-col items-center justify-between py-2",
-              card.colorClass
-            )}
-          />
-        )}
-
-      <div className="absolute inset-[4px] rounded-[14px] flex flex-col items-center justify-between py-2">
-        {card.value > 0 && (
-            <span className="text-3xl font-display text-white drop-shadow-[0_2px_0_#020617] leading-none">
-            {card.value}
-            </span>
-        )}
-        <div className="flex-grow" />
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[10px] font-display tracking-[0.18em] uppercase drop-shadow-[0_1px_0_#020617]">
-            {card.shortLabel}
-          </span>
-          <span className="text-[9px] bg-slate-900/70 px-2 py-0.5 rounded-full border border-black font-mono">
-            1 / 5
-          </span>
-        </div>
-      </div>
-    </motion.button>
-  );
-}
 
 function LockedCard({ label }: { label: string }) {
   return (
@@ -381,3 +267,6 @@ function LockedCard({ label }: { label: string }) {
     </div>
   );
 }
+
+
+    
