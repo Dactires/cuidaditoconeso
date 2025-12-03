@@ -21,6 +21,7 @@ interface GameCardProps {
   isInHand?: boolean;
   isDisabled?: boolean;
   cardBackImageUrl?: string;
+  explodingCardInfo?: { r: number; c: number; playerId: number; card: Card } | null;
 }
 
 const cardVariants = {
@@ -74,10 +75,12 @@ export default function GameCard({
   isInHand = false,
   isDisabled = false,
   cardBackImageUrl,
+  explodingCardInfo,
 }: GameCardProps) {
 
   const [showTimer, setShowTimer] = React.useState(false);
-  const cardIsBomb = card?.type === 'Bomba';
+  const cardIsBomb = card?.type === 'Bomba' || (explodingCardInfo && explodingCardInfo.card.type === 'Bomba');
+  const cardToRender = isExploding ? explodingCardInfo?.card : card;
 
   React.useEffect(() => {
     let timerTimeout: NodeJS.Timeout | null = null;
@@ -103,7 +106,7 @@ export default function GameCard({
   }, [card?.isFaceUp, cardIsBomb]);
 
 
-  if (!card) {
+  if (!cardToRender) {
     return (
       <div className={cn(
         "w-full h-full rounded-lg bg-black/20 border-2 border-dashed border-slate-700 aspect-square transition-colors",
@@ -112,8 +115,9 @@ export default function GameCard({
     );
   }
 
+  const finalCard = cardToRender!;
   const animationClass = isRivalMove ? 'animate-rival-play' : isExploding ? 'animate-explode' : '';
-  const glowClass = card.isFaceUp && card.type === 'Personaje' ? getGlowColor(card.color) : '';
+  const glowClass = finalCard.isFaceUp && finalCard.type === 'Personaje' ? getGlowColor(finalCard.color) : '';
 
   const renderCardFace = (isFront: boolean) => {
     // BACK OF THE CARD
@@ -131,15 +135,15 @@ export default function GameCard({
     // FRONT OF THE CARD
 
     // If it's a bomb and the timer is active, show the timer overlay
-    if (cardIsBomb && showTimer) {
+    if (finalCard.type === 'Bomba' && showTimer) {
         return (
              <>
-                {card.imageUrl && (
-                    <Image src={card.imageUrl} alt="Imagen de una bomba" fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover brightness-50" />
+                {finalCard.imageUrl && (
+                    <Image src={finalCard.imageUrl} alt="Imagen de una bomba" fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
                 )}
                 <motion.div
                     key="timer"
-                    className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                    className="absolute inset-0 flex items-center justify-center bg-black/60"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -161,19 +165,19 @@ export default function GameCard({
     // Otherwise, show the normal card front (bomb or character)
     return (
       <>
-        {card.imageUrl ? (
-          <Image src={card.imageUrl} alt={`Imagen de la carta ${card.uid}`} fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
+        {finalCard.imageUrl ? (
+          <Image src={finalCard.imageUrl} alt={`Imagen de la carta ${finalCard.uid}`} fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
         ) : (
           <div className="w-full h-full bg-slate-500" />
         )}
         
-        {card.type === 'Personaje' && (
+        {finalCard.type === 'Personaje' && (
           <div className={cn(
             "absolute top-1 left-1 px-2 py-0.5 rounded-full bg-black/60 text-white border-2 border-white/50 backdrop-blur-sm",
             isMobile && "px-1 py-0 text-sm"
           )}>
             <p className={cn("font-display tracking-[0.1em] uppercase", isMobile ? "text-base" : "text-6xl md:text-7xl")}>
-              {card.value}
+              {finalCard.value}
             </p>
           </div>
         )}
@@ -183,7 +187,7 @@ export default function GameCard({
 
   return (
     <motion.div
-      layoutId={`card-${card.uid}`}
+      layoutId={`card-${finalCard.uid}`}
       variants={cardVariants}
       initial="idle"
       animate={
@@ -205,7 +209,7 @@ export default function GameCard({
         <motion.div 
             className="w-full h-full absolute card-face"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(0deg)' }}
-            animate={{ rotateY: card.isFaceUp ? 180 : 0 }}
+            animate={{ rotateY: finalCard.isFaceUp ? 180 : 0 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
         >
             <div className={cn(
@@ -221,7 +225,7 @@ export default function GameCard({
                 glowClass
             )}
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-            animate={{ rotateY: card.isFaceUp ? 0 : -180 }}
+            animate={{ rotateY: finalCard.isFaceUp ? 0 : -180 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
         >
             <div className={cn(
