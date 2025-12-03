@@ -110,6 +110,7 @@ export function setupGame(numPlayers: number): GameState {
     turnPhase: 'START_TURN',
     finalTurnCounter: -1,
     lastRevealedCard: null,
+    explodingCard: null,
   };
 }
 
@@ -122,7 +123,7 @@ const checkEndGame = (draft: GameState) => {
     }
   }
 
-  if (gameShouldEnd) {
+  if (gameShouldEnd && !draft.gameOver) {
     draft.gameOver = true;
     draft.turnPhase = 'GAME_OVER';
 
@@ -228,6 +229,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     draft.lastRevealedCard = card;
 
     if (card.type === 'Bomba') {
+        draft.explodingCard = { r, c, playerId };
         applyExplosion(draft, player, r, c);
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba. Elige tu próxima acción.`;
     } else {
@@ -312,4 +314,8 @@ export const passTurn = produce((draft: GameState, playerId: number) => {
         return;
     }
     return nextTurn(draft);
+});
+
+export const clearExplosion = produce((draft: GameState) => {
+  draft.explodingCard = null;
 });

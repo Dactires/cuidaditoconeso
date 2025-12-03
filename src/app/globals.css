@@ -80,3 +80,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .animate-explode {
+    animation: explode 0.5s ease-out forwards;
+  }
+
+  @keyframes explode {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+      filter: drop-shadow(0 0 0.5rem hsl(var(--accent)));
+    }
+    50% {
+      transform: scale(1.5) rotate(15deg);
+      opacity: 0.8;
+      filter: drop-shadow(0 0 2rem hsl(var(--accent)));
+    }
+    100% {
+      transform: scale(0) rotate(-30deg);
+      opacity: 0;
+      filter: drop-shadow(0 0 0 hsl(var(--accent)));
+    }
+  }
+}

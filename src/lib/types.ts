@@ -26,4 +26,5 @@ export interface GameState {
   turnPhase: 'START_TURN' | 'REVEAL_CARD' | 'ACTION' | 'GAME_OVER';
   finalTurnCounter: number;
   lastRevealedCard: Card | null;
+  explodingCard: { r: number; c: number; playerId: number } | null;
 }

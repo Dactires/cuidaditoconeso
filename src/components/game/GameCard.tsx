@@ -10,6 +10,7 @@ interface GameCardProps {
   onClick: () => void;
   isSelected?: boolean;
   isSelectable?: boolean;
+  isExploding?: boolean;
 }
 
 const colorMap: { [key: string]: string } = {
@@ -19,7 +20,7 @@ const colorMap: { [key: string]: string } = {
   Amarillo: 'bg-yellow-500 text-black',
 };
 
-export default function GameCard({ card, onClick, isSelected = false, isSelectable = false }: GameCardProps) {
+export default function GameCard({ card, onClick, isSelected = false, isSelectable = false, isExploding = false }: GameCardProps) {
   const isFaceUp = !!card && card.isFaceUp;
 
   const cardBack = (
@@ -61,6 +62,7 @@ export default function GameCard({ card, onClick, isSelected = false, isSelectab
         'w-full h-full aspect-square cursor-pointer rounded-lg shadow-lg',
         isSelected && 'ring-4 ring-accent ring-offset-2 ring-offset-background scale-110 z-10',
         isSelectable && 'animate-pulse ring-2 ring-accent',
+        isExploding && 'animate-explode',
         !card && 'cursor-default'
       )}
       onClick={onClick}

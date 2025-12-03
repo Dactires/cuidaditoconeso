@@ -14,7 +14,8 @@ export type GameAction =
   | { type: 'PASS_TURN'; payload: { player_id: number } }
   | { type: 'RESET_GAME' }
   | { type: 'INITIALIZE_GAME'; payload: { numPlayers: number } }
-  | { type: 'SET_MESSAGE'; payload: string | null };
+  | { type: 'SET_MESSAGE'; payload: string | null }
+  | { type: 'CLEAR_EXPLOSION' };
 
 const getInitialState = (numPlayers: number): GameState => ({
   players: Array.from({ length: numPlayers }, (_, i) => ({
@@ -34,34 +35,36 @@ const getInitialState = (numPlayers: number): GameState => ({
   turnPhase: 'START_TURN',
   finalTurnCounter: -1,
   lastRevealedCard: null,
+  explodingCard: null,
 });
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
-  return produce(state, draft => {
-    switch (action.type) {
-      case 'INITIALIZE_GAME':
-        return Game.setupGame(action.payload.numPlayers);
-      case 'START_TURN':
-        return Game.drawCard(draft, action.payload.player_id);
-      case 'REVEAL_CARD':
-        return Game.revealCard(draft, action.payload.player_id, action.payload.r, action.payload.c);
-      case 'PLAY_CARD_OWN':
-        return Game.playCardOwnBoard(draft, action.payload.player_id, action.payload.card_in_hand, action.payload.target_r, action.payload.target_c);
-      case 'PLAY_CARD_RIVAL':
-        return Game.playCardRivalBoard(draft, action.payload.player_id, action.payload.card_in_hand, action.payload.target_r, action.payload.target_c);
-      case 'SWAP_CARD':
-        return Game.swapCard(draft, action.payload.player_id, action.payload.board_r, action.payload.board_c, action.payload.card_in_hand);
-      case 'PASS_TURN':
-        return Game.passTurn(draft, action.payload.player_id);
-      case 'SET_MESSAGE':
+  switch (action.type) {
+    case 'INITIALIZE_GAME':
+      return Game.setupGame(action.payload.numPlayers);
+    case 'START_TURN':
+      return Game.drawCard(state, action.payload.player_id);
+    case 'REVEAL_CARD':
+      return Game.revealCard(state, action.payload.player_id, action.payload.r, action.payload.c);
+    case 'PLAY_CARD_OWN':
+      return Game.playCardOwnBoard(state, action.payload.player_id, action.payload.card_in_hand, action.payload.target_r, action.payload.target_c);
+    case 'PLAY_CARD_RIVAL':
+      return Game.playCardRivalBoard(state, action.payload.player_id, action.payload.card_in_hand, action.payload.target_r, action.payload.target_c);
+    case 'SWAP_CARD':
+      return Game.swapCard(state, action.payload.player_id, action.payload.board_r, action.payload.board_c, action.payload.card_in_hand);
+    case 'PASS_TURN':
+      return Game.passTurn(state, action.payload.player_id);
+    case 'SET_MESSAGE':
+      return produce(state, draft => {
         draft.gameMessage = action.payload;
-        return draft;
-      case 'RESET_GAME':
-        return Game.setupGame(draft.players.length);
-      default:
-        return draft;
-    }
-  });
+      });
+    case 'RESET_GAME':
+      return Game.setupGame(state.players.length);
+    case 'CLEAR_EXPLOSION':
+      return Game.clearExplosion(state);
+    default:
+      return state;
+  }
 };
 
 export function useGame(numPlayers: number) {

@@ -40,7 +40,7 @@ export default function GamePage() {
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -54,7 +54,7 @@ export default function GamePage() {
     const performAiAction = (action: GameAction) => {
       setTimeout(() => {
         dispatch(action);
-      }, 1000); // Delay for user to see the action
+      }, 1500); // Delay for user to see the action
     };
   
     if (turnPhase === 'START_TURN') {
@@ -147,9 +147,18 @@ export default function GamePage() {
         .catch(console.error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.lastRevealedCard, toast, currentPlayer, players]);
+  }, [gameState.lastRevealedCard, toast, currentPlayerIndex, players]);
 
-  if (!initialized || !humanPlayer || !rivalPlayer || humanPlayer.hand.length === 0) {
+  useEffect(() => {
+    if (explodingCard) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'CLEAR_EXPLOSION' });
+      }, 500); // Duration of the explosion animation
+      return () => clearTimeout(timer);
+    }
+  }, [explodingCard, dispatch]);
+
+  if (!initialized || !humanPlayer || !rivalPlayer || !currentPlayer) {
     return (
         <div className="flex items-center justify-center h-full bg-background">
             <p className="text-foreground text-2xl">Cargando Juego...</p>
@@ -302,6 +311,7 @@ export default function GamePage() {
               board={rivalPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+              explodingCard={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c} : undefined}
             />
           </div>
 
@@ -312,6 +322,7 @@ export default function GamePage() {
               board={humanPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+              explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c} : undefined}
             />
           </div>
 
