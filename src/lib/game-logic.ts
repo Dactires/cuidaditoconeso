@@ -326,44 +326,41 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
-    // 1) NUEVA REGLA: tablero lleno de personajes
+    // 1) End condition: A board is filled with face-up character cards
     let gameShouldEnd = false;
-
     for (const player of draft.players) {
-        const board = player.board.flat();
-        const isFullOfCharacters = board.every(card => card !== null && card.type === "Personaje");
-        if (isFullOfCharacters) {
+        const boardIsFullOfCharacters = player.board
+            .flat()
+            .every(card => card?.type === 'Personaje' && card.isFaceUp);
+        if (boardIsFullOfCharacters) {
             gameShouldEnd = true;
             break;
         }
     }
 
-    if (gameShouldEnd && draft.finalTurnCounter === -1) {
-        // Final inmediato por tablero lleno de personajes
+    if (gameShouldEnd) {
         draft.gameOver = true;
         draft.turnPhase = 'GAME_OVER';
-
         draft.players.forEach(p => {
-          p.score = getBoardScore(p.board);
+            p.score = getBoardScore(p.board);
         });
         draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
 
-        const scores = draft.players.map(p => p.score);
-        const maxScore = Math.max(...scores);
+        const maxScore = Math.max(...draft.finalScores.map(s => s.score));
         const winners = draft.players.filter(p => p.score === maxScore);
-
+        
         if (winners.length > 1) {
-            draft.winner = null;
+            draft.winner = null; // Tie
             draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
         } else {
             draft.winner = winners[0];
             const winnerName = winners[0].id === 0 ? "Jugador 1 (Tú)" : `Rival (IA)`;
             draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
         }
-        return; // importante: no seguimos con la lógica de ronda final
+        return; // Exit early as the game is over
     }
 
-    // 2) Lógica de ronda final por mazo vacío
+    // 2) End condition: Final turn counter reaches zero due to depleted deck
     if (draft.finalTurnCounter === 0 && !draft.gameOver) {
         draft.gameOver = true;
         draft.turnPhase = 'GAME_OVER';
@@ -383,7 +380,7 @@ const checkEndGame = (draft: GameState) => {
         } else {
             draft.winner = winners[0];
             const winnerName = winners[0].id === 0 ? "Jugador 1 (Tú)" : `Rival (IA)`;
-            draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
+            draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana!`;
         }
     }
 };
@@ -391,7 +388,7 @@ const checkEndGame = (draft: GameState) => {
 function nextTurn(state: GameState): GameState {
   if (state.gameOver) return state;
 
-  // Reduce el contador de turno final ANTES de cambiar de jugador
+  // Reduce the final turn counter BEFORE switching players
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
   }
@@ -529,13 +526,17 @@ export const finishRefillAnimation = produce((draft: GameState, payload: { playe
     const { playerId, r, c, card } = payload;
     const player = draft.players[playerId];
     
-    player.board[r][c] = { ...card, isFaceUp: false };
+    // Only place card if the slot is still empty.
+    if (!player.board[r][c]) {
+        player.board[r][c] = { ...card, isFaceUp: false };
+    }
 
     const slotIndex = draft.refillingSlots.findIndex(slot => slot.card.uid === card.uid);
     if (slotIndex > -1) {
         draft.refillingSlots.splice(slotIndex, 1);
     }
-
+    
+    // After the last refill animation, check for game end conditions
     if (draft.refillingSlots.length === 0) {
         checkEndGame(draft);
     }

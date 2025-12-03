@@ -147,7 +147,7 @@ export default function GamePage() {
     }
   }, [user, isUserAuthLoading, router]);
 
-  // Sound effects trigger
+  // Sound effects trigger for any revealed card
   useEffect(() => {
     if (lastRevealedCard) {
         if (lastRevealedCard.card.type !== 'Bomba') {
@@ -160,13 +160,10 @@ export default function GamePage() {
   useEffect(() => {
       if (!explodingCard) return;
       playFlip(); // Play flip sound for the bomb reveal
-      const { playerId, r, c } = explodingCard;
       const timer = setTimeout(() => {
           playBomb(); // Play bomb sound with the explosion
-          dispatch({
-              type: 'CLEAR_EXPLOSION',
-          });
-      }, 650); // Delay to show the bomb card art
+          dispatch({ type: 'CLEAR_EXPLOSION' });
+      }, 650); // Delay to show the bomb card art before it resolves
       return () => clearTimeout(timer);
   }, [explodingCard, dispatch, playBomb, playFlip]);
   
@@ -350,12 +347,12 @@ export default function GamePage() {
     );
   };
   
-    const handleRefillAnimationComplete = (playerId: number, r: number, c: number, card: CardType) => {
-        dispatch({
-            type: 'FINISH_REFILL_ANIMATION',
-            payload: { playerId, r, c, card },
-        });
-    };
+  const handleRefillAnimationComplete = (playerId: number, r: number, c: number, card: CardType) => {
+      dispatch({
+          type: 'FINISH_REFILL_ANIMATION',
+          payload: { playerId, r, c, card },
+      });
+  };
   
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
     if (gameOver || !isHumanTurn) return false;

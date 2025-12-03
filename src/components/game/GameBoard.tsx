@@ -24,6 +24,38 @@ interface GameBoardProps {
   onRefillAnimationComplete?: (playerId: number, r: number, c: number, card: Card) => void;
 }
 
+const RefillingCard = ({ slot, playerId, isMobile, getSlotPosition, onRefillAnimationComplete, cardBackImageUrl }: {
+  slot: { playerId: number; r: number; c: number; card: Card };
+  playerId: number;
+  isMobile?: boolean;
+  getSlotPosition: (r: number, c: number) => { x: number, y: number };
+  onRefillAnimationComplete?: (playerId: number, r: number, c: number, card: Card) => void;
+  cardBackImageUrl?: string;
+}) => {
+    if (slot.playerId !== playerId) return null;
+    const targetPos = getSlotPosition(slot.r, slot.c);
+
+    return (
+        <motion.div
+            key={slot.card.uid}
+            className="absolute top-1/2 left-1/2"
+            initial={{ x: '150%', y: '-100%', scale: isMobile ? 0.7 : 1 }}
+            animate={{ x: targetPos.x, y: targetPos.y, scale: 1 }}
+            transition={{
+                delay: 0,
+                duration: 0.5,
+                ease: [0.25, 1, 0.5, 1]
+            }}
+            onAnimationComplete={() => onRefillAnimationComplete?.(slot.playerId, slot.r, slot.c, slot.card)}
+        >
+            <div className={cn('comic-card-slot', isMobile ? 'w-20' : 'w-24')}>
+                <GameCard card={{ ...slot.card, isFaceUp: false }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
+            </div>
+        </motion.div>
+    );
+};
+
+
 /**
  * Tablero 3x3 estilo cómic.
  */
@@ -37,7 +69,7 @@ export default function GameBoard({
   isDimmed,
   lastRivalMove,
   cardBackImageUrl,
-  refillingSlots,
+  refillingSlots = [],
   onRefillAnimationComplete,
 }: GameBoardProps) {
   const boardRef = React.useRef<HTMLDivElement>(null);
@@ -111,29 +143,17 @@ export default function GameBoard({
 
        {/* Refilling Card Animations */}
       <div className="absolute inset-0 pointer-events-none">
-        {refillingSlots?.map((slot, index) => {
-            if (slot.playerId !== playerId) return null;
-            const targetPos = getSlotPosition(slot.r, slot.c);
-
-            return (
-                <motion.div
-                    key={slot.card.uid}
-                    className="absolute top-1/2 left-1/2"
-                    initial={{ x: '150%', y: '-100%', scale: isMobile ? 0.7 : 1 }}
-                    animate={{ x: targetPos.x, y: targetPos.y, scale: 1 }}
-                    transition={{
-                        delay: index * 0.1,
-                        duration: 0.5,
-                        ease: [0.25, 1, 0.5, 1]
-                    }}
-                    onAnimationComplete={() => onRefillAnimationComplete?.(slot.playerId, slot.r, slot.c, slot.card)}
-                >
-                    <div className={cn('comic-card-slot', isMobile ? 'w-20' : 'w-24')}>
-                        <GameCard card={{ ...slot.card, isFaceUp: false }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
-                    </div>
-                </motion.div>
-            )
-        })}
+        {refillingSlots.map((slot, index) => (
+            <RefillingCard 
+              key={slot.card.uid}
+              slot={slot}
+              playerId={playerId}
+              isMobile={isMobile}
+              getSlotPosition={getSlotPosition}
+              onRefillAnimationComplete={onRefillAnimationComplete}
+              cardBackImageUrl={cardBackImageUrl}
+            />
+        ))}
       </div>
     </div>
   );
