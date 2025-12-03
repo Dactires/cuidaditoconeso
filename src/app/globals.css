@@ -113,6 +113,21 @@
     }
   }
 
+  .animate-rival-play {
+    animation: rival-play 1s ease-out;
+  }
+
+  @keyframes rival-play {
+    0%, 100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 transparent);
+    }
+    50% {
+      transform: scale(1.05);
+      filter: drop-shadow(0 0 1rem hsl(var(--destructive)));
+    }
+  }
+
   .comic-panel {
     @apply rounded-3xl border-4 border-white/90 bg-sky-400/40 shadow-[0_10px_0_rgba(0,0,0,0.6)];
     box-shadow:

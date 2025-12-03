@@ -5,15 +5,16 @@ import { cn } from '@/lib/utils';
 import type { Card } from '@/lib/types';
 import GameCard from './GameCard';
 
-type ExplodingPos = { r: number; c: number };
+type Pos = { r: number; c: number };
 
 interface GameBoardProps {
   board: (Card | null)[][];
   onCardClick?: (r: number, c: number) => void;
   isCardSelectable?: (r: number, c: number) => boolean;
-  explodingCard?: ExplodingPos;
+  explodingCard?: Pos;
   isMobile?: boolean;
   isDimmed?: boolean;
+  lastRivalMove?: Pos;
 }
 
 /**
@@ -26,6 +27,7 @@ export default function GameBoard({
   explodingCard,
   isMobile,
   isDimmed,
+  lastRivalMove,
 }: GameBoardProps) {
   return (
     <div className={cn(
@@ -40,6 +42,8 @@ export default function GameBoard({
             const selectable = isCardSelectable?.(r, c) ?? false;
             const isExploding =
               !!explodingCard && explodingCard.r === r && explodingCard.c === c;
+            const isRivalMove =
+              !!lastRivalMove && lastRivalMove.r === r && lastRivalMove.c === c;
 
             return (
               <button
@@ -61,6 +65,7 @@ export default function GameBoard({
                   isSelected={false} // Selection is handled by parent
                   isSelectable={selectable}
                   isExploding={isExploding}
+                  isRivalMove={isRivalMove}
                   isMobile={isMobile}
                   isDimmed={isDimmed}
                 />

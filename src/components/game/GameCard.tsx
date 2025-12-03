@@ -12,6 +12,7 @@ interface GameCardProps {
   isSelected?: boolean;
   isSelectable?: boolean;
   isExploding?: boolean;
+  isRivalMove?: boolean;
   isMobile?: boolean;
   isDimmed?: boolean;
 }
@@ -31,6 +32,7 @@ export default function GameCard({
   isSelected = false,
   isSelectable = false,
   isExploding = false,
+  isRivalMove = false,
   isMobile = false,
   isDimmed = false,
 }: GameCardProps) {
@@ -63,7 +65,8 @@ export default function GameCard({
         isSelectable && !isDimmed && 'cursor-pointer',
         isSelected && !isMobile && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
         isSelected && isMobile && 'ring-2 ring-amber-300 rounded-2xl',
-        isSelectable && !isDimmed && !card.isFaceUp && "ring-2 ring-amber-400/80 ring-inset"
+        isSelectable && !isDimmed && !card.isFaceUp && "ring-2 ring-amber-400/80 ring-inset",
+        isRivalMove && 'animate-rival-play'
       )}
       onClick={onClick}
       whileHover={isSelectable && !isMobile ? { scale: 1.05, y: -4 } : {}}

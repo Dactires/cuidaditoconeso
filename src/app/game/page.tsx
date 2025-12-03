@@ -61,7 +61,7 @@ export default function GamePage() {
 
   const [showDrawAnimation, setShowDrawAnimation] = useState<number | null>(null);
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRivalMove } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -117,6 +117,24 @@ export default function GamePage() {
         performAiAction({ type: 'PASS_TURN', payload: { player_id: aiPlayerId } });
       }
     } else if (turnPhase === 'ACTION') {
+      // Prioritize playing bomb on player's board
+      const bombCard = rivalPlayer.hand.find(c => c.type === 'Bomba');
+      if (bombCard) {
+        const playerBoardSpots: {r: number, c: number}[] = [];
+        humanPlayer.board.forEach((row, r) => {
+          row.forEach((card, c) => {
+            if (!card || !card.isFaceUp) {
+              playerBoardSpots.push({ r, c });
+            }
+          });
+        });
+        if (playerBoardSpots.length > 0) {
+          const targetSpot = playerBoardSpots[Math.floor(Math.random() * playerBoardSpots.length)];
+          performAiAction({ type: 'PLAY_CARD_RIVAL', payload: { player_id: aiPlayerId, card_in_hand: bombCard, target_r: targetSpot.r, target_c: targetSpot.c } });
+          return;
+        }
+      }
+
       if (rivalPlayer.hand.length >= 4) {
         const cardToPlay = rivalPlayer.hand.find(c => c.type === 'Personaje');
         if (cardToPlay) {
@@ -140,7 +158,7 @@ export default function GamePage() {
        }
     }
   
-  }, [currentPlayerIndex, turnPhase, rivalPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay]);
+  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay]);
 
   // Human player auto-draw
   useEffect(() => {
@@ -192,6 +210,16 @@ export default function GamePage() {
       return () => clearTimeout(timer);
     }
   }, [explodingCard, dispatch]);
+
+  // Clear rival move animation state
+  useEffect(() => {
+    if (lastRivalMove) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'CLEAR_RIVAL_MOVE' });
+      }, 1200); // Corresponds to animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [lastRivalMove, dispatch]);
 
   if (isUserLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer || isMobile === undefined) {
     return (
@@ -256,7 +284,7 @@ export default function GamePage() {
   };
   
   const handlePassTurn = () => {
-    if (gameOver || turnPhase !== 'ACTION' || !isHumanTurn || gameState.isForcedToPlay) return;
+    if (gameOver || !isHumanTurn || gameState.isForcedToPlay) return;
     dispatch({ type: 'PASS_TURN', payload: { player_id: humanPlayerId } });
   }
 
@@ -361,7 +389,7 @@ export default function GamePage() {
               </div>
   
               <div className="mt-2 flex items-center justify-center gap-2">
-                {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
+                {turnPhase === 'ACTION' && !isHumanTurn && !gameState.isForcedToPlay && (
                     <button onClick={handlePassTurn} className="comic-btn comic-btn-secondary !text-xs !py-1 !px-3">
                       Pasar Turno
                     </button>
@@ -385,7 +413,8 @@ export default function GamePage() {
                   ? { r: explodingCard.r, c: explodingCard.c }
                   : undefined
               }
-              isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
+              isDimmed={isHumanTurn && turnPhase !== 'REVEAL_CARD' && !selectedHandCard}
+              lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
             />
 
             <div className="h-2" />
@@ -399,7 +428,8 @@ export default function GamePage() {
                   ? { r: explodingCard.r, c: explodingCard.c }
                   : undefined
               }
-              isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
+              isDimmed={!isHumanTurn && turnPhase !== 'REVEAL_CARD'}
+              lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
             />
           </div>
   
@@ -493,6 +523,7 @@ export default function GamePage() {
             explodingCard={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
             isMobile
             isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
+            lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
         />
       </div>
 
@@ -507,15 +538,11 @@ export default function GamePage() {
             explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
             isMobile
             isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
+            lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
         />
          <div className="flex items-center justify-between w-full px-2 h-10">
           <div className='w-1/3 flex justify-start'>
-              {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
-                  <button onClick={handlePassTurn} className="comic-btn comic-btn-secondary !text-[10px] !py-1 !px-2">
-                    Pasar
-                  </button>
-              )}
-               {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
+              {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
                   <p className="mt-1 text-[11px] text-amber-300 text-center">
                     Debes jugar una carta.
                   </p>
@@ -535,7 +562,7 @@ export default function GamePage() {
       </div>
       
       {/* Player Hand */}
-       <div className={cn(
+      <div className={cn(
         "w-full flex justify-center items-end gap-1 px-1 h-28 shrink-0 transition-opacity duration-300",
         isHumanTurn && turnPhase === 'ACTION' ? 'opacity-100' : 'opacity-60'
       )}>

@@ -15,7 +15,8 @@ export type GameAction =
   | { type: 'RESET_GAME' }
   | { type: 'INITIALIZE_GAME'; payload: { numPlayers: number } }
   | { type: 'SET_MESSAGE'; payload: string | null }
-  | { type: 'CLEAR_EXPLOSION' };
+  | { type: 'CLEAR_EXPLOSION' }
+  | { type: 'CLEAR_RIVAL_MOVE' };
 
 const getInitialState = (numPlayers: number): GameState => ({
   players: [],
@@ -31,6 +32,7 @@ const getInitialState = (numPlayers: number): GameState => ({
   finalTurnCounter: -1,
   lastRevealedCard: null,
   explodingCard: null,
+  lastRivalMove: null,
 });
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -57,6 +59,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return Game.setupGame(state.players.length);
     case 'CLEAR_EXPLOSION':
       return Game.clearExplosion(state);
+    case 'CLEAR_RIVAL_MOVE':
+      return Game.clearRivalMove(state);
     default:
       return state;
   }

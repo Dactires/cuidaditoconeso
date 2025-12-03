@@ -111,6 +111,7 @@ export function setupGame(numPlayers: number): GameState {
     finalTurnCounter: -1,
     lastRevealedCard: null,
     explodingCard: null,
+    lastRivalMove: null,
   };
 }
 
@@ -280,6 +281,8 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     
     playedCard.isFaceUp = false;
     rival.board[r][c] = playedCard;
+
+    draft.lastRivalMove = { playerId: rival.id, r, c };
     
     return nextTurn(draft);
 });
@@ -318,4 +321,8 @@ export const passTurn = produce((draft: GameState, playerId: number) => {
 
 export const clearExplosion = produce((draft: GameState) => {
   draft.explodingCard = null;
+});
+
+export const clearRivalMove = produce((draft: GameState) => {
+  draft.lastRivalMove = null;
 });

@@ -27,4 +27,5 @@ export interface GameState {
   finalTurnCounter: number;
   lastRevealedCard: Card | null;
   explodingCard: { r: number; c: number; playerId: number } | null;
+  lastRivalMove: { r: number; c: number; playerId: number } | null;
 }
