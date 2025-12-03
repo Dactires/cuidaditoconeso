@@ -6,7 +6,6 @@ import type { Card } from '@/lib/types';
 import { BombIcon } from '@/components/icons/BombIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Clock } from 'lucide-react';
 import React from 'react';
 
 interface GameCardProps {
@@ -153,7 +152,8 @@ export default function GameCard({
     >
         <motion.div 
             className="w-full h-full absolute card-face"
-            style={{ backfaceVisibility: 'hidden', transform: showFace ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+            initial={false}
+            animate={{ rotateY: showFace ? 180 : 0 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
         >
             <div className={cn(
@@ -168,7 +168,8 @@ export default function GameCard({
                 "w-full h-full absolute card-face",
                 glowClass
             )}
-            style={{ backfaceVisibility: 'hidden', transform: showFace ? 'rotateY(0deg)' : 'rotateY(-180deg)' }}
+            initial={false}
+            animate={{ rotateY: showFace ? 0 : -180 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
         >
             <div className={cn(
