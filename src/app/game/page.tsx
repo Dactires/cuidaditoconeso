@@ -644,7 +644,7 @@ export default function GamePage() {
       
       {/* Player Hand */}
       <div className={cn(
-        "w-full flex justify-center items-end gap-1 px-1 h-28 shrink-0",
+        "w-full flex justify-center items-center gap-1 px-1 h-28 shrink-0",
       )}>
         {humanPlayer.hand.map((card, index) => (
           <motion.div
