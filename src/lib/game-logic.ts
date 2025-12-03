@@ -38,21 +38,21 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
 
     // Create character cards
     for (const color of COLORS) {
-      for (const value of CHARACTER_VALUES) {
-          for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-            // Find the definition for the current color.
-            // This is safer than relying on array order.
-            const def = cardDefinitions.find(d => d.kind === 'color' && d.label.toLowerCase().includes(color.toLowerCase()));
-            deck.push({
-              uid: generateCardId(),
-              type: 'Personaje',
-              color,
-              value,
-              isFaceUp: false,
-              imageUrl: def?.imageUrl,
-            });
-          }
-      }
+        for (const value of CHARACTER_VALUES) {
+            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                // Find the definition for the current color.
+                const defId = `color-${color.toLowerCase()}`;
+                const def = cardDefMap.get(defId);
+                deck.push({
+                  uid: generateCardId(),
+                  type: 'Personaje',
+                  color,
+                  value,
+                  isFaceUp: false,
+                  imageUrl: def?.imageUrl,
+                });
+            }
+        }
     }
   
     // Create bomb cards
@@ -131,6 +131,8 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     explodingCard: null,
     lastRivalMove: null,
     lastDrawnCardId: null,
+    lastRevealedBomb: null,
+    showDrawAnimation: false,
   };
 }
 
@@ -201,10 +203,10 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
     const newCard = draft.deck.pop()!;
     const drawnCardId = generateCardId(); // generate a temporary unique id for animation
     
-    // Create a new card object for the hand
     const handCard = { ...newCard, uid: drawnCardId, isFaceUp: true };
-    draft.lastDrawnCardId = drawnCardId;
     player.hand.push(handCard);
+    draft.lastDrawnCardId = drawnCardId;
+    draft.showDrawAnimation = true;
 
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
@@ -231,11 +233,10 @@ const applyExplosion = (draft: GameState, player: Player, r: number, c: number) 
     coordsToReplace.forEach(coord => {
         const [row, col] = coord.split(',').map(Number);
         const oldCard = player.board[row][col];
-        if (oldCard) draft.discardPile.push(oldCard);
+        if (oldCard) draft.discardPile.push({...oldCard});
         if (draft.deck.length > 0) {
             const newCard = draft.deck.pop()!;
-            newCard.isFaceUp = false;
-            player.board[row][col] = newCard;
+            player.board[row][col] = { ...newCard, isFaceUp: false };
         } else {
             player.board[row][col] = null;
         }
@@ -251,12 +252,11 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     if (!card || card.isFaceUp) return;
 
     card.isFaceUp = true;
-    draft.lastRevealedCard = { ...card }; // Make a copy
+    draft.lastRevealedCard = { playerId, r, c, card: { ...card } }; // Make a copy
 
     if (card.type === 'Bomba') {
-        draft.explodingCard = { r, c, playerId };
-        applyExplosion(draft, player, r, c);
-        draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba. Elige tu próxima acción.`;
+        draft.lastRevealedBomb = { playerId, r, c, cardUid: card.uid };
+        draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
     } else {
         const newScore = getBoardScore(player.board);
         const scoreChange = newScore - player.score;
@@ -264,7 +264,17 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
     }
 
+    draft.explodingCard = null;
     draft.turnPhase = 'ACTION';
+    checkEndGame(draft);
+});
+
+export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
+    const player = draft.players[playerId];
+    draft.explodingCard = { playerId, r, c };
+    applyExplosion(draft, player, r, c);
+    draft.lastRevealedBomb = null; // Clear the bomb trigger
+    draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
 });
 
@@ -303,7 +313,6 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
     
-    // Create a new card object for the rival's board, ensuring it's face down.
     const newBoardCard = { ...playedCard, isFaceUp: false };
     rival.board[r][c] = newBoardCard;
 
@@ -322,10 +331,8 @@ export const swapCard = produce((draft: GameState, playerId: number, r: number, 
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
 
-    // Make a copy of the board card for the hand
     player.hand.push({ ...boardCard, isFaceUp: true });
     
-    // Place a copy of the hand card on the board
     const newBoardCard = { ...playedCard, isFaceUp: true };
     player.board[r][c] = newBoardCard;
 
@@ -357,4 +364,5 @@ export const clearRivalMove = produce((draft: GameState) => {
 
 export const clearDrawnCard = produce((draft: GameState) => {
   draft.lastDrawnCardId = null;
+  draft.showDrawAnimation = false;
 });

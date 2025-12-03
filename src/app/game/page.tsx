@@ -119,7 +119,7 @@ export default function GamePage() {
   const isMobile = useIsMobile();
   const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -135,13 +135,26 @@ export default function GamePage() {
   // Sound effects trigger
   useEffect(() => {
     if (lastRevealedCard) {
-      if (lastRevealedCard.type === 'Bomba') {
-        setTimeout(() => playBomb(), 800); // Delay bomb sound until explosion
-      } else {
+      if (lastRevealedCard.card.type !== 'Bomba') {
         playFlip();
       }
     }
-  }, [lastRevealedCard, playBomb, playFlip]);
+  }, [lastRevealedCard, playFlip]);
+
+  // When a bomb is revealed, first show it, then trigger explosion
+  useEffect(() => {
+    if (!lastRevealedBomb) return;
+    playFlip(); // Play flip sound for the bomb reveal
+    const { playerId, r, c } = lastRevealedBomb;
+    const timer = setTimeout(() => {
+      playBomb(); // Play bomb sound with the explosion
+      dispatch({
+        type: 'TRIGGER_EXPLOSION',
+        payload: { playerId, r, c },
+      });
+    }, 450); // Delay to show the bomb card art
+    return () => clearTimeout(timer);
+  }, [lastRevealedBomb, dispatch, playBomb, playFlip]);
 
   // AI Logic Trigger
   useEffect(() => {
@@ -234,13 +247,13 @@ export default function GamePage() {
   
   // Clear drawn card animation state
   useEffect(() => {
-    if (lastDrawnCardId) {
+    if (showDrawAnimation && lastDrawnCardId) {
       const timer = setTimeout(() => {
         dispatch({ type: 'CLEAR_DRAWN_CARD' });
-      }, 1000); 
+      }, 1000); // Animation duration
       return () => clearTimeout(timer);
     }
-  }, [lastDrawnCardId, dispatch]);
+  }, [showDrawAnimation, lastDrawnCardId, dispatch]);
 
   // Handle card playing logic
   useEffect(() => {
@@ -532,12 +545,23 @@ export default function GamePage() {
               <div className="flex justify-between items-start gap-3">
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Mazo</span>
-                  <motion.div className="relative comic-card-slot">
-                    {deck.length > 0 && <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />}
-                     <AnimatePresence>
-                      {lastDrawnCardId && (
+                   <div className="relative comic-card-slot">
+                    <AnimatePresence>
+                      {showDrawAnimation && deck.length > 0 && (
                         <motion.div
-                          key="drawing-card"
+                          key="deck"
+                          initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-0"
+                        >
+                          <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
+                        </motion.div>
+                      )}
+                      {showDrawAnimation && lastDrawnCardId && humanPlayer.hand.some(c => c.uid === lastDrawnCardId) && (
+                        <motion.div
+                          key={lastDrawnCardId}
                           layoutId={`card-${lastDrawnCardId}`}
                           className="absolute inset-0 z-50"
                           initial={{ x: 0, y: 0 }}
@@ -547,11 +571,11 @@ export default function GamePage() {
                             ease: [0.3, 0, 0.4, 1],
                           }}
                         >
-                          <GameCard card={{ ...humanPlayer.hand[humanPlayer.hand.length -1], uid: lastDrawnCardId, isFaceUp: false }} onClick={()=>{}} isInHand cardBackImageUrl={cardBackImageUrl} />
+                          <GameCard card={{ ...humanPlayer.hand.find(c => c.uid === lastDrawnCardId)!, isFaceUp: false }} onClick={()=>{}} isInHand cardBackImageUrl={cardBackImageUrl} />
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
+                  </div>
                   <span className="text-[11px] text-slate-200/70 font-mono">
                     {deck.length} cartas
                   </span>

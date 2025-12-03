@@ -26,8 +26,10 @@ export interface GameState {
   gameMessage: string | null;
   turnPhase: 'START_TURN' | 'REVEAL_CARD' | 'ACTION' | 'GAME_OVER';
   finalTurnCounter: number;
-  lastRevealedCard: Card | null;
+  lastRevealedCard: { playerId: number; r: number; c: number; card: Card } | null;
   explodingCard: { r: number; c: number; playerId: number } | null;
   lastRivalMove: { r: number; c: number; playerId: number } | null;
   lastDrawnCardId: string | null;
+  lastRevealedBomb: { playerId: number; r: number; c: number; cardUid: string; } | null;
+  showDrawAnimation: boolean;
 }
