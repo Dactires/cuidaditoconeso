@@ -27,19 +27,46 @@ interface SfxContextType {
 
 const SfxContext = createContext<SfxContextType | undefined>(undefined);
 
-// A component that pre-caches sounds and provides play functions
-const SoundManager = ({
-  setPlayFunctions,
+// A dummy component that holds the useSound hooks to build the play functions map
+const SoundHooksComponent = ({
+  sfxMap,
+  onFunctionsReady,
 }: {
-  setPlayFunctions: (functions: PlayFunctions) => void;
+  sfxMap: Map<string, string>;
+  onFunctionsReady: (functions: PlayFunctions) => void;
+}) => {
+  const playFunctions: PlayFunctions = {};
+
+  sfxMap.forEach((url, id) => {
+    const [play] = useSound(url, { volume: 0.35, interrupt: true });
+    playFunctions[id] = play;
+  });
+
+  useEffect(() => {
+    // Pass the newly created functions object up to the provider
+    onFunctionsReady(playFunctions);
+    // This effect should only re-run if the map of URLs itself changes.
+    // The functions object is re-created on every render, so it can't be a dependency.
+  }, [sfxMap]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null; // This component doesn't render anything
+};
+
+
+export const SfxProvider: React.FC<{ children: ReactNode }> = ({
+  children,
 }) => {
   const { firestore } = useFirebase();
   const [sfxMap, setSfxMap] = useState<Map<string, string>>(new Map());
+  const [playFunctions, setPlayFunctions] = useState<PlayFunctions>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   // 1. Fetch all sound URLs from Firestore
   useEffect(() => {
     const fetchAllSfxUrls = async () => {
       if (!firestore) return;
+      
+      setIsLoading(true);
       const urls = new Map<string, string>();
       try {
         const cardImagesCollectionRef = collection(firestore, 'card-images');
@@ -62,61 +89,36 @@ const SoundManager = ({
     fetchAllSfxUrls();
   }, [firestore]);
 
-  // 2. This is a dummy component that just holds the useSound hooks
-  const SoundHooks = () => {
-    const playFunctions: PlayFunctions = {};
-    
-    // Create a useSound hook for each entry in the sfxMap
-    sfxMap.forEach((url, id) => {
-      const [play] = useSound(url, { volume: 0.35, interrupt: true });
-      playFunctions[id] = play;
-    });
-
-    // 3. Update the parent's state with the created play functions
-    useEffect(() => {
-      setPlayFunctions(playFunctions);
-    }, [sfxMap]); // Reruns when sfxMap changes
-
-    return null; // This component doesn't render anything
-  };
-
-  return <SoundHooks />;
-};
-
-
-export const SfxProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
-  const [playFunctions, setPlayFunctions] = useState<PlayFunctions>({});
-  const [isLoading, setIsLoading] = useState(true);
-
   // The master play function that the game logic will call
   const playSoundById = useCallback((cardId: string) => {
     const playFn = playFunctions[cardId];
     if (playFn) {
       playFn();
-    } else {
-      // console.warn(`Sound not found for cardId: ${cardId}`);
     }
   }, [playFunctions]);
 
   // IMPORTANT: This effect provides the playSound function to the game logic module.
   useEffect(() => {
     gameSfxApi.playSoundById = playSoundById;
-    // When playFunctions are ready, loading is done
-    if(Object.keys(playFunctions).length > 0) {
+  }, [playSoundById]);
+
+  // Callback for when the sound hooks are ready
+  const handleFunctionsReady = useCallback((functions: PlayFunctions) => {
+    setPlayFunctions(functions);
+    if(Object.keys(functions).length > 0) {
         setIsLoading(false);
     }
-  }, [playSoundById, playFunctions]);
+  }, []);
 
   return (
     <SfxContext.Provider value={{ playSound: playSoundById, isLoading }}>
-      {/* The SoundManager is now a child and updates this provider's state */}
-      <SoundManager setPlayFunctions={setPlayFunctions} />
+      {/* The SoundHooksComponent is now a child and updates this provider's state via callback */}
+      <SoundHooksComponent sfxMap={sfxMap} onFunctionsReady={handleFunctionsReady} />
       {children}
     </SfxContext.Provider>
   );
 };
+
 
 // Hook to use the SFX player (optional, if needed in other UI components)
 export const useSfxPlayer = () => {
