@@ -1,12 +1,11 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useGame, GameAction } from '@/hooks/use-game';
 import type { Card as CardType, Player } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { useGameSounds } from '@/hooks/use-game-sounds';
 import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -14,7 +13,7 @@ import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import GameLoadingScreen from '@/components/game/GameLoadingScreen';
-import MatchupScreen from '@/components/game/MatchupScreen'; // Importar el nuevo componente
+import MatchupScreen from '@/components/game/MatchupScreen';
 import { User, Bot, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -98,10 +97,11 @@ const useCardDefinitionsWithImages = () => {
                 return {
                     ...def,
                     ...(data || {}),
-                    ability: { // Ensure ability structure is merged correctly
+                    ability: { 
                       name: data?.ability?.name || def.ability?.name || '',
                       description: data?.ability?.description || def.ability?.description || '',
                       json: data?.ability?.json || def.ability?.json || '{}',
+                      soundUrl: data?.ability?.soundUrl || def.ability?.soundUrl || '',
                     }
                 };
             });
@@ -128,7 +128,6 @@ export default function GamePage() {
   const router = useRouter();
   const { cardDefs, cardBackImageUrl, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
   const { gameState, dispatch, initialized, resetGame } = useGame(2, cardDefs);
-  const { playFlip, playBomb, playDeal } = useGameSounds();
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
@@ -139,8 +138,10 @@ export default function GamePage() {
   const [gamePhase, setGamePhase] = useState<'loading' | 'matchup' | 'playing'>('loading');
 
   const { playBattleMusic, stopAllMusic } = useMusicPlayer();
+  
+  const sfxPlayerRef = useRef<HTMLAudioElement>(null);
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation, sfxUrl } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const humanPlayer = players?.[humanPlayerId];
@@ -177,26 +178,23 @@ export default function GamePage() {
     }
   }, [initialized, gamePhase]);
 
-
-  // Sound effects trigger for any revealed card
+  // SFX Player
   useEffect(() => {
-    if (lastRevealedCard) {
-        // This logic is now purely for sound, not explosion triggering
-        if (lastRevealedCard.card.type !== 'Bomba') {
-            playFlip();
-        }
+    if (sfxUrl && sfxPlayerRef.current) {
+        sfxPlayerRef.current.src = sfxUrl;
+        sfxPlayerRef.current.play().catch(e => console.log("SFX play error:", e));
     }
-  }, [lastRevealedCard, playFlip]);
+  }, [sfxUrl]);
+
 
   // When a bomb is revealed, first show it, then trigger explosion
   useEffect(() => {
       if (!explodingCard) return;
-      playBomb(); // Play bomb sound with the explosion
       const timer = setTimeout(() => {
           dispatch({ type: 'CLEAR_EXPLOSION' });
-      }, 1200); // Aumentar duración para entender la animación
+      }, 1200); 
       return () => clearTimeout(timer);
-  }, [explodingCard, dispatch, playBomb]);
+  }, [explodingCard, dispatch]);
 
 
   // AI Logic Trigger
@@ -276,12 +274,11 @@ export default function GamePage() {
     if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN' || gamePhase !== 'playing') return;
 
     const timer = setTimeout(() => {
-      playDeal();
       dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, gamePhase, playDeal]);
+  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, gamePhase]);
   
   // Clear drawn card animation state
   useEffect(() => {
@@ -830,6 +827,7 @@ export default function GamePage() {
 
   return (
     <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
+      <audio ref={sfxPlayerRef} className="hidden" />
       <GameOverModal
         isOpen={gameOver}
         winner={winner}

@@ -152,7 +152,7 @@ const getRandomEmptyOrHiddenRivalPos = (board: (Card | null)[][]): { r: number; 
 const triggerAbilities = (
   draft: GameState,
   playedCard: Card,
-  trigger: "ON_PLAY_OWN_BOARD"
+  trigger: "ON_PLAY_OWN_BOARD" | "ON_REVEAL"
 ) => {
   if (!playedCard.ability?.json) return;
 
@@ -164,6 +164,10 @@ const triggerAbilities = (
   }
 
   if (ability.trigger !== trigger) return;
+  
+  if (playedCard.ability.soundUrl) {
+    draft.sfxUrl = playedCard.ability.soundUrl;
+  }
 
   const currentPlayer = draft.players[draft.currentPlayerIndex];
   const rivalPlayer = draft.players[(draft.currentPlayerIndex + 1) % draft.players.length];
@@ -194,7 +198,6 @@ const triggerAbilities = (
           currentPlayer.discardPile.push({ ...neighbor, isFaceUp: true });
           currentPlayer.board[targetR][targetC] = null;
 
-          // Rellenar inmediatamente
           if (ensurePlayerDeckHasCards(currentPlayer, 1)) {
             const newCard = currentPlayer.deck.pop()!;
             currentPlayer.board[targetR][targetC] = { ...newCard, isFaceUp: false };
@@ -206,7 +209,6 @@ const triggerAbilities = (
     }
 
     case "PLANT_BOMB_RANDOM": {
-      // Buscar bomba en deck o descarte del jugador actual
       let bombIdx = currentPlayer.deck.findIndex(c => c.type === "Bomba");
       let bombSource: "deck" | "discard" | null = null;
 
@@ -217,16 +219,10 @@ const triggerAbilities = (
         if (bombIdx !== -1) bombSource = "discard";
       }
 
-      if (!bombSource) {
-        // no hay bombas disponibles, habilidad no hace nada
-        break;
-      }
+      if (!bombSource) break;
       
       const pos = getRandomEmptyOrHiddenRivalPos(rivalPlayer.board);
-      if (!pos) {
-          // No valid spots to plant the bomb
-          break;
-      }
+      if (!pos) break;
       
       const bombCard =
         bombSource === "deck"
@@ -255,7 +251,6 @@ const triggerAbilities = (
 
       card.isFaceUp = true;
 
-      // marcamos una revelación temporal
       draft.tempReveal = {
         playerId: currentPlayer.id,
         r: pos.r,
@@ -267,9 +262,14 @@ const triggerAbilities = (
       draft.gameMessage = `¡${playedCard.ability.name}! Espiás una carta de tu tablero.`;
       break;
     }
+    
+    case "EXPLODE_ADJACENT": {
+        // This is now just a marker. The actual explosion is handled by setting explodingCard.
+        // Handled in revealCard function.
+        break;
+    }
 
     default:
-      // acciones futuras que quieras agregar
       break;
   }
 };
@@ -279,7 +279,6 @@ const triggerAbilities = (
 export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): GameState {
   cardUid = 0; // Reset UID counter for a new game
 
-  // For now, all players have level 1 characters
   const player1Levels = { 'Rojo': 1, 'Azul': 1, 'Verde': 1, 'Amarillo': 1 };
   const player2Levels = { 'Rojo': 1, 'Azul': 1, 'Verde': 1, 'Amarillo': 1 };
   const playerLevels = [player1Levels, player2Levels];
@@ -293,9 +292,7 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     discardPile: [],
   }));
 
-  // Deal initial hands and boards from individual decks
   for (const player of players) {
-      // Deal hand
       for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
         if (ensurePlayerDeckHasCards(player, 1)) {
            const card = player.deck.pop();
@@ -304,7 +301,6 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
             }
         }
       }
-      // Fill board
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
            if (ensurePlayerDeckHasCards(player, 1)) {
@@ -335,12 +331,12 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     showDrawAnimation: false,
     refillingSlots: [],
     tempReveal: null,
+    sfxUrl: null,
   };
 }
 
 const checkEndGame = (draft: GameState) => {
   console.log("CHECKING END GAME...");
-  // 1) NUEVA REGLA: tablero lleno de personajes boca arriba
   let someoneHasFullCharacters = false;
   for (const player of draft.players) {
     const isFullOfCharacters = player.board
@@ -357,7 +353,6 @@ const checkEndGame = (draft: GameState) => {
   }
 
   if (someoneHasFullCharacters && !draft.gameOver) {
-    // Final inmediato por tablero lleno de personajes
     draft.gameOver = true;
     draft.turnPhase = 'GAME_OVER';
 
@@ -380,11 +375,9 @@ const checkEndGame = (draft: GameState) => {
       draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
     }
     console.log("GAME OVER! Winner:", draft.winner ? `Player ${draft.winner.id}` : 'Tie', 'Message:', draft.gameMessage);
-    return; // importante: no seguimos con la lógica de ronda final
+    return; 
   }
 
-  // 2) si querés mantener tu lógica de ronda final por mazo vacío,
-  // dejá abajo tu código de finalTurnCounter.
   if (draft.finalTurnCounter === 0 && !draft.gameOver) {
     draft.gameOver = true;
     draft.turnPhase = 'GAME_OVER';
@@ -413,13 +406,13 @@ const checkEndGame = (draft: GameState) => {
 function nextTurn(state: GameState): GameState {
   if (state.gameOver) return state;
 
-  // Reduce the final turn counter BEFORE switching players
+  state.sfxUrl = null;
+
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
   }
   
   checkEndGame(state);
-  // checkEndGame might set gameOver, so we check again
   if (state.gameOver) return state;
 
   state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
@@ -445,6 +438,8 @@ function nextTurn(state: GameState): GameState {
 export const drawCard = produce((draft: GameState, playerId: number) => {
   if (draft.turnPhase !== 'START_TURN' || draft.currentPlayerIndex !== playerId) return;
   const player = draft.players[playerId];
+  
+  draft.sfxUrl = '/sfx/draw.mp3';
 
   if (ensurePlayerDeckHasCards(player, 1)) {
     const newCard = player.deck.pop()!;
@@ -474,12 +469,14 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     card.isFaceUp = true;
     draft.lastRevealedCard = { playerId, r, c, card: { ...card } };
     draft.explodingCard = null;
+    draft.sfxUrl = null;
 
     if (card.type === 'Bomba') {
-        // Trigger explosion immediately in the state
+        triggerAbilities(draft, card, "ON_REVEAL");
         draft.explodingCard = { playerId, r, c, card: { ...card } };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
     } else {
+        draft.sfxUrl = '/sfx/flip.mp3';
         player.score = getBoardScore(player.board);
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
         draft.turnPhase = 'ACTION';
@@ -491,7 +488,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
     const player = draft.players[playerId];
     const explodingCard = player.board[r][c];
-    if (!explodingCard) return; // Card might already be removed by resolveExplosion
+    if (!explodingCard) return; 
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
 });
 
@@ -504,14 +501,12 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
     return;
   }
 
-  // 1) Descarta la bomba
   player.discardPile.push({ ...centerCard, isFaceUp: true });
   player.board[r][c] = null;
 
   const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
   const positionsToRefill: { r: number; c: number }[] = [{ r, c }];
 
-  // 2) Descarta SOLO adyacentes volteados
   for (const [ar, ac] of coordsToCheck) {
     if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
       const adjCard = player.board[ar][ac];
@@ -523,7 +518,6 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
     }
   }
 
-  // 3) Rellena inmediatamente con cartas boca abajo
   ensurePlayerDeckHasCards(player, positionsToRefill.length);
   for (const pos of positionsToRefill) {
     if (player.deck.length > 0) {
@@ -534,7 +528,7 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
 
   player.score = getBoardScore(player.board);
   draft.explodingCard = null;
-  draft.refillingSlots = []; // ya no lo usás para la bomba
+  draft.refillingSlots = []; 
   draft.turnPhase = 'ACTION';
   draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
   checkEndGame(draft);
@@ -544,7 +538,6 @@ export const finishRefillAnimation = produce((draft: GameState, payload: { playe
     const { playerId, r, c, card } = payload;
     const player = draft.players[playerId];
     
-    // Only place card if the slot is still empty.
     if (!player.board[r][c]) {
         player.board[r][c] = { ...card, isFaceUp: false };
     }
@@ -554,7 +547,6 @@ export const finishRefillAnimation = produce((draft: GameState, payload: { playe
         draft.refillingSlots.splice(slotIndex, 1);
     }
     
-    // After the last refill animation, check for game end conditions
     if (draft.refillingSlots.length === 0) {
         checkEndGame(draft);
     }
@@ -577,7 +569,16 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     player.board[r][c] = newBoardCard;
     player.score = getBoardScore(player.board);
     
+    draft.sfxUrl = '/sfx/flip.mp3';
     triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
+
+    if (!draft.gameOver) {
+       // Do not check for endgame here if it's an ability card that reveals, etc.
+       const ability = playedCard.ability?.json ? JSON.parse(playedCard.ability.json) : null;
+       if (ability?.action !== 'REVEAL_RANDOM_BRIEFLY') {
+            checkEndGame(draft);
+       }
+    }
 
     if (!draft.gameOver) {
       return nextTurn(draft);
@@ -599,7 +600,8 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     
     const newBoardCard = { ...playedCard, isFaceUp: false };
     rival.board[r][c] = newBoardCard;
-
+    
+    draft.sfxUrl = null; // No sound for this action by default
     draft.lastRivalMove = { playerId: rival.id, r, c };
     
     return nextTurn(draft);
@@ -665,13 +667,8 @@ export const hideTempReveal = produce((
 
   const card = player.board[r][c];
 
-  // Only hide it if it's still the same card that was temporarily revealed.
   if (card && card.uid === cardUid) {
     card.isFaceUp = false;
   }
   draft.tempReveal = null;
 });
-
-
-
-

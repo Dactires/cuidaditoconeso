@@ -40,6 +40,7 @@ const getInitialState = (numPlayers: number): GameState => ({
   lastDrawnCardId: null,
   showDrawAnimation: false,
   refillingSlots: [],
+  sfxUrl: null,
 });
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -120,5 +121,3 @@ export function useGame(numPlayers: number, cardDefs: GameCardDef[] | null) {
 
     return { gameState, dispatch, initialized, resetGame };
   }
-  
-    

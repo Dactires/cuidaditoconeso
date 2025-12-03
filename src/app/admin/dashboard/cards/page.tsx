@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Save, BrainCircuit } from 'lucide-react';
+import { Upload, X, Save, BrainCircuit, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore, doc, setDoc, getDoc, DocumentData } from 'firebase/firestore';
@@ -22,14 +22,16 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Local state for the card, initialized with definition
   const [card, setCard] = useState<GameCardDef>(initialCard);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Effect to load data from Firestore on mount
+  const [soundPreview, setSoundPreview] = useState<string | null>(null);
+  const [selectedSoundFile, setSelectedSoundFile] = useState<File | null>(null);
+  const soundInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const fetchCardData = async () => {
       if (!firestore) return;
@@ -38,14 +40,14 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
 
       if (docSnap.exists()) {
         const firestoreData = docSnap.data();
-        // Merge Firestore data into the initial card definition
         setCard(prevCard => ({
           ...prevCard,
           ...firestoreData,
-          ability: { // Ensure ability object structure
+          ability: {
             name: firestoreData.ability?.name || '',
             description: firestoreData.ability?.description || '',
             json: firestoreData.ability?.json || '{}',
+            soundUrl: firestoreData.ability?.soundUrl || '',
           }
         }));
       }
@@ -80,31 +82,47 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
       reader.readAsDataURL(file);
     }
   };
+  
+  const handleSoundFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedSoundFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+          setSoundPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   const handleSaveAll = async () => {
     if (!firestore || !storage) return;
     setIsSaving(true);
-    let downloadURL = card.imageUrl; // Use existing URL by default
+    let downloadURL = card.imageUrl;
+    let soundDownloadURL = card.ability?.soundUrl;
 
     try {
-       // --- 1. Upload Image if selected ---
+      setIsUploading(true);
       if (selectedFile) {
-        setIsUploading(true);
-        const storageRef = ref(storage, `card-images/${card.id}/${selectedFile.name}`);
+        const storageRef = ref(storage, `card-images/${card.id}/image_${selectedFile.name}`);
         const snapshot = await uploadBytes(storageRef, selectedFile);
         downloadURL = await getDownloadURL(snapshot.ref);
-        
-        // Update local state immediately for UI
         setCard(prev => ({...prev, imageUrl: downloadURL}));
-        setSelectedFile(null);
-        setImagePreview(null);
-        setIsUploading(false);
       }
       
-      // --- 2. Save all data to Firestore ---
+      if (selectedSoundFile) {
+        const soundStorageRef = ref(storage, `card-sounds/${card.id}/sound_${selectedSoundFile.name}`);
+        const soundSnapshot = await uploadBytes(soundStorageRef, selectedSoundFile);
+        soundDownloadURL = await getDownloadURL(soundSnapshot.ref);
+         setCard(prev => ({
+            ...prev,
+            ability: { ...prev.ability!, soundUrl: soundDownloadURL },
+        }));
+      }
+      setIsUploading(false);
+      
       const docRef = doc(firestore, 'card-images', card.id);
       
-      // Construct a clean data object to save
       const dataToSave: Partial<GameCardDef> = {
         label: card.label,
         description: card.description,
@@ -112,11 +130,17 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
         ability: {
           name: card.ability?.name || '',
           description: card.ability?.description || '',
-          json: card.ability?.json || '{}'
+          json: card.ability?.json || '{}',
+          soundUrl: soundDownloadURL,
         }
       };
 
       await setDoc(docRef, dataToSave, { merge: true });
+      
+      setSelectedFile(null);
+      setImagePreview(null);
+      setSelectedSoundFile(null);
+      setSoundPreview(null);
 
       toast({
         title: '¡Guardado!',
@@ -182,7 +206,7 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
               )}
             </div>
              <Input
-                ref={fileInputRef}
+                ref={imageInputRef}
                 type="file"
                 accept="image/png, image/jpeg, image/webp"
                 onChange={handleFileChange}
@@ -192,7 +216,7 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => imageInputRef.current?.click()}
                 >
                   Cambiar Imagen
                 </Button>
@@ -294,9 +318,58 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
                   <p className="text-xs text-red-500 mt-1">El JSON no es válido.</p>
               )}
             </div>
+             {/* Sound Upload */}
+            <div className="space-y-2">
+                <Label htmlFor={`ability-sound-${card.id}`}>Audio de Habilidad</Label>
+                 <Input
+                    ref={soundInputRef}
+                    type="file"
+                    accept="audio/mpeg, audio/wav, audio/ogg"
+                    onChange={handleSoundFileChange}
+                    className="hidden"
+                />
+                {!selectedSoundFile && !card.ability?.soundUrl && (
+                     <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => soundInputRef.current?.click()}
+                        >
+                        <Upload className="mr-2 h-4 w-4" /> Subir Audio
+                    </Button>
+                )}
+                {selectedSoundFile && soundPreview && (
+                    <div className="border rounded-md p-2 flex items-center gap-2">
+                        <Music className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex-grow text-xs truncate">
+                            <p className="font-semibold">{selectedSoundFile.name}</p>
+                            <p className="text-muted-foreground">
+                                {Math.round(selectedSoundFile.size / 1024)} KB
+                            </p>
+                        </div>
+                        <audio src={soundPreview} controls className="h-8" />
+                        <Button
+                            variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => { setSelectedSoundFile(null); setSoundPreview(null); }}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+                {!selectedSoundFile && card.ability?.soundUrl && (
+                     <div className="border rounded-md p-2 flex items-center gap-2">
+                         <Music className="h-5 w-5 text-muted-foreground" />
+                         <audio src={card.ability.soundUrl} controls className="h-8 flex-grow" />
+                         <Button
+                            variant="outline" size="sm"
+                            onClick={() => soundInputRef.current?.click()}
+                         >
+                            Reemplazar
+                         </Button>
+                     </div>
+                )}
+            </div>
         </div>
         
-        {/* Botón de Guardar Todo */}
         <div className="pt-4 border-t">
           <Button
             className="w-full comic-btn comic-btn-primary"
@@ -312,7 +385,6 @@ function AdminCard({ initialCard }: { initialCard: GameCardDef }) {
   );
 }
 
-// Componente principal de la página
 export default function AdminCardsPage() {
   return (
     <div className="space-y-6">

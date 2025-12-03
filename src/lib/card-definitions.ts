@@ -5,6 +5,7 @@ export type CardAbility = {
   name: string;
   description: string;
   json: string;
+  soundUrl?: string;
 };
 
 export type GameCardDef = {
@@ -146,6 +147,15 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     ribbonClass: "bg-slate-950",
     value: 0,
     description: "La Bomba destruye las cartas adyacentes que estén boca arriba. Úsala con estrategia para limpiar el tablero.",
+    ability: {
+      name: "Explosión",
+      description: "Destruye las cartas adyacentes que estén boca arriba.",
+      json: JSON.stringify({
+        "trigger": "ON_REVEAL",
+        "target": "OWN_BOARD",
+        "action": "EXPLODE_ADJACENT"
+      }, null, 2)
+    }
   },
   {
     id: "hero",

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Save, Music, X, FileAudio, Bomb } from 'lucide-react';
+import { Upload, Save, Music, X } from 'lucide-react';
 import { useStorage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL, getMetadata } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
@@ -194,56 +194,23 @@ export default function AdminAudioPage() {
       icon: Music,
       accept: "audio/mpeg"
     },
-    {
-      title: "SFX: Explosión",
-      description: "Sonido al explotar una carta de bomba.",
-      storagePath: "sfx/explosion.mp3",
-      icon: Bomb,
-      accept: "audio/mpeg, audio/wav, audio/ogg"
-    },
-    {
-      title: "SFX: Voltear Carta",
-      description: "Sonido al revelar una carta en el tablero.",
-      storagePath: "sfx/flip.mp3",
-      icon: FileAudio,
-      accept: "audio/mpeg, audio/wav, audio/ogg"
-    },
-    {
-      title: "SFX: Robar Carta",
-      description: "Sonido cuando un jugador roba una carta.",
-      storagePath: "sfx/draw.mp3",
-      icon: FileAudio,
-      accept: "audio/mpeg, audio/wav, audio/ogg"
-    }
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight comic-title">
-          Gestión de Audio del Juego
+          Gestión de Música del Juego
         </h1>
         <p className="text-muted-foreground">
-          Sube los archivos para la música de fondo y los efectos de sonido (SFX).
+          Sube los archivos para la música de fondo del lobby y las batallas.
         </p>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="comic-title text-xl">Música de Fondo</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {audioFiles.filter(f => f.storagePath.startsWith('music/')).map(file => (
-            <AudioUploader key={file.storagePath} {...file} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4 pt-4">
-        <h2 className="comic-title text-xl">Efectos de Sonido (SFX)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {audioFiles.filter(f => f.storagePath.startsWith('sfx/')).map(file => (
-            <AudioUploader key={file.storagePath} {...file} />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {audioFiles.map(file => (
+          <AudioUploader key={file.storagePath} {...file} />
+        ))}
       </div>
     </div>
   );

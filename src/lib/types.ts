@@ -1,3 +1,4 @@
+
 import { CardAbility } from "./card-definitions";
 
 export interface Card {
@@ -42,4 +43,5 @@ export interface GameState {
     cardUid: string;
     hideAt: number;
   } | null;
+  sfxUrl: string | null;
 }
