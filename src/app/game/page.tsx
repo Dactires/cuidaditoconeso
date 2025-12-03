@@ -152,7 +152,7 @@ export default function GamePage() {
         type: 'TRIGGER_EXPLOSION',
         payload: { playerId, r, c },
       });
-    }, 450); // Delay to show the bomb card art
+    }, 650); // Delay to show the bomb card art
     return () => clearTimeout(timer);
   }, [lastRevealedBomb, dispatch, playBomb, playFlip]);
 
