@@ -1,5 +1,3 @@
-
-
 import { CardAbility } from "./card-definitions";
 
 export interface Card {
@@ -17,12 +15,12 @@ export interface Player {
   hand: Card[];
   board: (Card | null)[][];
   score: number;
+  deck: Card[];
+  discardPile: Card[];
 }
 
 export interface GameState {
   players: Player[];
-  deck: Card[];
-  discardPile: Card[];
   currentPlayerIndex: number;
   gameOver: boolean;
   winner: Player | null;
@@ -39,5 +37,3 @@ export interface GameState {
   showDrawAnimation: boolean;
   refillingSlots: { playerId: number; r: number; c: number; card: Card }[];
 }
-
-    

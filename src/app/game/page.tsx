@@ -129,7 +129,7 @@ export default function GamePage() {
   const [showDeckAnimation, setShowDeckAnimation] = useState(false);
 
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -579,7 +579,7 @@ export default function GamePage() {
                   <span className="comic-section-title">Mazo</span>
                    <div className="relative comic-card-slot">
                     <AnimatePresence>
-                      {(showDrawAnimation || showDeckAnimation) && deck.length > 0 && (
+                      {(showDrawAnimation || showDeckAnimation) && humanPlayer.deck.length > 0 && (
                         <motion.div
                           key="deck"
                           initial={{ opacity: 0, y: -10, scale: 0.9 }}
@@ -588,7 +588,7 @@ export default function GamePage() {
                           transition={{ duration: 0.2 }}
                           className="absolute inset-0"
                         >
-                          <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
+                          <GameCard card={{ ...humanPlayer.deck[humanPlayer.deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
                         </motion.div>
                       )}
                       {showDrawAnimation && lastDrawnCardId && humanPlayer.hand.some(c => c.uid === lastDrawnCardId) && (
@@ -609,16 +609,16 @@ export default function GamePage() {
                     </AnimatePresence>
                   </div>
                   <span className="text-[11px] text-slate-200/70 font-mono">
-                    {deck.length} cartas
+                    {humanPlayer.deck.length} cartas
                   </span>
                 </div>
   
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Descarte</span>
                   <div className="comic-card-slot">
-                    {discardPile.length > 0 ? (
+                    {humanPlayer.discardPile.length > 0 ? (
                       <GameCard
-                        card={{ ...discardPile[discardPile.length - 1], isFaceUp: true }}
+                        card={{ ...humanPlayer.discardPile[humanPlayer.discardPile.length - 1], isFaceUp: true }}
                         onClick={() => {}}
                         cardBackImageUrl={cardBackImageUrl}
                       />
@@ -631,7 +631,7 @@ export default function GamePage() {
                     )}
                   </div>
                   <span className="text-[11px] text-slate-200/70 font-mono">
-                    {discardPile.length} cartas
+                    {humanPlayer.discardPile.length} cartas
                   </span>
                 </div>
               </div>
@@ -836,5 +836,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
