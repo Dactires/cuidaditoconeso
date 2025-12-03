@@ -34,13 +34,13 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
 
     for (const def of characterDefs) {
         const level = characterLevels[def.color] || 1; // Default to level 1 if not specified
-        // All character cards of a color will have the same level for now.
+        // Create 20 character cards of the specified level for this color.
         for (let i = 0; i < (CARDS_PER_VALUE_COLOR * 5); i++) {
              deck.push({
                 uid: generateCardId(),
                 type: 'Personaje',
                 color: def.color,
-                value: level,
+                value: level, // All cards of this color get the same level
                 isFaceUp: false,
                 imageUrl: def.imageUrl,
                 ability: def.ability,
@@ -228,6 +228,7 @@ const triggerAbilities = (
       }
       rivalPlayer.board[pos.r][pos.c] = { ...bombCard, uid: generateCardId() };
 
+      draft.lastRivalMove = { playerId: rivalPlayer.id, r: pos.r, c: pos.c };
       draft.gameMessage = `¡${playedCard.ability.name}! Plantaste una bomba oculta en el tablero rival.`;
       break;
     }
@@ -326,7 +327,7 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
-    // 1) NUEVA REGLA: tablero lleno de personajes boca arriba
+    // 1) NUEVA REGLA: tablero lleno de cartas boca arriba
     let gameShouldEnd = false;
 
     for (const player of draft.players) {
@@ -338,7 +339,7 @@ const checkEndGame = (draft: GameState) => {
     }
 
     if (gameShouldEnd && draft.finalTurnCounter === -1) {
-        draft.finalTurnCounter = draft.players.length;
+        draft.finalTurnCounter = draft.players.length; // Cada jugador tiene un último turno
         draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
     }
 
@@ -361,7 +362,7 @@ const checkEndGame = (draft: GameState) => {
             draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
         } else {
             draft.winner = winners[0];
-            const winnerName = winners[0].id === 0 ? "Jugador 1" : `Rival (IA)`;
+            const winnerName = winners[0].id === 0 ? "Jugador 1 (Tú)" : `Rival (IA)`;
             draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
         }
     }
@@ -370,19 +371,19 @@ const checkEndGame = (draft: GameState) => {
 function nextTurn(state: GameState): GameState {
   if (state.gameOver) return state;
 
-  state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
-  state.turnPhase = 'START_TURN';
-  state.isForcedToPlay = false;
-  state.gameMessage = `Turno del Jugador ${state.currentPlayerIndex + 1}.`;
-
+  // Reduce el contador de turno final ANTES de cambiar de jugador
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
   }
   
   checkEndGame(state);
-  
   // checkEndGame might set gameOver, so we check again
   if (state.gameOver) return state;
+
+  state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+  state.turnPhase = 'START_TURN';
+  state.isForcedToPlay = false;
+  state.gameMessage = `Turno del Jugador ${state.currentPlayerIndex + 1}.`;
 
   const currentPlayer = state.players[state.currentPlayerIndex];
   if (currentPlayer.deck.length === 0 && state.finalTurnCounter === -1) {

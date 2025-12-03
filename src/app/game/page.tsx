@@ -95,6 +95,11 @@ const useCardDefinitionsWithImages = () => {
                 return {
                     ...def,
                     ...(data || {}),
+                    ability: { // Ensure ability structure is merged correctly
+                      name: data?.ability?.name || def.ability?.name || '',
+                      description: data?.ability?.description || def.ability?.description || '',
+                      json: data?.ability?.json || def.ability?.json || '{}',
+                    }
                 };
             });
             
@@ -312,8 +317,10 @@ export default function GamePage() {
   // Clear rival move animation state
   useEffect(() => {
     if (lastRivalMove) {
+      setRivalJustPlayed(true);
       const timer = setTimeout(() => {
         dispatch({ type: 'CLEAR_RIVAL_MOVE' });
+        setRivalJustPlayed(false);
       }, 1200); // Corresponds to animation duration
       return () => clearTimeout(timer);
     }
@@ -509,6 +516,7 @@ export default function GamePage() {
              <div
               className={cn(
                 "comic-board-panel transition-shadow duration-200",
+                rivalJustPlayed && "board-hit",
                 !isHumanTurn && "ring-4 ring-red-500/70 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
               )}
             >
@@ -670,6 +678,7 @@ export default function GamePage() {
         <div
           className={cn(
             "comic-board-panel transition-shadow duration-200",
+            rivalJustPlayed && "board-hit",
             !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
           )}
         >
@@ -724,7 +733,7 @@ export default function GamePage() {
               isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
               explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? explodingCard : undefined}
               isMobile
-              isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
+              isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               cardBackImageUrl={cardBackImageUrl}
               refillingSlots={refillingSlots}
