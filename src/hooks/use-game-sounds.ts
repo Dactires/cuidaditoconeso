@@ -15,21 +15,30 @@ export const useGameSounds = () => {
             if (!storage) return;
             try {
                 const flipRef = ref(storage, 'sfx/flip.mp3');
-                const bombRef = ref(storage, 'sfx/explosion.mp3');
-                const dealRef = ref(storage, 'sfx/draw.mp3');
-
-                const [fUrl, bUrl, dUrl] = await Promise.all([
-                    getDownloadURL(flipRef).catch(() => null),
-                    getDownloadURL(bombRef).catch(() => null),
-                    getDownloadURL(dealRef).catch(() => null)
-                ]);
-                
+                const fUrl = await getDownloadURL(flipRef);
                 setFlipUrl(fUrl);
-                setBombUrl(bUrl);
-                setDealUrl(dUrl);
-
             } catch (error) {
-                console.error("Error fetching game sounds:", error);
+                 if ((error as any).code !== 'storage/object-not-found') {
+                    console.error("Error fetching flip sound:", error);
+                 }
+            }
+            try {
+                const bombRef = ref(storage, 'sfx/explosion.mp3');
+                const bUrl = await getDownloadURL(bombRef);
+                setBombUrl(bUrl);
+            } catch (error) {
+                if ((error as any).code !== 'storage/object-not-found') {
+                    console.error("Error fetching bomb sound:", error);
+                }
+            }
+             try {
+                const dealRef = ref(storage, 'sfx/draw.mp3');
+                const dUrl = await getDownloadURL(dealRef);
+                setDealUrl(dUrl);
+            } catch (error) {
+                if ((error as any).code !== 'storage/object-not-found') {
+                    console.error("Error fetching deal sound:", error);
+                }
             }
         }
         fetchSoundUrls();
