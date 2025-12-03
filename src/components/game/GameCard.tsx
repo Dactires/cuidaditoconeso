@@ -21,9 +21,9 @@ const colorMap: { [key: string]: string } = {
 
 export default function GameCard({ card, onClick, isSelected = false, isSelectable = false }: GameCardProps) {
   const cardBack = (
-    <div className="absolute w-full h-full bg-blue-800 rounded-lg backface-hidden flex items-center justify-center p-1 border-2 border-blue-400">
-      <div className="w-full h-full rounded-md border-2 border-blue-400/50 border-dashed flex items-center justify-center">
-        <span className="text-blue-200 font-bold text-sm -rotate-45">BOMBERS</span>
+    <div className="absolute w-full h-full bg-primary rounded-lg backface-hidden flex items-center justify-center p-1 border-2 border-primary-foreground/50">
+      <div className="w-full h-full rounded-md border-2 border-primary-foreground/20 border-dashed flex items-center justify-center">
+        <span className="text-primary-foreground font-bold text-sm -rotate-45 opacity-70">BOMBERS</span>
       </div>
     </div>
   );
@@ -59,8 +59,8 @@ export default function GameCard({ card, onClick, isSelected = false, isSelectab
         className={cn(
           'relative w-full h-full cursor-pointer rounded-lg shadow-lg transition-transform duration-700 [transform-style:preserve-3d]',
           card?.isFaceUp && '[transform:rotateY(180deg)]',
-          isSelected && 'ring-4 ring-yellow-400 ring-offset-2 scale-110 z-10',
-          isSelectable && 'animate-pulse ring-2 ring-yellow-400',
+          isSelected && 'ring-4 ring-accent ring-offset-2 ring-offset-background scale-110 z-10',
+          isSelectable && 'animate-pulse ring-2 ring-accent',
           !card && 'cursor-default'
         )}
       >

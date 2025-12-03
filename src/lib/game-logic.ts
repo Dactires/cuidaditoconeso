@@ -73,7 +73,11 @@ export function setupGame(numPlayers: number): GameState {
   // Deal initial hands
   for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
     for (const player of players) {
-      player.hand.push(deck.pop()!);
+      const card = deck.pop();
+      if(card) {
+        card.isFaceUp = true;
+        player.hand.push(card);
+      }
     }
   }
 
@@ -81,7 +85,11 @@ export function setupGame(numPlayers: number): GameState {
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
       for (const player of players) {
-        player.board[r][c] = deck.pop()!;
+        const card = deck.pop();
+        if (card) {
+            card.isFaceUp = false;
+            player.board[r][c] = card;
+        }
       }
     }
   }
@@ -136,6 +144,7 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   const player = draft.players[playerId];
   if (draft.deck.length > 0) {
     const newCard = draft.deck.pop()!;
+    newCard.isFaceUp = true;
     player.hand.push(newCard);
     draft.gameMessage = `Player ${playerId + 1} drew a card. Reveal a card on your board.`;
   } else {
