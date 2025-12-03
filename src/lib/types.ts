@@ -1,5 +1,7 @@
 
 
+import { CardAbility } from "./card-definitions";
+
 export interface Card {
   uid: string;
   type: 'Personaje' | 'Bomba';
@@ -7,6 +9,7 @@ export interface Card {
   value: number | null;
   isFaceUp: boolean;
   imageUrl?: string;
+  ability?: CardAbility;
 }
 
 export interface Player {
@@ -36,3 +39,5 @@ export interface GameState {
   showDrawAnimation: boolean;
   refillingSlots: { playerId: number; r: number; c: number; card: Card }[];
 }
+
+    

@@ -7,9 +7,10 @@ import {
   BOARD_SIZE,
   MAX_HAND_SIZE,
   CHARACTER_VALUES,
+  COLORS,
 } from './constants';
 import { produce } from 'immer';
-import type { GameCardDef } from './card-definitions';
+import type { GameCardDef, CardAbility } from './card-definitions';
 
 // --- HELPER FUNCTIONS ---
 
@@ -31,43 +32,33 @@ const generateCardId = () => `card-${cardUid++}`;
 function createDeck(cardDefinitions: GameCardDef[], characterLevels: { [color: string]: number } = {}): Card[] {
     cardUid = 0; // Reset UID counter
     const deck: Card[] = [];
+    
+    // --- Create character cards ---
     const characterDefs = cardDefinitions.filter(def => def.kind === 'character');
-    const bombDef = cardDefinitions.find(def => def.id === 'bomb');
-
-    // Create character cards based on levels
     characterDefs.forEach(def => {
-        const level = characterLevels[def.color] || 1; // Default to level 1
+        // Use the level from the input, or default to 1
+        const level = characterLevels[def.color] || 1;
         const valueDistribution = [0, 0, 0, 0, 0]; // Counts for values 1-5
 
-        // This logic creates a distribution based on level.
-        // Level 1: [5,0,0,0,0] -> five cards of value 1
-        // Level 2: [3,2,0,0,0] -> three of value 1, two of value 2
-        // Level 3: [2,2,1,0,0] -> etc.
-        // Level 4: [1,2,1,1,0]
-        // Level 5: [1,1,1,1,1]
-        let cardsToDistribute = CARDS_PER_VALUE_COLOR * CHARACTER_VALUES.length; // This is not right, should be just 5 cards per color
-        cardsToDistribute = 5; // Simplified to 5 cards per color total in the deck
-        
-        let pool = [];
-        for (let i = 1; i <= level; i++) {
-            pool.push(i);
-        }
-        
         // This is a simple way to create a distribution that favors higher levels
-        const distribution = [0,0,0,0,0];
+        // Level 1 -> 5 cards of value 1
+        // Level 2 -> 3 cards of value 1, 2 of value 2
+        // Level 3 -> 2x val 1, 2x val 2, 1x val 3
+        // ... and so on.
         const baseCount = Math.floor(5 / level);
         for(let i=0; i<level; i++) {
-            distribution[i] = baseCount;
+            valueDistribution[i] = baseCount;
         }
         let remainder = 5 % level;
         for(let i=level-1; i>=0 && remainder > 0; i--) {
-            distribution[i]++;
+            valueDistribution[i]++;
             remainder--;
         }
 
-        distribution.forEach((count, index) => {
+        valueDistribution.forEach((count, index) => {
             const value = index + 1;
             for (let i = 0; i < count; i++) {
+                // All cards of the same color share the same definition (and thus image and ability)
                 deck.push({
                     uid: generateCardId(),
                     type: 'Personaje',
@@ -75,12 +66,15 @@ function createDeck(cardDefinitions: GameCardDef[], characterLevels: { [color: s
                     value: value,
                     isFaceUp: false,
                     imageUrl: def.imageUrl,
+                    ability: def.ability
                 });
             }
         });
     });
+
   
-    // Create bomb cards
+    // --- Create bomb cards ---
+    const bombDef = cardDefinitions.find(def => def.id === 'bomb');
     if (bombDef) {
         for (let i = 0; i < BOMB_COUNT; i++) {
           deck.push({ 
@@ -89,7 +83,8 @@ function createDeck(cardDefinitions: GameCardDef[], characterLevels: { [color: s
               color: null, 
               value: null, 
               isFaceUp: false, 
-              imageUrl: bombDef.imageUrl 
+              imageUrl: bombDef.imageUrl,
+              ability: bombDef.ability,
           });
         }
     }
@@ -110,9 +105,6 @@ function getBoardScore(board: (Card | null)[][]): number {
 function ensureDeckHasCards(draft: GameState, count: number): boolean {
     while (draft.deck.length < count) {
         if (draft.discardPile.length === 0) {
-            // If there are no cards in discard, it might be an issue, but we shouldn't get stuck.
-            // This might happen at the very start of the game if the deck is too small.
-            // For now, we return false to indicate we couldn't fulfill the request.
             return false;
         }
         draft.deck.push(...shuffle(draft.discardPile.map(c => ({...c, isFaceUp: false}))));
@@ -121,6 +113,38 @@ function ensureDeckHasCards(draft: GameState, count: number): boolean {
     }
     return true;
 }
+
+const shuffleBoard = (board: (Card | null)[][]): (Card | null)[][] => {
+    const flatBoard = board.flat();
+    const shuffledFlatBoard = shuffle(flatBoard);
+    const newBoard: (Card | null)[][] = [];
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        newBoard.push(shuffledFlatBoard.slice(i * BOARD_SIZE, (i + 1) * BOARD_SIZE));
+    }
+    return newBoard;
+};
+
+// --- ABILITY HANDLING ---
+const triggerAbilities = (draft: GameState, playedCard: Card, trigger: "ON_PLAY_OWN_BOARD") => {
+    if (!playedCard.ability?.json) return;
+
+    let ability;
+    try {
+        ability = JSON.parse(playedCard.ability.json);
+    } catch {
+        // Invalid JSON, do nothing
+        return;
+    }
+
+    if (ability.trigger === trigger) {
+        if (ability.action === "SHUFFLE_ALL_CARDS" && ability.target === "RIVAL_BOARD") {
+            const rivalPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+            const rivalPlayer = draft.players[rivalPlayerIndex];
+            rivalPlayer.board = shuffleBoard(rivalPlayer.board);
+            draft.gameMessage = `¡${playedCard.ability.name}! El tablero del rival ha sido barajado.`;
+        }
+    }
+};
 
 
 // --- CORE GAME LOGIC ---
@@ -410,6 +434,8 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     const newBoardCard = { ...playedCard, isFaceUp: true };
     player.board[r][c] = newBoardCard;
     player.score = getBoardScore(player.board);
+    
+    triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
 
     checkEndGame(draft);
     if (!draft.gameOver) {
@@ -492,3 +518,5 @@ export const clearDrawnCard = produce((draft: GameState) => {
   draft.lastDrawnCardId = null;
   draft.showDrawAnimation = false;
 });
+
+    

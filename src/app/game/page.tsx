@@ -77,32 +77,39 @@ const turnChipVariants = {
 const useCardDefinitionsWithImages = () => {
     const firestore = useFirestore();
     const [cardDefs, setCardDefs] = useState<GameCardDef[] | null>(null);
-    const [cardBackImageUrl, setCardBackImageUrl] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchCardImages = async () => {
+        const fetchCardData = async () => {
             if (!firestore) return;
             setLoading(true);
-            const imageCollectionRef = collection(firestore, 'card-images');
-            const imageSnapshot = await getDocs(imageCollectionRef);
-            const imageUrls = new Map<string, string>();
-            imageSnapshot.forEach(doc => {
-                imageUrls.set(doc.id, doc.data().imageUrl);
+            const dataCollectionRef = collection(firestore, 'card-images');
+            const dataSnapshot = await getDocs(dataCollectionRef);
+            const firestoreData = new Map<string, Partial<GameCardDef>>();
+            dataSnapshot.forEach(doc => {
+                firestoreData.set(doc.id, doc.data() as Partial<GameCardDef>);
             });
 
-            const enrichedDefs = CARD_DEFINITIONS.map(def => ({
-                ...def,
-                imageUrl: imageUrls.get(def.id) || undefined,
-            }));
+            const enrichedDefs = CARD_DEFINITIONS.map(def => {
+                const data = firestoreData.get(def.id);
+                return {
+                    ...def,
+                    ...(data || {}),
+                };
+            });
             
-            setCardBackImageUrl(imageUrls.get('card-back'));
             setCardDefs(enrichedDefs);
             setLoading(false);
         };
 
-        fetchCardImages();
+        fetchCardData();
     }, [firestore]);
+    
+    const cardBackImageUrl = useMemo(() => {
+        if (!cardDefs) return undefined;
+        return cardDefs.find(def => def.id === 'card-back')?.imageUrl;
+    }, [cardDefs]);
+
 
     return { cardDefs, cardBackImageUrl, loading };
 }
@@ -829,3 +836,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
