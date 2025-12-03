@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer } from 'react';
+import { useReducer, useEffect, useState } from 'react';
 import * as Game from '@/lib/game-logic';
 import type { GameState, Card, Player } from '@/lib/types';
 import { produce } from 'immer';
@@ -13,6 +13,7 @@ export type GameAction =
   | { type: 'SWAP_CARD'; payload: { player_id: number; board_r: number; board_c: number; card_in_hand: Card } }
   | { type: 'PASS_TURN'; payload: { player_id: number } }
   | { type: 'RESET_GAME' }
+  | { type: 'INITIALIZE_GAME'; payload: { numPlayers: number } }
   | { type: 'SET_MESSAGE'; payload: string | null };
 
 const getInitialState = (numPlayers: number): GameState => ({
@@ -38,6 +39,8 @@ const getInitialState = (numPlayers: number): GameState => ({
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   return produce(state, draft => {
     switch (action.type) {
+      case 'INITIALIZE_GAME':
+        return Game.setupGame(action.payload.numPlayers);
       case 'START_TURN':
         return Game.drawCard(draft, action.payload.player_id);
       case 'REVEAL_CARD':
@@ -61,11 +64,17 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
   });
 };
 
-export function useGame(numPlayers: number, initialize = true) {
-  const [gameState, dispatch] = useReducer(
-    gameReducer,
-    initialize ? Game.setupGame(numPlayers) : getInitialState(numPlayers)
-  );
-
-  return { gameState, dispatch };
-}
+export function useGame(numPlayers: number) {
+    const [gameState, dispatch] = useReducer(gameReducer, getInitialState(numPlayers));
+    const [initialized, setInitialized] = useState(false);
+  
+    useEffect(() => {
+      if (!initialized) {
+        dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers } });
+        setInitialized(true);
+      }
+    }, [initialized, numPlayers]);
+  
+    return { gameState, dispatch };
+  }
+  

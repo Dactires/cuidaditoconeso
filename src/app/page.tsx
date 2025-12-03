@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGame, GameAction } from '@/hooks/use-game';
-import type { Card as CardType } from '@/lib/types';
+import type { Card as CardType, Player } from '@/lib/types';
 import { getScoreChangeExplanation } from '@/app/actions/game';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
-import PlayerArea from '@/components/game/PlayerArea';
-import PlayerHand from '@/components/game/PlayerHand';
-import ActionControls from '@/components/game/ActionControls';
-import GameStatus from '@/components/game/GameStatus';
+import GameBoard from '@/components/game/GameBoard';
+import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
-import { BOARD_SIZE } from '@/lib/constants';
+import { Button } from '@/components/ui/button';
+import { User, Bot, Layers, Archive, Info } from 'lucide-react';
+
 
 type Selection = {
   card: CardType;
@@ -24,24 +25,26 @@ type BoardSelection = {
   c: number;
 } | null;
 
+function getBoardScore(board: (CardType | null)[][]): number {
+  return board.flat().reduce((score, card) => {
+    if (card && card.isFaceUp && card.type === 'Personaje' && card.value) {
+      return score + card.value;
+    }
+    return score;
+  }, 0);
+}
+
+
 export default function GamePage() {
-  const { gameState, dispatch } = useGame(2, false); // Do not initialize game on server
+  const { gameState, dispatch } = useGame(2);
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
-  const [isGameReady, setIsGameReady] = useState(false);
 
-  useEffect(() => {
-    dispatch({ type: 'RESET_GAME' });
-    setIsGameReady(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile } = gameState;
 
   useEffect(() => {
     if (targetBoardPos && selectedHandCard) {
-      // Logic for playing card on board
       const actionType =
         targetBoardPos.playerId === currentPlayer.id
           ? 'PLAY_CARD_OWN'
@@ -58,9 +61,8 @@ export default function GamePage() {
       setSelectedHandCard(null);
       setTargetBoardPos(null);
     }
-  }, [targetBoardPos, selectedHandCard, dispatch, gameState.players, currentPlayerIndex]);
-  
-  // AI Score Explanation Effect
+  }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer?.id]);
+
   useEffect(() => {
     if (gameState.lastRevealedCard?.type === 'Personaje' && gameState.lastRevealedCard.isFaceUp) {
       const boardState = players[currentPlayerIndex].board.map(row => 
@@ -78,25 +80,27 @@ export default function GamePage() {
             toast({
               title: `AI Analysis: Score Change ${result.scoreChange > 0 ? '+' : ''}${result.scoreChange}`,
               description: result.explanation,
+              duration: 5000,
             });
           }
         })
         .catch(console.error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.lastRevealedCard, toast]);
+  }, [gameState.lastRevealedCard]);
 
-  if (!isGameReady || !players || players.length === 0) {
+  if (!players || players.length === 0 || !players[0].hand) {
     return (
-        <div className="flex items-center justify-center h-full">
-            <p>Loading Game...</p>
+        <div className="flex items-center justify-center h-full bg-green-900">
+            <p className="text-white text-2xl">Loading Game...</p>
         </div>
     );
   }
 
   const currentPlayer = players[currentPlayerIndex];
   const rivalPlayer = players[(currentPlayerIndex + 1) % players.length];
-
+  const currentPlayerScore = getBoardScore(currentPlayer.board);
+  const rivalPlayerScore = getBoardScore(rivalPlayer.board);
 
   const handleBoardClick = (playerId: number, r: number, c: number) => {
     if (gameOver) return;
@@ -110,7 +114,6 @@ export default function GamePage() {
       !selectedHandCard &&
       playerId === currentPlayer.id
     ) {
-      // Handle swap action selection
       const card = currentPlayer.board[r][c];
       if (card && card.isFaceUp) {
         setTargetBoardPos({ playerId, r, c });
@@ -126,7 +129,6 @@ export default function GamePage() {
     if (gameOver || turnPhase !== 'ACTION') return;
 
     if (targetBoardPos) {
-      // Finalize swap
       if (targetBoardPos.playerId === currentPlayer.id) {
         dispatch({
           type: 'SWAP_CARD',
@@ -158,22 +160,20 @@ export default function GamePage() {
 
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
     if (gameOver) return false;
-    const card = players[playerId]?.board[r][c];
-
+    const card = players.find(p => p.id === playerId)?.board[r][c];
+  
     if (turnPhase === 'REVEAL_CARD' && playerId === currentPlayer.id && card && !card.isFaceUp) {
       return true;
     }
     if (turnPhase === 'ACTION') {
       if (selectedHandCard) {
-        // Placing a card from hand
         if (selectedHandCard.card.type === 'Personaje' && playerId === currentPlayer.id && card && !card.isFaceUp) {
-          return true; // Place own
+          return true;
         }
         if (playerId === rivalPlayer.id && card && !card.isFaceUp) {
-          return true; // Place rival
+          return true;
         }
       } else {
-        // Selecting a card to swap
         if (playerId === currentPlayer.id && card && card.isFaceUp) {
           return true;
         }
@@ -184,65 +184,135 @@ export default function GamePage() {
 
   const isHandCardSelectable = (card: CardType) => {
     if (gameOver || turnPhase !== 'ACTION') return false;
-    if (targetBoardPos) { // Swapping
+    if (targetBoardPos) { 
       return card.type === 'Personaje';
     }
     return true;
   };
-
+  
   return (
-    <div className="flex flex-col h-full bg-background text-foreground font-body p-4 lg:p-6 overflow-hidden">
+    <div className="min-h-screen w-full bg-green-800/50 bg-[url('/felt-pattern.png')] bg-repeat flex items-center justify-center p-4 font-sans">
       <GameOverModal
         isOpen={gameOver && !!winner}
         winner={winner}
         scores={finalScores}
         onClose={() => dispatch({ type: 'RESET_GAME' })}
       />
-      
-      <div className="flex-1 min-h-0">
-        <PlayerArea
-          player={rivalPlayer}
-          isRival={true}
-          onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-          isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-        />
-      </div>
-
-      <div className="flex-shrink-0 my-2 lg:my-4">
-        <GameStatus
-          deckSize={gameState.deck.length}
-          discardSize={gameState.discardPile.length}
-          message={gameMessage}
-        />
-      </div>
-      
-      <div className="flex-1 min-h-0">
-        <PlayerArea
-          player={currentPlayer}
-          isCurrentPlayer={true}
-          onCardClick={(r, c) => handleBoardClick(currentPlayer.id, r, c)}
-          isCardSelectable={(r, c) => isBoardCardSelectable(currentPlayer.id, r, c)}
-        />
-      </div>
-
-      <div className="flex-shrink-0 mt-2 lg:mt-4 bg-card/80 backdrop-blur-sm p-2 lg:p-4 rounded-lg border shadow-lg">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="w-full md:w-1/2">
-                <h3 className="font-headline text-base lg:text-lg mb-2 text-center">Your Hand</h3>
-                <PlayerHand
-                    hand={currentPlayer.hand}
-                    onCardClick={handleHandCardClick}
-                    selectedCardId={selectedHandCard?.card.uid}
-                    isCardSelectable={isHandCardSelectable}
-                />
+      <div className="w-full max-w-7xl grid grid-cols-[200px,1fr,200px] gap-6 items-center">
+        
+        {/* COLUMNA IZQUIERDA - JUGADOR */}
+        <div className="flex flex-col items-center justify-center gap-4 h-full">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-20 w-20 rounded-full bg-orange-400 flex items-center justify-center border-4 border-white/80 shadow-lg">
+              <User className="h-12 w-12 text-white" />
             </div>
-            <div className="w-full md:w-1/2">
-                <h3 className="font-headline text-base lg:text-lg mb-2 text-center">Actions</h3>
-                <ActionControls
-                    turnPhase={turnPhase}
-                    onAction={handleAction}
-                    isForcedToPlay={gameState.isForcedToPlay}
+            <span className="text-white font-bold text-lg">Player 1 (You)</span>
+            <span className="text-white/80 text-base font-semibold">Score: {currentPlayerScore}</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 w-full">
+            {currentPlayer.hand.map((card, index) => (
+              <div key={card.uid} className="relative w-full aspect-square">
+                 <GameCard 
+                    card={card}
+                    onClick={() => handleHandCardClick(card, index)}
+                    isSelected={selectedHandCard?.card.uid === card.uid}
+                    isSelectable={isHandCardSelectable(card)}
                 />
+              </div>
+            ))}
+             {Array.from({ length: 4 - currentPlayer.hand.length }).map((_, index) => (
+                <div key={`placeholder-${index}`} className="w-full aspect-square rounded-md bg-black/20 border-2 border-dashed border-white/20" />
+            ))}
+          </div>
+        </div>
+
+        {/* COLUMNA CENTRAL - TABLEROS */}
+        <div className="flex flex-col items-center gap-4">
+            {/* Game Status */}
+            {gameMessage && (
+                <div className="text-white text-center text-lg font-semibold px-4 py-2 bg-black/40 rounded-lg shadow-inner flex items-center gap-2">
+                    <Info className="w-5 h-5 flex-shrink-0" />
+                    <span>{gameMessage}</span>
+                </div>
+            )}
+            
+          {/* Rival Board */}
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-white font-bold text-base">Player 2 (Rival) - Score: {rivalPlayerScore}</span>
+            <GameBoard 
+              board={rivalPlayer.board} 
+              onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+              isRival
+            />
+          </div>
+
+          {/* Player Board */}
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-white font-bold text-base">Player 1 (You) - Score: {currentPlayerScore}</span>
+            <GameBoard 
+              board={currentPlayer.board} 
+              onCardClick={(r, c) => handleBoardClick(currentPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isCardSelectable(currentPlayer.id, r, c)}
+            />
+          </div>
+
+          {/* Acciones */}
+          <div className="flex flex-wrap justify-center items-center gap-2 text-xs h-10">
+            {turnPhase === 'START_TURN' && (
+                <Button size="sm" onClick={() => handleAction('START_TURN')} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+                    Draw Card
+                </Button>
+            )}
+            {turnPhase === 'REVEAL_CARD' && (
+                <p className="text-center font-semibold text-amber-300">Reveal a card on your board.</p>
+            )}
+            {turnPhase === 'ACTION' && (
+                <Button size="sm" variant="outline" className="bg-transparent text-white hover:bg-white/10" disabled={gameState.isForcedToPlay} onClick={() => handleAction('PASS_TURN')}>
+                    Pass Turn
+                </Button>
+            )}
+             {turnPhase === 'ACTION' && gameState.isForcedToPlay && (
+                <p className="text-xs text-red-400 font-semibold text-center w-full">You have too many cards and must play or swap.</p>
+            )}
+            {turnPhase === 'GAME_OVER' && (
+                <p className="text-center font-bold text-2xl text-amber-400">Game Over!</p>
+            )}
+          </div>
+        </div>
+
+        {/* COLUMNA DERECHA - MAZO Y DESCARTE */}
+        <div className="flex flex-col items-center justify-center gap-4 h-full">
+            <div className="flex flex-col items-center gap-2">
+                <div className="h-20 w-20 rounded-full bg-purple-600 flex items-center justify-center border-4 border-white/80 shadow-lg">
+                    <Bot className="h-12 w-12 text-white" />
+                </div>
+                <span className="text-white font-bold text-lg">Player 2 (Rival)</span>
+                <span className="text-white/80 text-base font-semibold">Score: {rivalPlayerScore}</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+                <div className="flex gap-4 items-center">
+                {/* Mazo */}
+                <div className="flex flex-col items-center">
+                    <div className="w-24 aspect-square relative">
+                        <GameCard card={deck.length > 0 ? { ...deck[deck.length-1], isFaceUp: false } : null} onClick={() => {}} />
+                    </div>
+                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Layers className="w-4 h-4"/> Deck: {deck.length}</div>
+                </div>
+
+                {/* Descarte */}
+                <div className="flex flex-col items-center">
+                    <div className="w-24 aspect-square relative">
+                    {discardPile.length > 0 ? (
+                        <GameCard card={{...discardPile[discardPile.length - 1], isFaceUp: true}} onClick={() => {}} />
+                    ) : (
+                        <div className="w-full h-full rounded-md bg-black/20 border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-white/70">Empty</div>
+                    )}
+                    </div>
+                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Archive className="w-4 h-4" />Discard: {discardPile.length}</div>
+                </div>
+                </div>
             </div>
         </div>
       </div>

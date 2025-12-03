@@ -2,11 +2,18 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { VT323 } from 'next/font/google'
 
 export const metadata: Metadata = {
   title: 'Board Bombers',
   description: 'A strategic card game of risk and reward.',
 };
+
+const vt323 = VT323({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-vt323',
+})
 
 export default function RootLayout({
   children,
@@ -14,17 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className={cn('font-body antialiased h-full bg-background')}>
-        <main className="h-full">{children}</main>
+    <html lang="en" className="h-full overflow-hidden">
+      <body className={cn('antialiased h-full bg-background', vt323.variable)}>
+        <main className="h-full font-sans">{children}</main>
         <Toaster />
       </body>
     </html>

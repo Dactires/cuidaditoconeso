@@ -24,28 +24,28 @@ export default function GameOverModal({ isOpen, winner, scores, onClose }: GameO
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-gray-800 text-white border-yellow-500">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex flex-col items-center gap-2 text-2xl">
-            <Trophy className="w-12 h-12 text-yellow-500" />
+          <AlertDialogTitle className="flex flex-col items-center gap-2 text-2xl text-yellow-400">
+            <Trophy className="w-12 h-12 text-yellow-400" />
             Game Over!
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-center text-lg">
-            {winner ? `Player ${winner.id + 1} wins with ${scores.find(s => s.id === winner.id)?.score} points!` : 'The game ended in a draw!'}
+          <AlertDialogDescription className="text-center text-lg text-white/90">
+            {winner ? `Player ${winner.id + 1} wins with a score of ${scores.find(s => s.id === winner.id)?.score}!` : 'The game ended in a draw!'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="my-4">
-          <h3 className="font-bold text-center mb-2">Final Scores:</h3>
+          <h3 className="font-bold text-center mb-2 text-yellow-400">Final Scores:</h3>
           <ul className="space-y-1 text-center">
             {scores.sort((a,b) => b.score - a.score).map(({ id, score }) => (
-              <li key={id} className="text-muted-foreground">
-                Player {id + 1}: <span className="font-bold text-foreground">{score} points</span>
+              <li key={id} className="text-white/80">
+                Player {id + 1}: <span className="font-bold text-white">{score} points</span>
               </li>
             ))}
           </ul>
         </div>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={onClose} className="w-full">Play Again</AlertDialogAction>
+          <AlertDialogAction onClick={onClose} className="w-full bg-yellow-500 text-black hover:bg-yellow-600">Play Again</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
