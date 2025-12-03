@@ -40,7 +40,7 @@ export default function GameBoard({
         className={cn(
           "grid grid-cols-3 place-items-center",
           isMobile ? "gap-2" : "gap-3",
-          "w-full max-w-[min(320px,85vw)]"
+          "w-full max-w-[min(280px,82vw)]"
         )}
       >
         {board.map((row, r) =>

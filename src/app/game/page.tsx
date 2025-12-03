@@ -419,7 +419,7 @@ export default function GamePage() {
             </div>
           </div>
   
-          <div className="flex flex-col items-center justify-start gap-4 pt-2">
+          <div className="flex flex-col items-center justify-start gap-3 pt-1">
              <div
               className={cn(
                 "comic-board-panel transition-shadow duration-200",
@@ -698,7 +698,7 @@ export default function GamePage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-2 font-body overflow-hidden">
+    <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
       <GameOverModal
         isOpen={gameOver}
         winner={winner}
