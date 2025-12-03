@@ -15,9 +15,9 @@ import type { GameCardDef } from './card-definitions';
 // This is a simple object that will act as a bridge between the game logic (not a React component)
 // and the React-based SFX player hook.
 export const gameSfxApi = {
-  playSound: (url: string) => {
+  playSoundById: (cardId: string) => {
     // This function will be replaced by the actual implementation from the SfxProvider.
-    console.warn('playSound called before SfxProvider was ready.');
+    console.warn(`playSoundById for cardId: ${cardId} called before SfxProvider was ready.`);
   },
 };
 
@@ -50,6 +50,7 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
         for (let i = 0; i < (CARDS_PER_VALUE_COLOR * 5); i++) {
              deck.push({
                 uid: generateCardId(),
+                id: def.id,
                 type: 'Personaje',
                 color: def.color,
                 value: level, // All cards of this color get the same level
@@ -66,6 +67,7 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
         for (let i = 0; i < BOMB_COUNT; i++) {
             deck.push({
                 uid: generateCardId(),
+                id: bombDef.id,
                 type: 'Bomba',
                 color: null,
                 value: null,
@@ -165,7 +167,7 @@ const triggerAbilities = (
   playedCard: Card,
   trigger: "ON_PLAY_OWN_BOARD" | "ON_REVEAL"
 ) => {
-  if (!playedCard.ability?.json) return;
+  if (!playedCard.ability?.json || !playedCard.id) return;
 
   let ability: AbilityJson;
   try {
@@ -176,9 +178,9 @@ const triggerAbilities = (
 
   if (ability.trigger !== trigger) return;
   
-  // Play sound via the API bridge
+  // Play sound via the API bridge by card ID
   if (playedCard.ability.soundUrl) {
-    gameSfxApi.playSound(playedCard.ability.soundUrl);
+    gameSfxApi.playSoundById(playedCard.id);
   }
 
   const currentPlayer = draft.players[draft.currentPlayerIndex];
@@ -347,7 +349,6 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
-  console.log("CHECKING END GAME...");
   let someoneHasFullCharacters = false;
   for (const player of draft.players) {
     const isFullOfCharacters = player.board
@@ -357,7 +358,6 @@ const checkEndGame = (draft: GameState) => {
           card !== null && card.type === 'Personaje' && card.isFaceUp
       );
     if (isFullOfCharacters) {
-      console.log(`Player ${player.id} has a full board of face-up characters.`);
       someoneHasFullCharacters = true;
       break;
     }
@@ -371,7 +371,6 @@ const checkEndGame = (draft: GameState) => {
       p.score = getBoardScore(p.board);
     });
     draft.finalScores = draft.players.map((p) => ({ id: p.id, score: p.score }));
-    console.log("FINAL SCORES:", JSON.stringify(draft.finalScores));
 
     const maxScore = Math.max(...draft.finalScores.map((s) => s.score));
     const winners = draft.players.filter((p) => p.score === maxScore);
@@ -385,7 +384,6 @@ const checkEndGame = (draft: GameState) => {
         winners[0].id === 0 ? 'Jugador 1 (Tú)' : `Rival (IA)`;
       draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
     }
-    console.log("GAME OVER! Winner:", draft.winner ? `Player ${draft.winner.id}` : 'Tie', 'Message:', draft.gameMessage);
     return; 
   }
 
@@ -448,7 +446,7 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   if (draft.turnPhase !== 'START_TURN' || draft.currentPlayerIndex !== playerId) return;
   const player = draft.players[playerId];
   
-  gameSfxApi.playSound('/sfx/draw.mp3');
+  gameSfxApi.playSoundById('draw');
 
   if (ensurePlayerDeckHasCards(player, 1)) {
     const newCard = player.deck.pop()!;
@@ -484,7 +482,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
         draft.explodingCard = { playerId, r, c, card: { ...card } };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
     } else {
-        gameSfxApi.playSound('/sfx/flip.mp3');
+        gameSfxApi.playSoundById('flip');
         player.score = getBoardScore(player.board);
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
         draft.turnPhase = 'ACTION';
@@ -607,12 +605,13 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
     
+    if (playedCard.id) {
+      gameSfxApi.playSoundById(playedCard.id);
+    }
+
     const newBoardCard = { ...playedCard, isFaceUp: false };
     rival.board[r][c] = newBoardCard;
     
-    if (playedCard.ability?.soundUrl) {
-      gameSfxApi.playSound(playedCard.ability.soundUrl);
-    }
     draft.lastRivalMove = { playerId: rival.id, r, c };
     
     return nextTurn(draft);

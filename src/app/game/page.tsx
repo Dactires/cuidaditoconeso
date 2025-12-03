@@ -32,7 +32,7 @@ import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
 import { collection, getDocs } from 'firebase/firestore';
 import { MAX_HAND_SIZE } from '@/lib/constants';
 import { useMusicPlayer } from '@/hooks/use-music-player';
-import { SfxProvider } from '@/hooks/use-sfx-player';
+import { SfxProvider, useSfxPlayer } from '@/hooks/use-sfx-player';
 
 
 type Selection = {
@@ -575,7 +575,7 @@ function GamePageContent() {
                           transition={{ duration: 0.2 }}
                           className="absolute inset-0"
                         >
-                          <GameCard card={{ ...humanPlayer.deck[humanPlayer.deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
+                          <GameCard card={{ ...humanPlayer.deck[humanPlayer.deck.length - 1], isFaceUp: false, uid: 'deck-back', id: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />
                         </motion.div>
                       )}
                       {showDrawAnimation && lastDrawnCardId && humanPlayer.hand.some(c => c.uid === lastDrawnCardId) && (

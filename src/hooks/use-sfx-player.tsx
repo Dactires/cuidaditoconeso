@@ -7,119 +7,112 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useRef,
   ReactNode,
 } from 'react';
 import { useFirebase } from '@/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { gameSfxApi } from '@/lib/game-logic';
+import useSound from 'use-sound';
+
+// Type for the dictionary of play functions
+type PlayFunctions = {
+  [key: string]: () => void;
+};
 
 interface SfxContextType {
-  playSound: (url: string) => void;
+  // This function is now mostly for internal/debugging use if needed
+  playSound: (cardId: string) => void;
   isLoading: boolean;
 }
 
 const SfxContext = createContext<SfxContextType | undefined>(undefined);
 
-// Define a pool size for audio players
-const POOL_SIZE = 5;
-
-// This component manages a pool of <audio> elements
-const AudioPool = ({
-  sfxUrls,
-  audioPoolRef,
+// A component that pre-caches sounds and provides play functions
+const SoundManager = ({
+  setPlayFunctions,
 }: {
-  sfxUrls: Map<string, string>;
-  audioPoolRef: React.RefObject<HTMLAudioElement[]>;
+  setPlayFunctions: (functions: PlayFunctions) => void;
 }) => {
-  // Initialize the refs array if it's not already
-  if (audioPoolRef.current === null) {
-    (audioPoolRef as React.MutableRefObject<HTMLAudioElement[]>).current = [];
-  }
+  const { firestore } = useFirebase();
+  const [sfxMap, setSfxMap] = useState<Map<string, string>>(new Map());
 
-  return (
-    <>
-      {Array.from({ length: POOL_SIZE }).map((_, i) => (
-        <audio
-          key={i}
-          ref={(el) => {
-            if (el && audioPoolRef.current) {
-              audioPoolRef.current[i] = el;
-            }
-          }}
-          preload="auto"
-          className="hidden"
-        />
-      ))}
-    </>
-  );
+  // 1. Fetch all sound URLs from Firestore
+  useEffect(() => {
+    const fetchAllSfxUrls = async () => {
+      if (!firestore) return;
+      const urls = new Map<string, string>();
+      try {
+        const cardImagesCollectionRef = collection(firestore, 'card-images');
+        const snapshot = await getDocs(cardImagesCollectionRef);
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.ability?.soundUrl && doc.id) {
+            urls.set(doc.id, data.ability.soundUrl);
+          }
+        });
+        // Set basic sounds manually
+        urls.set('flip', '/sfx/flip.mp3');
+        urls.set('draw', '/sfx/draw.mp3');
+
+        setSfxMap(urls);
+      } catch (error) {
+        console.error('Error fetching SFX URLs:', error);
+      }
+    };
+    fetchAllSfxUrls();
+  }, [firestore]);
+
+  // 2. This is a dummy component that just holds the useSound hooks
+  const SoundHooks = () => {
+    const playFunctions: PlayFunctions = {};
+    
+    // Create a useSound hook for each entry in the sfxMap
+    sfxMap.forEach((url, id) => {
+      const [play] = useSound(url, { volume: 0.35, interrupt: true });
+      playFunctions[id] = play;
+    });
+
+    // 3. Update the parent's state with the created play functions
+    useEffect(() => {
+      setPlayFunctions(playFunctions);
+    }, [sfxMap]); // Reruns when sfxMap changes
+
+    return null; // This component doesn't render anything
+  };
+
+  return <SoundHooks />;
 };
+
 
 export const SfxProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const { firestore } = useFirebase();
-  const [sfxUrls, setSfxUrls] = useState<Map<string, string>>(new Map());
+  const [playFunctions, setPlayFunctions] = useState<PlayFunctions>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ref for the pool of <audio> elements
-  const audioPoolRef = useRef<HTMLAudioElement[]>([]);
-  const nextAudioIndex = useRef(0);
-
-  // Fetch all ability sound URLs from Firestore on mount
-  useEffect(() => {
-    const fetchAllSfxUrls = async () => {
-      if (!firestore) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const cardImagesCollectionRef = collection(firestore, 'card-images');
-        const snapshot = await getDocs(cardImagesCollectionRef);
-        const urls = new Map<string, string>();
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.ability?.soundUrl) {
-            // Use doc.id as a key if you want to reference sound by card ID,
-            // or the URL itself if you pass the full URL to playSound.
-            urls.set(data.ability.soundUrl, data.ability.soundUrl);
-          }
-        });
-        setSfxUrls(urls);
-      } catch (error) {
-        console.error('Error fetching SFX URLs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAllSfxUrls();
-  }, [firestore]);
-
-  // The function to play a sound from the pool
-  const playSound = useCallback((url: string) => {
-    if (isLoading || !sfxUrls.has(url) || !audioPoolRef.current) return;
-
-    const audio = audioPoolRef.current[nextAudioIndex.current];
-    if (audio) {
-      audio.src = url;
-      audio.volume = 0.3; // Set desired volume
-      audio.play().catch((e) => console.error('SFX play error:', e));
+  // The master play function that the game logic will call
+  const playSoundById = useCallback((cardId: string) => {
+    const playFn = playFunctions[cardId];
+    if (playFn) {
+      playFn();
+    } else {
+      // console.warn(`Sound not found for cardId: ${cardId}`);
     }
-
-    // Move to the next audio element in the pool
-    nextAudioIndex.current = (nextAudioIndex.current + 1) % POOL_SIZE;
-  }, [isLoading, sfxUrls]);
+  }, [playFunctions]);
 
   // IMPORTANT: This effect provides the playSound function to the game logic module.
   useEffect(() => {
-    gameSfxApi.playSound = playSound;
-  }, [playSound]);
+    gameSfxApi.playSoundById = playSoundById;
+    // When playFunctions are ready, loading is done
+    if(Object.keys(playFunctions).length > 0) {
+        setIsLoading(false);
+    }
+  }, [playSoundById, playFunctions]);
 
   return (
-    <SfxContext.Provider value={{ playSound, isLoading }}>
-      <AudioPool sfxUrls={sfxUrls} audioPoolRef={audioPoolRef} />
+    <SfxContext.Provider value={{ playSound: playSoundById, isLoading }}>
+      {/* The SoundManager is now a child and updates this provider's state */}
+      <SoundManager setPlayFunctions={setPlayFunctions} />
       {children}
     </SfxContext.Provider>
   );

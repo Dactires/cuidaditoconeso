@@ -1,8 +1,10 @@
 
+
 import { CardAbility } from "./card-definitions";
 
 export interface Card {
   uid: string;
+  id: string; // The definition ID, e.g., 'character-rojo' or 'bomb'
   type: 'Personaje' | 'Bomba';
   color: string | null;
   value: number | null;
