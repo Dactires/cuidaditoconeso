@@ -6,6 +6,7 @@ import {
   INITIAL_HAND_SIZE,
   BOARD_SIZE,
   MAX_HAND_SIZE,
+  CHARACTER_VALUES,
 } from './constants';
 import { produce } from 'immer';
 import type { GameCardDef } from './card-definitions';
@@ -33,22 +34,21 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     
     const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
 
-    // Create character cards
+    // --- CORREGIDO: Lógica de creación de cartas de personaje ---
     cardDefinitions.forEach(def => {
         if (def.kind === 'character') {
-            const baseCardDef = cardDefMap.get(`character-${def.color.toLowerCase()}-${def.value}`);
-            if (baseCardDef) {
+            CHARACTER_VALUES.forEach(value => {
                 for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
                     deck.push({
                         uid: generateCardId(),
                         type: 'Personaje',
                         color: def.color,
-                        value: def.value,
+                        value: value, // Asigna el valor del 1 al 5
                         isFaceUp: false,
-                        imageUrl: baseCardDef.imageUrl,
+                        imageUrl: def.imageUrl, // Usa la imagen de la definición base
                     });
                 }
-            }
+            });
         }
     });
   
@@ -69,6 +69,7 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
   
     return shuffle(deck);
 }
+
 
 function getBoardScore(board: (Card | null)[][]): number {
   return board.flat().reduce((score, card) => {
