@@ -97,7 +97,7 @@ export default function AdminDashboardLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
+        <div className="p-4 sm:p-6 lg:p-8 min-h-0 overflow-y-auto">
             {children}
         </div>
       </SidebarInset>
