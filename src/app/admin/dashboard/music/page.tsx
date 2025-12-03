@@ -200,10 +200,10 @@ export default function AdminAudioPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight comic-title">
-          Gestión de Música del Juego
+          Gestión de Audio
         </h1>
         <p className="text-muted-foreground">
-          Sube los archivos para la música de fondo del lobby y las batallas.
+          Sube los archivos para la música de fondo del lobby y las batallas. Los efectos de sonido se asignan directamente a las cartas en la sección de "Cartas".
         </p>
       </div>
 

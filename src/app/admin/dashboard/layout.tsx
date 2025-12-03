@@ -102,7 +102,7 @@ export default function AdminDashboardLayout({
                 >
                   <Link href="/admin/dashboard/music">
                     <Music />
-                    <span>Música</span>
+                    <span>Audio</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

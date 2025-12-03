@@ -32,6 +32,7 @@ import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
 import { collection, getDocs } from 'firebase/firestore';
 import { MAX_HAND_SIZE } from '@/lib/constants';
 import { useMusicPlayer } from '@/hooks/use-music-player';
+import { SfxProvider } from '@/hooks/use-sfx-player';
 
 
 type Selection = {
@@ -123,7 +124,7 @@ const useCardDefinitionsWithImages = () => {
 }
 
 
-export default function GamePage() {
+function GamePageContent() {
   const { user, isUserLoading: isUserAuthLoading } = useUser();
   const router = useRouter();
   const { cardDefs, cardBackImageUrl, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
@@ -134,14 +135,11 @@ export default function GamePage() {
   const isMobile = useIsMobile();
   const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
 
-  // Nuevo estado para controlar las fases de la pantalla
   const [gamePhase, setGamePhase] = useState<'loading' | 'matchup' | 'playing'>('loading');
 
   const { playBattleMusic, stopAllMusic } = useMusicPlayer();
   
-  const sfxPlayerRef = useRef<HTMLAudioElement>(null);
-
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation, sfxUrl } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const humanPlayer = players?.[humanPlayerId];
@@ -167,39 +165,24 @@ export default function GamePage() {
     };
   }, [gamePhase, playBattleMusic, stopAllMusic]);
 
-
-  // Control del flujo de fases (loading -> matchup -> playing)
   useEffect(() => {
     if (initialized && gamePhase === 'loading') {
       const timer = setTimeout(() => {
         setGamePhase('matchup');
-      }, 3000); // Duración de la pantalla de carga
+      }, 3000); 
       return () => clearTimeout(timer);
     }
   }, [initialized, gamePhase]);
 
-  // SFX Player
-  useEffect(() => {
-    if (sfxUrl && sfxPlayerRef.current) {
-        sfxPlayerRef.current.src = sfxUrl;
-        sfxPlayerRef.current.play().catch(e => console.log("SFX play error:", e));
-        // Reset sfxUrl in game state after playing to prevent re-triggering
-        dispatch({ type: 'SET_SFX_URL', payload: null });
-    }
-  }, [sfxUrl, dispatch]);
-
-
-  // When a bomb is revealed, first show it, then trigger explosion
   useEffect(() => {
       if (!explodingCard) return;
+
       const timer = setTimeout(() => {
           dispatch({ type: 'CLEAR_EXPLOSION' });
       }, 1200); 
       return () => clearTimeout(timer);
   }, [explodingCard, dispatch]);
 
-
-  // AI Logic Trigger
   useEffect(() => {
     if (gameOver || !initialized || currentPlayerIndex !== aiPlayerId || gamePhase !== 'playing') return;
   
@@ -271,7 +254,6 @@ export default function GamePage() {
   
   }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay, gamePhase]);
 
-  // Human player auto-draw
   useEffect(() => {
     if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN' || gamePhase !== 'playing') return;
 
@@ -282,7 +264,6 @@ export default function GamePage() {
     return () => clearTimeout(timer);
   }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, gamePhase]);
   
-  // Clear drawn card animation state
   useEffect(() => {
     if (showDrawAnimation && lastDrawnCardId) {
       const timer = setTimeout(() => {
@@ -292,7 +273,6 @@ export default function GamePage() {
     }
   }, [showDrawAnimation, lastDrawnCardId, dispatch]);
 
-  // Handle card playing logic
   useEffect(() => {
     if (targetBoardPos && selectedHandCard && currentPlayer) {
       const actionType =
@@ -317,14 +297,13 @@ export default function GamePage() {
     }
   }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer]);
 
-  // Clear rival move animation state
   useEffect(() => {
     if (lastRivalMove) {
       setRivalJustPlayed(true);
       const timer = setTimeout(() => {
         dispatch({ type: 'CLEAR_RIVAL_MOVE' });
         setRivalJustPlayed(false);
-      }, 1200); // Corresponds to animation duration
+      }, 1200); 
       return () => clearTimeout(timer);
     }
   }, [lastRivalMove, dispatch]);
@@ -829,7 +808,6 @@ export default function GamePage() {
 
   return (
     <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
-      <audio ref={sfxPlayerRef} className="hidden" />
       <GameOverModal
         isOpen={gameOver}
         winner={winner}
@@ -841,4 +819,12 @@ export default function GamePage() {
       {isMobile ? renderMobileView() : renderDesktopView()}
     </div>
   );
+}
+
+export default function GamePage() {
+  return (
+    <SfxProvider>
+      <GamePageContent />
+    </SfxProvider>
+  )
 }

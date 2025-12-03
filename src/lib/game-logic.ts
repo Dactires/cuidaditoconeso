@@ -11,6 +11,17 @@ import {
 import { produce } from 'immer';
 import type { GameCardDef } from './card-definitions';
 
+// --- SFX API Bridge ---
+// This is a simple object that will act as a bridge between the game logic (not a React component)
+// and the React-based SFX player hook.
+export const gameSfxApi = {
+  playSound: (url: string) => {
+    // This function will be replaced by the actual implementation from the SfxProvider.
+    console.warn('playSound called before SfxProvider was ready.');
+  },
+};
+
+
 // --- HELPER FUNCTIONS ---
 
 function shuffle<T>(array: T[]): T[] {
@@ -165,8 +176,9 @@ const triggerAbilities = (
 
   if (ability.trigger !== trigger) return;
   
+  // Play sound via the API bridge
   if (playedCard.ability.soundUrl) {
-    draft.sfxUrl = playedCard.ability.soundUrl;
+    gameSfxApi.playSound(playedCard.ability.soundUrl);
   }
 
   const currentPlayer = draft.players[draft.currentPlayerIndex];
@@ -331,7 +343,6 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     showDrawAnimation: false,
     refillingSlots: [],
     tempReveal: null,
-    sfxUrl: null,
   };
 }
 
@@ -437,7 +448,7 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   if (draft.turnPhase !== 'START_TURN' || draft.currentPlayerIndex !== playerId) return;
   const player = draft.players[playerId];
   
-  draft.sfxUrl = '/sfx/draw.mp3';
+  gameSfxApi.playSound('/sfx/draw.mp3');
 
   if (ensurePlayerDeckHasCards(player, 1)) {
     const newCard = player.deck.pop()!;
@@ -467,14 +478,13 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     card.isFaceUp = true;
     draft.lastRevealedCard = { playerId, r, c, card: { ...card } };
     draft.explodingCard = null;
-    draft.sfxUrl = null;
 
     if (card.type === 'Bomba') {
         triggerAbilities(draft, card, "ON_REVEAL");
         draft.explodingCard = { playerId, r, c, card: { ...card } };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
     } else {
-        draft.sfxUrl = '/sfx/flip.mp3';
+        gameSfxApi.playSound('/sfx/flip.mp3');
         player.score = getBoardScore(player.board);
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
         draft.turnPhase = 'ACTION';
@@ -567,17 +577,16 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     player.board[r][c] = newBoardCard;
     player.score = getBoardScore(player.board);
     
-    // Use the complete card definition from the board for ability trigger
     const finalCardOnBoard = player.board[r][c];
     if (finalCardOnBoard) {
         triggerAbilities(draft, finalCardOnBoard, "ON_PLAY_OWN_BOARD");
     }
 
-    if (!draft.gameOver) {
-       const ability = playedCard.ability?.json ? JSON.parse(playedCard.ability.json) : null;
-       if (ability?.action !== 'REVEAL_RANDOM_BRIEFLY') {
-            checkEndGame(draft);
-       }
+    // Do not check for end game right after playing a card with an ability
+    // that might temporarily alter the board state.
+    const ability = playedCard.ability?.json ? JSON.parse(playedCard.ability.json) : null;
+    if (ability?.action !== 'REVEAL_RANDOM_BRIEFLY') {
+        checkEndGame(draft);
     }
 
     if (!draft.gameOver) {
@@ -602,7 +611,7 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     rival.board[r][c] = newBoardCard;
     
     if (playedCard.ability?.soundUrl) {
-      draft.sfxUrl = playedCard.ability.soundUrl;
+      gameSfxApi.playSound(playedCard.ability.soundUrl);
     }
     draft.lastRivalMove = { playerId: rival.id, r, c };
     
@@ -673,8 +682,4 @@ export const hideTempReveal = produce((
     card.isFaceUp = false;
   }
   draft.tempReveal = null;
-});
-
-export const setSfxUrl = produce((draft: GameState, url: string | null) => {
-    draft.sfxUrl = url;
 });

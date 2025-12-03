@@ -43,5 +43,4 @@ export interface GameState {
     cardUid: string;
     hideAt: number;
   } | null;
-  sfxUrl: string | null;
 }
