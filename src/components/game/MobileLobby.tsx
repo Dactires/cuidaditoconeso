@@ -16,6 +16,7 @@ import {
   Hammer,
 } from 'lucide-react';
 import MobileCollection from './MobileCollection';
+import type { GameCardDef } from '@/lib/card-definitions';
 
 type TabId = 'battle' | 'collection' | 'shop' | 'club' | 'events';
 
@@ -27,6 +28,7 @@ interface MobileLobbyProps {
   coins: number;
   gems: number;
   tickets?: number;
+  cardDefinitions: GameCardDef[];
   onTabChange?: (tab: TabId) => void;
   onPlay?: () => void;
 }
@@ -62,6 +64,7 @@ export default function MobileLobby({
   coins,
   gems,
   tickets = 0,
+  cardDefinitions,
   onTabChange,
   onPlay,
 }: MobileLobbyProps) {
@@ -167,7 +170,7 @@ export default function MobileLobby({
     if (activeTab === 'collection') {
       return (
         <div className="h-full -mx-3">
-          <MobileCollection />
+          <MobileCollection allCards={cardDefinitions} />
         </div>
       );
     }

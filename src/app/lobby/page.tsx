@@ -1,23 +1,68 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
-import { useUser } from '@/firebase';
+import React, { useEffect, useState } from 'react';
+import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import MobileLobby from '@/components/game/MobileLobby';
+import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
+import { collection, getDocs } from 'firebase/firestore';
+
+
+// Hook para cargar las imágenes de las cartas
+const useCardDefinitionsWithImages = () => {
+  const firestore = useFirestore();
+  const [cardDefsWithImages, setCardDefsWithImages] = useState<GameCardDef[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCardImages = async () => {
+      if (!firestore) return;
+      setLoading(true);
+      try {
+        const imageCollectionRef = collection(firestore, 'card-images');
+        const imageSnapshot = await getDocs(imageCollectionRef);
+        const imageUrls = new Map<string, string>();
+        imageSnapshot.forEach(doc => {
+          imageUrls.set(doc.id, doc.data().imageUrl);
+        });
+
+        const enrichedDefs = CARD_DEFINITIONS.map(def => ({
+          ...def,
+          imageUrl: imageUrls.get(def.id) || def.imageUrl || undefined,
+        }));
+
+        setCardDefsWithImages(enrichedDefs);
+      } catch (error) {
+        console.error("Error fetching card images:", error);
+        setCardDefsWithImages(CARD_DEFINITIONS); // Fallback to definitions without images
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCardImages();
+  }, [firestore]);
+
+  return { cardDefsWithImages, loading };
+}
+
 
 // --- MAIN PAGE COMPONENT ---
 export default function LobbyPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
+  const { cardDefsWithImages, loading: areCardsLoading } = useCardDefinitionsWithImages();
   const router = useRouter();
 
+  const isUserLoading = isAuthLoading || areCardsLoading;
+
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isAuthLoading && !user) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isAuthLoading, router]);
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || !cardDefsWithImages) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="comic-title text-2xl animate-pulse">
@@ -38,6 +83,7 @@ export default function LobbyPage() {
       coins={1000}
       gems={297}
       tickets={2}
+      cardDefinitions={cardDefsWithImages}
       onPlay={() => router.push('/game')}
       onTabChange={(tab) => {
         console.log('Tab changed to:', tab);

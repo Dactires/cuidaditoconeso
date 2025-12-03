@@ -5,23 +5,22 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CARD_DEFINITIONS, GameCardDef } from "@/lib/card-definitions";
-
-const LOCKED_PLACEHOLDERS = [
-  "Carta por descubrir",
-  "Nueva bomba especial",
-  "Nuevo héroe",
-  "Nuevo poder",
-];
+import type { GameCardDef } from "@/lib/card-definitions";
+import Image from "next/image";
 
 type SelectedCard = GameCardDef | null;
 
-export default function MobileCollection() {
+export default function MobileCollection({ allCards }: { allCards: GameCardDef[] }) {
   const [selected, setSelected] = useState<SelectedCard>(null);
 
-  const deck = CARD_DEFINITIONS.filter(def => def.kind === 'character' || def.kind === 'bomb' || def.kind === 'hero' || def.kind === 'power');
-  const collectionUnlocked = CARD_DEFINITIONS; // For now, show all cards as available
-  const collectionLocked = [
+  const deck = allCards.filter(
+    (def) =>
+      ["character", "bomb", "hero", "power"].includes(def.kind) &&
+      def.id !== "power2" // Example: only one power slot for now
+  );
+
+  const collectionUnlocked = allCards.filter(card => !deck.some(d => d.id === card.id) && card.kind !== 'back');
+  const collectionLocked: string[] = [
     // Future locked cards can be added here
   ];
 
@@ -148,22 +147,29 @@ function CardDetailModal({
           <div className="flex flex-col items-center text-center gap-4 md:gap-5">
             <div className="mx-auto mb-4 md:mb-6 w-40 md:w-56">
               <div className="relative w-full aspect-square rounded-[24px] bg-slate-900 border-[6px] border-black shadow-[0_14px_0_#020617,0_0_30px_rgba(0,0,0,0.7)] overflow-hidden flex items-center justify-center">
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    card.colorClass
-                  )}
-                />
+                 {card.imageUrl ? (
+                  <Image src={card.imageUrl} alt={`Imagen de ${card.label}`} fill sizes="33vw" className="object-cover" />
+                ) : (
+                  <div
+                    className={cn(
+                      "absolute inset-0",
+                      card.colorClass
+                    )}
+                  />
+                )}
+
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span
-                    className={cn(
-                      "font-display text-5xl md:text-6xl text-white drop-shadow-[0_3px_0_#020617]",
-                      baseTextColor
-                    )}
-                  >
-                    {card.value}
-                  </span>
+                   {card.value > 0 && (
+                    <span
+                      className={cn(
+                        "font-display text-5xl md:text-6xl text-white drop-shadow-[0_3px_0_#020617]",
+                        baseTextColor
+                      )}
+                    >
+                      {card.value}
+                    </span>
+                   )}
 
                   <span className="mt-2 text-[12px] md:text-sm uppercase tracking-[0.18em] bg-black/70 px-4 py-1 rounded-full">
                     {ribbonText}
@@ -266,32 +272,45 @@ function DeckCard({
       <div
         className={cn(
           "absolute inset-[3px] rounded-[14px] border-[2px] border-black flex flex-col items-center justify-between py-1.5",
-          card.colorClass
+          !card.imageUrl && card.colorClass
         )}
       >
-        <span
-          className={cn(
-            "text-2xl font-display drop-shadow-[0_2px_0_#020617] leading-none",
-            baseTextColor
-          )}
-        >
-          {card.value}
-        </span>
+        {card.imageUrl ? (
+            <Image src={card.imageUrl} alt="" fill sizes="25vw" className="object-cover rounded-[14px]" />
+        ) : (
+            <div className={cn("absolute inset-0", card.colorClass)} />
+        )}
 
-        <div
-          className={cn(
-            "px-1.5 py-0.5 rounded-full border-[2px] border-black shadow-[0_2px_0_#020617] text-[9px] font-display tracking-[0.18em] uppercase",
-            card.ribbonClass,
-            baseTextColor
-          )}
-        >
-          {card.kind === "character"
-            ? card.shortLabel
-            : card.kind === "bomb"
-            ? "BOMBA"
-            : card.kind === "hero"
-            ? "HÉROE"
-            : "PODER"}
+        <div className="absolute inset-0 flex flex-col items-center justify-between py-1.5">
+
+            {card.value > 0 && (
+                <span
+                className={cn(
+                    "text-2xl font-display drop-shadow-[0_2px_0_#020617] leading-none",
+                    baseTextColor
+                )}
+                >
+                {card.value}
+                </span>
+            )}
+
+            <div className="flex-grow" />
+
+            <div
+            className={cn(
+                "px-1.5 py-0.5 rounded-full border-[2px] border-black shadow-[0_2px_0_#020617] text-[9px] font-display tracking-[0.18em] uppercase",
+                card.ribbonClass,
+                baseTextColor
+            )}
+            >
+            {card.kind === "character"
+                ? card.shortLabel
+                : card.kind === "bomb"
+                ? "BOMBA"
+                : card.kind === "hero"
+                ? "HÉROE"
+                : "PODER"}
+            </div>
         </div>
       </div>
 
@@ -319,15 +338,24 @@ function CollectionCard({
       onClick={onClick}
       className="relative h-28 w-full rounded-2xl border-[3px] border-black shadow-[0_4px_0_#020617] overflow-hidden bg-slate-900"
     >
-      <div
-        className={cn(
-          "absolute inset-[4px] rounded-[14px] border-[2px] border-black flex flex-col items-center justify-between py-2",
-          card.colorClass
+       {card.imageUrl ? (
+          <Image src={card.imageUrl} alt="" fill sizes="25vw" className="object-cover" />
+        ) : (
+          <div
+            className={cn(
+              "absolute inset-[4px] rounded-[14px] border-[2px] border-black flex flex-col items-center justify-between py-2",
+              card.colorClass
+            )}
+          />
         )}
-      >
-        <span className="text-3xl font-display text-white drop-shadow-[0_2px_0_#020617] leading-none">
-          {card.value}
-        </span>
+
+      <div className="absolute inset-[4px] rounded-[14px] flex flex-col items-center justify-between py-2">
+        {card.value > 0 && (
+            <span className="text-3xl font-display text-white drop-shadow-[0_2px_0_#020617] leading-none">
+            {card.value}
+            </span>
+        )}
+        <div className="flex-grow" />
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[10px] font-display tracking-[0.18em] uppercase drop-shadow-[0_1px_0_#020617]">
             {card.shortLabel}
