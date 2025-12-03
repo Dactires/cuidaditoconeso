@@ -145,12 +145,12 @@ export default function GamePage() {
   const rivalPlayer = players?.[aiPlayerId];
   
   useEffect(() => {
-    if (!isUserAuthLoading && !user) {
-      router.push('/login');
-    }
-     if (!isUserAuthLoading && user) {
+    if (!isUserAuthLoading && user) {
       stopAllMusic();
       playBattleMusic();
+    }
+     if (!isUserAuthLoading && !user) {
+      router.push('/login');
     }
 
      return () => {
