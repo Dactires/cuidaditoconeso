@@ -40,14 +40,14 @@ function createDeck(): Card[] {
           type: 'Personaje',
           color,
           value,
-          isFaceUp: false, // <<<<<<<<< CORRECTED: All cards must start face down
+          isFaceUp: false,
         });
       }
     }
   }
   // Create bomb cards
   for (let i = 0; i < BOMB_COUNT; i++) {
-    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false }); // <<<<<<<<< CORRECTED: All cards must start face down
+    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false });
   }
 
   return shuffle(deck);
@@ -91,7 +91,6 @@ export function setupGame(numPlayers: number): GameState {
       for (const player of players) {
         const card = deck.pop();
         if (card) {
-            // This is correct, cards on board start face down
             player.board[r][c] = { ...card, isFaceUp: false };
         }
       }
