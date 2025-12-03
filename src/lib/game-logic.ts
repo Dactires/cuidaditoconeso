@@ -246,6 +246,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 
 export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
     const player = draft.players[playerId];
+    // Find the card from the board to make sure we have the correct one
     const explodingCard = player.board[r][c];
 
     if (!explodingCard || explodingCard.type !== 'Bomba') return;
@@ -275,7 +276,7 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
         const [row, col] = coord.split(',').map(Number);
         const oldCard = player.board[row][col];
         if (oldCard) {
-            draft.discardPile.push({ ...oldCard });
+            draft.discardPile.push({ ...oldCard, isFaceUp: true });
         }
         if (draft.deck.length > 0) {
             const newCard = draft.deck.pop()!;
@@ -284,7 +285,8 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
             player.board[row][col] = null;
         }
     });
-
+    
+    player.score = getBoardScore(player.board);
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
 });
@@ -297,7 +299,7 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
 
     if (cardInHand.type !== 'Personaje' || !player.hand.some(c => c.uid === cardInHand.uid) || (targetCard && targetCard.isFaceUp)) return;
     
-    if(targetCard) draft.discardPile.push({...targetCard});
+    if(targetCard) draft.discardPile.push({...targetCard, isFaceUp: true});
     
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
@@ -320,7 +322,7 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     
     if (!player.hand.some(c => c.uid === cardInHand.uid) || (targetCard && targetCard.isFaceUp)) return;
 
-    if(targetCard) draft.discardPile.push({...targetCard});
+    if(targetCard) draft.discardPile.push({...targetCard, isFaceUp: true});
 
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
