@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Info } from "lucide-react";
+import { Lock, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type CardKind = "color" | "bomb" | "hero" | "power";
-
-type ColorId = "red" | "blue" | "green" | "brown";
 
 type GameCardDef = {
   id: string;
@@ -116,23 +114,17 @@ const LOCKED_PLACEHOLDERS = [
   "Nuevo poder",
 ];
 
-type SelectedCard = {
-  card: GameCardDef;
-  from: "deck" | "collection";
-} | null;
+type SelectedCard = GameCardDef | null;
 
 export default function MobileCollection() {
   const [selected, setSelected] = useState<SelectedCard>(null);
 
-  // Mazo fijo de 8 cartas (1 de cada color + bomb + hero + 2 poderes)
   const deck = BASE_CARDS;
-
-  // Colección muestra primero los 4 colores base, luego 4 slots bloqueados
   const collectionUnlocked = BASE_CARDS.slice(0, 4);
   const collectionLocked = LOCKED_PLACEHOLDERS;
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
+    <div className="flex flex-col h-full bg-transparent relative">
       {/* MAZO */}
       <section className="px-3 pt-1 pb-2">
         <div className="flex items-baseline justify-between mb-1">
@@ -149,48 +141,12 @@ export default function MobileCollection() {
             <DeckCard
               key={card.id}
               card={card}
-              isSelected={selected?.card.id === card.id}
-              onClick={() => setSelected({ card, from: "deck" })}
+              isSelected={selected?.id === card.id}
+              onClick={() => setSelected(card)}
             />
           ))}
         </div>
       </section>
-
-      {/* PANEL DETALLE (tipo Clash Royale, arriba de la colección) */}
-      <AnimatePresence>
-        {selected && (
-          <motion.section
-            key={selected.card.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.2 }}
-            className="px-3 pb-2"
-          >
-            <div className="comic-card bg-[#0b3b4e] border-[3px] border-slate-900 shadow-[0_6px_0_#020617] px-3 py-2 flex gap-3">
-              <div className="w-16">
-                <DeckCard card={selected.card} smallStatic />
-              </div>
-              <div className="flex-1 flex flex-col justify-center">
-                <div className="flex items-center gap-1 mb-0.5">
-                  <Info className="w-3.5 h-3.5 text-amber-300" />
-                  <span className="comic-title text-xs text-white">
-                    {selected.card.label}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-100 leading-snug">
-                  {selected.card.description}
-                </p>
-                {selected.card.kind === "color" && selected.card.maxValue && (
-                  <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full bg-amber-300 border-[2px] border-black text-[9px] font-display tracking-[0.18em] uppercase text-slate-900 shadow-[0_2px_0_#020617]">
-                    Llega hasta el número {selected.card.maxValue}
-                  </span>
-                )}
-              </div>
-            </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
 
       {/* COLECCIÓN */}
       <section className="px-3 pb-20 pt-1 flex-1 overflow-y-auto no-scrollbar">
@@ -203,7 +159,7 @@ export default function MobileCollection() {
             <CollectionCard
               key={card.id}
               card={card}
-              onClick={() => setSelected({ card, from: "collection" })}
+              onClick={() => setSelected(card)}
             />
           ))}
 
@@ -212,12 +168,136 @@ export default function MobileCollection() {
           ))}
         </div>
       </section>
+
+      {/* MODAL FLOANTE DE DETALLE */}
+      <AnimatePresence>
+        {selected && (
+          <CardDetailModal
+            card={selected}
+            onClose={() => setSelected(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 /* ─────────────────────
-   COMPONENTES VISUALES
+   MODAL DE DETALLE
+   ───────────────────── */
+
+function CardDetailModal({
+  card,
+  onClose,
+}: {
+  card: GameCardDef;
+  onClose: () => void;
+}) {
+  // Por ahora todo nivel 1, progreso 1/5 si es color
+  const currentLevel = card.kind === "color" ? 1 : 1;
+  const maxLevel = card.kind === "color" ? 5 : 1;
+  const hasLevels = card.kind === "color";
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-40 flex items-center justify-center px-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* FONDO OSCURO */}
+      <motion.div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
+
+      {/* CONTENEDOR */}
+      <motion.div
+        initial={{ scale: 0.8, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.85, y: 10, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+        className="relative z-50 w-full max-w-sm"
+      >
+        <div className="comic-card bg-[#0b3b4e] border-[4px] border-slate-900 shadow-[0_10px_0_#020617] px-4 pt-3 pb-4">
+          {/* BOTÓN CERRAR */}
+          <button
+            onClick={onClose}
+            className="absolute -top-3 -right-3 rounded-full bg-slate-900 border-[3px] border-black w-8 h-8 flex items-center justify-center shadow-[0_4px_0_#020617] text-slate-200 hover:bg-slate-800"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex gap-3">
+            {/* Carta grande */}
+            <div className="w-24 shrink-0">
+              <DeckCard card={card} smallStatic />
+            </div>
+
+            <div className="flex-1 flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <Info className="w-4 h-4 text-amber-300" />
+                <h2 className="comic-title text-sm text-white">
+                  {card.label}
+                </h2>
+              </div>
+              <p className="text-[11px] text-slate-100 leading-snug mt-1">
+                {card.description}
+              </p>
+
+              {/* NIVEL / PROGRESO */}
+              {hasLevels && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="comic-title text-[10px] text-amber-300">
+                      NIVEL {currentLevel}
+                    </span>
+                    <span className="text-[10px] text-slate-100 font-mono">
+                      {currentLevel} / {maxLevel}
+                    </span>
+                  </div>
+                  <div className="h-3 rounded-full bg-slate-900 border-[2px] border-black overflow-hidden shadow-[0_2px_0_#020617]">
+                    <div className="h-full w-1/5 bg-emerald-400" />
+                  </div>
+                  <span className="block mt-1 text-[10px] text-slate-300">
+                    Próximamente vas a poder subirla hasta el número {maxLevel}.
+                  </span>
+                </div>
+              )}
+
+              {!hasLevels && (
+                <span className="mt-2 text-[10px] text-slate-200">
+                  Esta carta todavía no tiene sistema de niveles, pero ya forma
+                  parte del mazo base.
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* BOTÓN SUBIR DE NIVEL */}
+          <div className="mt-3 flex flex-col gap-1">
+            <button
+              disabled
+              className="comic-btn comic-btn-primary !w-full !justify-center !py-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              Subir de nivel
+            </button>
+            <span className="text-[10px] text-center text-slate-300">
+              Función en construcción. Más adelante vas a poder gastar recursos
+              para mejorar esta carta.
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────
+   CARTAS
    ───────────────────── */
 
 function DeckCard({
@@ -248,7 +328,7 @@ function DeckCard({
   return (
     <motion.button
       type="button"
-      whileTap={{ scale: 0.95, y: 1 }}
+      whileTap={{ scale: onClick ? 0.95 : 1, y: onClick ? 1 : 0 }}
       onClick={onClick}
       className={cn(
         "relative w-full select-none",
@@ -262,7 +342,6 @@ function DeckCard({
           card.colorClass
         )}
       >
-        {/* Número grande */}
         <span
           className={cn(
             "text-2xl font-display drop-shadow-[0_2px_0_#020617] leading-none",
@@ -272,7 +351,6 @@ function DeckCard({
           {value}
         </span>
 
-        {/* Cinta inferior con tipo */}
         <div
           className={cn(
             "px-1.5 py-0.5 rounded-full border-[2px] border-black shadow-[0_2px_0_#020617] text-[9px] font-display tracking-[0.18em] uppercase",
