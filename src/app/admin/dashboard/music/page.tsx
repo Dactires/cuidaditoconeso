@@ -2,47 +2,56 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Save, Music, X } from 'lucide-react';
+import { Upload, Save, Music, X, FileAudio, Bomb } from 'lucide-react';
 import { useStorage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL, getMetadata } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
 
-function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
+function AudioUploader({
+  title,
+  description,
+  storagePath,
+  icon: Icon,
+  accept,
+}: {
+  title: string;
+  description: string;
+  storagePath: string;
+  icon: React.ElementType;
+  accept: string;
+}) {
   const storage = useStorage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [currentMusicUrl, setCurrentMusicUrl] = useState<string | null>(null);
-  const [currentMusicName, setCurrentMusicName] = useState<string | null>(null);
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [currentName, setCurrentName] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0); 
 
-  const musicTitle = musicType === 'lobby' ? 'Música del Lobby' : 'Música de Batalla';
-  const musicFileName = musicType === 'lobby' ? 'lobby.mp3' : 'battle.mp3';
-
-  // Fetch current music URL on component mount
+  // Fetch current audio URL on component mount
   useEffect(() => {
     if (!storage) return;
-    const musicRef = ref(storage, `music/${musicFileName}`);
-    getDownloadURL(musicRef)
+    const audioRef = ref(storage, storagePath);
+    getDownloadURL(audioRef)
       .then((url) => {
-        setCurrentMusicUrl(url);
-        getMetadata(musicRef).then(meta => setCurrentMusicName(meta.name));
+        setCurrentUrl(url);
+        getMetadata(audioRef).then(meta => setCurrentName(meta.name));
       })
       .catch((error) => {
         if (error.code !== 'storage/object-not-found') {
-          console.error(`Error fetching ${musicType} music:`, error);
+          console.error(`Error fetching ${title} audio:`, error);
         }
-        setCurrentMusicUrl(null);
-        setCurrentMusicName(null);
+        setCurrentUrl(null);
+        setCurrentName(null);
       });
-  }, [storage, musicType, musicFileName]);
+  }, [storage, title, storagePath]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,27 +66,27 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
     setIsUploading(true);
     setUploadProgress(50); 
 
-    const musicRef = ref(storage, `music/${musicFileName}`);
+    const audioRef = ref(storage, storagePath);
 
     try {
-      await uploadBytes(musicRef, selectedFile);
-      const downloadURL = await getDownloadURL(musicRef);
+      await uploadBytes(audioRef, selectedFile);
+      const downloadURL = await getDownloadURL(audioRef);
 
       setUploadProgress(100);
-      setCurrentMusicUrl(downloadURL);
-      setCurrentMusicName(selectedFile.name);
+      setCurrentUrl(downloadURL);
+      setCurrentName(selectedFile.name);
       setSelectedFile(null);
 
       toast({
-        title: '¡Música Guardada!',
-        description: `La ${musicTitle.toLowerCase()} ha sido actualizada.`,
+        title: '¡Audio Guardado!',
+        description: `El archivo de ${title.toLowerCase()} ha sido actualizado.`,
       });
     } catch (error) {
-      console.error(`Error uploading ${musicType} music:`, error);
+      console.error(`Error uploading ${title} audio:`, error);
       toast({
         variant: 'destructive',
         title: 'Error al Subir',
-        description: 'Hubo un problema al guardar el archivo de música.',
+        description: 'Hubo un problema al guardar el archivo de audio.',
       });
     } finally {
       setTimeout(() => {
@@ -91,29 +100,30 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
     <Card>
       <CardHeader>
         <CardTitle className="comic-title text-lg flex items-center gap-2">
-          <Music /> {musicTitle}
+          <Icon /> {title}
         </CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label>Música Actual</Label>
-          {currentMusicUrl ? (
+          <Label>Audio Actual</Label>
+          {currentUrl ? (
             <div className="mt-2 space-y-2">
                <p className="text-sm text-muted-foreground truncate">
-                {currentMusicName}
+                {currentName}
                </p>
-               <audio controls src={currentMusicUrl} className="w-full">
+               <audio controls src={currentUrl} className="w-full">
                 Tu navegador no soporta el elemento de audio.
                </audio>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground mt-2">No se ha asignado música todavía.</p>
+            <p className="text-sm text-muted-foreground mt-2">No se ha asignado audio todavía.</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={`music-upload-${musicType}`}>
-            {currentMusicUrl ? 'Reemplazar Música' : 'Subir Música'}
+          <Label htmlFor={`music-upload-${title}`}>
+            {currentUrl ? 'Reemplazar Audio' : 'Subir Audio'}
           </Label>
           <div className="flex items-center gap-2">
              <Button 
@@ -123,10 +133,10 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
                 <Upload className="mr-2 h-4 w-4" /> Seleccionar archivo...
              </Button>
             <Input
-                id={`music-upload-${musicType}`}
+                id={`music-upload-${title}`}
                 ref={fileInputRef}
                 type="file"
-                accept="audio/mpeg, audio/wav, audio/ogg"
+                accept={accept}
                 onChange={handleFileChange}
                 className="hidden"
             />
@@ -167,21 +177,73 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
   );
 }
 
-export default function AdminMusicPage() {
+
+export default function AdminAudioPage() {
+  const audioFiles = [
+    {
+      title: "Música del Lobby",
+      description: "Música de fondo para la pantalla principal.",
+      storagePath: "music/lobby.mp3",
+      icon: Music,
+      accept: "audio/mpeg"
+    },
+    {
+      title: "Música de Batalla",
+      description: "Música de fondo durante las partidas.",
+      storagePath: "music/battle.mp3",
+      icon: Music,
+      accept: "audio/mpeg"
+    },
+    {
+      title: "SFX: Explosión",
+      description: "Sonido al explotar una carta de bomba.",
+      storagePath: "sfx/explosion.mp3",
+      icon: Bomb,
+      accept: "audio/mpeg, audio/wav, audio/ogg"
+    },
+    {
+      title: "SFX: Voltear Carta",
+      description: "Sonido al revelar una carta en el tablero.",
+      storagePath: "sfx/flip.mp3",
+      icon: FileAudio,
+      accept: "audio/mpeg, audio/wav, audio/ogg"
+    },
+    {
+      title: "SFX: Robar Carta",
+      description: "Sonido cuando un jugador roba una carta.",
+      storagePath: "sfx/draw.mp3",
+      icon: FileAudio,
+      accept: "audio/mpeg, audio/wav, audio/ogg"
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight comic-title">
-          Gestión de Música del Juego
+          Gestión de Audio del Juego
         </h1>
         <p className="text-muted-foreground">
-          Sube los archivos de audio para la música de fondo del lobby y de las batallas.
+          Sube los archivos para la música de fondo y los efectos de sonido (SFX).
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <MusicUploader musicType="lobby" />
-        <MusicUploader musicType="battle" />
+      <div className="space-y-4">
+        <h2 className="comic-title text-xl">Música de Fondo</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {audioFiles.filter(f => f.storagePath.startsWith('music/')).map(file => (
+            <AudioUploader key={file.storagePath} {...file} />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-4">
+        <h2 className="comic-title text-xl">Efectos de Sonido (SFX)</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {audioFiles.filter(f => f.storagePath.startsWith('sfx/')).map(file => (
+            <AudioUploader key={file.storagePath} {...file} />
+          ))}
+        </div>
       </div>
     </div>
   );

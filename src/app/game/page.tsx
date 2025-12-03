@@ -128,7 +128,7 @@ export default function GamePage() {
   const router = useRouter();
   const { cardDefs, cardBackImageUrl, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
   const { gameState, dispatch, initialized, resetGame } = useGame(2, cardDefs);
-  const { playFlip, playBomb } = useGameSounds();
+  const { playFlip, playBomb, playDeal } = useGameSounds();
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
@@ -152,27 +152,30 @@ export default function GamePage() {
       router.push('/login');
       return;
     }
-     if (!isUserAuthLoading && user && initialized && gamePhase === 'playing') {
+  }, [user, isUserAuthLoading, router]);
+
+  useEffect(() => {
+    if (gamePhase === 'playing') {
       stopAllMusic();
       playBattleMusic();
     }
-
-     return () => {
-      if (!isUserAuthLoading && user) {
-        stopAllMusic();
-      }
+    return () => {
+        if(gamePhase === 'playing'){
+            stopAllMusic();
+        }
     };
-  }, [user, isUserAuthLoading, router, playBattleMusic, stopAllMusic, initialized, gamePhase]);
+  }, [gamePhase, playBattleMusic, stopAllMusic]);
+
 
   // Control del flujo de fases (loading -> matchup -> playing)
   useEffect(() => {
-    if (initialized) {
+    if (initialized && gamePhase === 'loading') {
       const timer = setTimeout(() => {
         setGamePhase('matchup');
       }, 3000); // Duración de la pantalla de carga
       return () => clearTimeout(timer);
     }
-  }, [initialized]);
+  }, [initialized, gamePhase]);
 
 
   // Sound effects trigger for any revealed card
@@ -273,11 +276,12 @@ export default function GamePage() {
     if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN' || gamePhase !== 'playing') return;
 
     const timer = setTimeout(() => {
+      playDeal();
       dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, gamePhase]);
+  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, gamePhase, playDeal]);
   
   // Clear drawn card animation state
   useEffect(() => {
