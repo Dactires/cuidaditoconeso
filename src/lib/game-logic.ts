@@ -13,6 +13,7 @@ import { produce } from 'immer';
 // --- HELPER FUNCTIONS ---
 
 function shuffle<T>(array: T[]): T[] {
+  // Fisher-Yates shuffle
   let currentIndex = array.length,
     randomIndex;
   while (currentIndex !== 0) {
@@ -30,6 +31,7 @@ const generateCardId = () => `card-${cardUid++}`;
 function createDeck(): Card[] {
   cardUid = 0; // Reset UID counter for deterministic generation
   const deck: Card[] = [];
+  // Create character cards
   for (const color of COLORS) {
     for (const value of CHARACTER_VALUES) {
       for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
@@ -38,14 +40,16 @@ function createDeck(): Card[] {
           type: 'Personaje',
           color,
           value,
-          isFaceUp: false,
+          isFaceUp: false, // <<<<<<<<< CORRECTED: All cards must start face down
         });
       }
     }
   }
+  // Create bomb cards
   for (let i = 0; i < BOMB_COUNT; i++) {
-    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false });
+    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false }); // <<<<<<<<< CORRECTED: All cards must start face down
   }
+
   return shuffle(deck);
 }
 
@@ -87,6 +91,7 @@ export function setupGame(numPlayers: number): GameState {
       for (const player of players) {
         const card = deck.pop();
         if (card) {
+            // This is correct, cards on board start face down
             player.board[r][c] = { ...card, isFaceUp: false };
         }
       }

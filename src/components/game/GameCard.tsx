@@ -38,7 +38,7 @@ export default function GameCard({ card, onClick, isSelected = false, isSelectab
           )}
         >
           <CardHeader className="p-0 absolute top-1 right-1">
-             <p className="text-xs font-bold">{card.type === 'Bomba' ? 'BOMB' : card.color}</p>
+             <p className="text-xs font-bold">{card.type === 'Bomba' ? 'BOMBA' : card.color}</p>
           </CardHeader>
            <CardTitle className="text-4xl md:text-5xl font-bold">
               {card.type === 'Bomba' ? <BombIcon className="w-10 h-10" /> : card.value}
