@@ -23,8 +23,6 @@ interface GameOverModalProps {
 }
 
 export default function GameOverModal({ isOpen, winner, scores, onRestart, onExit }: GameOverModalProps) {
-  if (!isOpen) return null;
-
   const getWinnerText = () => {
     if (winner) {
       const winnerScore = scores.find(s => s.id === winner.id)?.score;
