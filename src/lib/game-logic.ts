@@ -15,9 +15,9 @@ import type { GameCardDef } from './card-definitions';
 // This is a simple object that will act as a bridge between the game logic (not a React component)
 // and the React-based SFX player hook.
 export const gameSfxApi = {
-  playSoundById: (cardId: string) => {
+  playSoundById: (soundId: string) => {
     // This function will be replaced by the actual implementation from the SfxProvider.
-    console.warn(`playSoundById for cardId: ${cardId} called before SfxProvider was ready.`);
+    console.warn(`playSoundById for soundId: ${soundId} called before SfxProvider was ready.`);
   },
 };
 
@@ -178,10 +178,12 @@ const triggerAbilities = (
 
   if (ability.trigger !== trigger) return;
   
-  // Play sound via the API bridge by card ID
   if (playedCard.ability.soundUrl) {
     gameSfxApi.playSoundById(playedCard.id);
+  } else if (trigger === 'ON_REVEAL' && playedCard.type === 'Bomba') {
+    gameSfxApi.playSoundById('explosion');
   }
+
 
   const currentPlayer = draft.players[draft.currentPlayerIndex];
   const rivalPlayer = draft.players[(draft.currentPlayerIndex + 1) % draft.players.length];

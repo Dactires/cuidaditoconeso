@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Save, Music, X } from 'lucide-react';
+import { Upload, Save, Music, X, Speaker } from 'lucide-react';
 import { useStorage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL, getMetadata } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
@@ -194,6 +194,27 @@ export default function AdminAudioPage() {
       icon: Music,
       accept: "audio/mpeg"
     },
+    {
+        title: "SFX: Explosión",
+        description: "Sonido de la bomba al explotar.",
+        storagePath: "sfx/explosion.mp3",
+        icon: Speaker,
+        accept: "audio/mpeg"
+    },
+    {
+        title: "SFX: Voltear Carta",
+        description: "Sonido al revelar una carta.",
+        storagePath: "sfx/flip.mp3",
+        icon: Speaker,
+        accept: "audio/mpeg"
+    },
+    {
+        title: "SFX: Robar Carta",
+        description: "Sonido al robar una carta del mazo.",
+        storagePath: "sfx/draw.mp3",
+        icon: Speaker,
+        accept: "audio/mpeg"
+    },
   ];
 
   return (
@@ -203,11 +224,11 @@ export default function AdminAudioPage() {
           Gestión de Audio
         </h1>
         <p className="text-muted-foreground">
-          Sube los archivos para la música de fondo del lobby y las batallas. Los efectos de sonido se asignan directamente a las cartas en la sección de "Cartas".
+          Sube los archivos para la música de fondo y los efectos de sonido genéricos. Los efectos de sonido específicos de una habilidad se asignan directamente en la sección de "Cartas".
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {audioFiles.map(file => (
           <AudioUploader key={file.storagePath} {...file} />
         ))}

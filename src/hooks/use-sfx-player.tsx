@@ -13,6 +13,7 @@ import { useFirebase } from '@/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { gameSfxApi } from '@/lib/game-logic';
 import useSound from 'use-sound';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 // Type for the dictionary of play functions
 type PlayFunctions = {
@@ -20,7 +21,6 @@ type PlayFunctions = {
 };
 
 interface SfxContextType {
-  // This function is now mostly for internal/debugging use if needed
   playSound: (cardId: string) => void;
   isLoading: boolean;
 }
@@ -44,18 +44,20 @@ const SoundHook = ({ soundId, url, onPlayReady }: { soundId: string, url: string
 export const SfxProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const { firestore } = useFirebase();
+  const { firestore, storage } = useFirebase();
   const [sfxMap, setSfxMap] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  const [playFunctions, setPlayFunctions] = useState<PlayFunctions>({});
 
-  // 1. Fetch all sound URLs from Firestore
+  // 1. Fetch all sound URLs from Firestore and Storage
   useEffect(() => {
     const fetchAllSfxUrls = async () => {
-      if (!firestore) return;
+      if (!firestore || !storage) return;
       
       setIsLoading(true);
       const urls = new Map<string, string>();
       try {
+        // Fetch from card definitions in Firestore
         const cardImagesCollectionRef = collection(firestore, 'card-images');
         const snapshot = await getDocs(cardImagesCollectionRef);
         snapshot.forEach((doc) => {
@@ -64,9 +66,18 @@ export const SfxProvider: React.FC<{ children: ReactNode }> = ({
             urls.set(doc.id, data.ability.soundUrl);
           }
         });
-        // Set basic sounds manually
-        urls.set('flip', '/sfx/flip.mp3');
-        urls.set('draw', '/sfx/draw.mp3');
+        
+        // Fetch generic sounds from Storage
+        const genericSounds = ['flip', 'draw', 'explosion'];
+        await Promise.all(genericSounds.map(async (soundName) => {
+            try {
+                const soundRef = ref(storage, `sfx/${soundName}.mp3`);
+                const url = await getDownloadURL(soundRef);
+                urls.set(soundName, url);
+            } catch (e) {
+                console.warn(`Could not load sound: sfx/${soundName}.mp3`, e);
+            }
+        }));
 
         setSfxMap(urls);
       } catch (error) {
@@ -76,33 +87,35 @@ export const SfxProvider: React.FC<{ children: ReactNode }> = ({
       }
     };
     fetchAllSfxUrls();
-  }, [firestore]);
+  }, [firestore, storage]);
 
-  // IMPORTANT: This effect provides the playSound function to the game logic module.
+  // 2. This effect provides the playSound function to the game logic module.
   useEffect(() => {
     // This is the master play function that the game logic will call via the API bridge
-    const playSoundById = (cardId: string) => {
-        const url = sfxMap.get(cardId);
-        if (url) {
-            // It's not the most optimal to create an Audio object on the fly,
-            // but it avoids the Rules of Hooks issue and is reliable.
-            // For a production app, a more complex pooling system would be better.
-            const audio = new Audio(url);
-            audio.volume = 0.35;
-            audio.play().catch(console.error);
+    const playSoundById = (soundId: string) => {
+        const playFn = playFunctions[soundId];
+        if (playFn) {
+            playFn();
+        } else {
+            console.warn(`Sound not found or not ready for ID: ${soundId}`);
         }
     };
     
     gameSfxApi.playSoundById = playSoundById;
 
-  }, [sfxMap]); // Re-create the master function if the sfxMap changes
+  }, [playFunctions]); // Re-create the master function if the playFunctions map changes
 
-  // Since we are not using the context for now, we can simplify this.
-  const value = { playSound: (id: string) => gameSfxApi.playSoundById(id), isLoading };
+  const handlePlayReady = useCallback((id: string, playFn: () => void) => {
+    setPlayFunctions(prev => ({...prev, [id]: playFn }));
+  }, []);
+
 
   return (
-    <SfxContext.Provider value={value}>
-      {children}
+    <SfxContext.Provider value={{ playSound: (id) => gameSfxApi.playSoundById(id), isLoading }}>
+        {Array.from(sfxMap.entries()).map(([id, url]) => (
+            <SoundHook key={id} soundId={id} url={url} onPlayReady={handlePlayReady} />
+        ))}
+        {children}
     </SfxContext.Provider>
   );
 };
