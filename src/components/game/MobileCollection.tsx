@@ -95,7 +95,7 @@ const BASE_CARDS: GameCardDef[] = [
     colorClass: "bg-purple-500",
     ribbonClass: "bg-purple-700",
     description:
-      "Los poderes reemplazan a los hechizos. Esta carta es un poder básico. Sistema de poderes en construcción.",
+      "Esta carta es un poder básico. El sistema de poderes está en construcción.",
   },
   {
     id: "power2",
