@@ -124,7 +124,7 @@ export default function MobileCollection() {
   const collectionLocked = LOCKED_PLACEHOLDERS;
 
   return (
-    <div className="flex flex-col h-full bg-transparent relative">
+    <div className="flex flex-col h-full bg-transparent relative no-scrollbar">
       {/* MAZO */}
       <section className="px-3 pt-1 pb-2">
         <div className="flex items-baseline justify-between mb-1">
@@ -197,7 +197,7 @@ function CardDetailModal({
   const maxLevel = card.kind === "color" ? 5 : 1;
   const hasLevels = card.kind === "color";
 
-  const value =
+  const mainValue =
     card.kind === "color"
       ? 1
       : card.kind === "bomb"
@@ -206,7 +206,7 @@ function CardDetailModal({
       ? 6
       : "P";
 
-  const ribbonText =
+  const labelBottom =
     card.kind === "color"
       ? card.shortLabel
       : card.kind === "bomb"
@@ -214,9 +214,6 @@ function CardDetailModal({
       : card.kind === "hero"
       ? "HÉROE"
       : "PODER";
-
-  const baseTextColor =
-    card.textColor ?? (card.kind === "hero" ? "text-slate-900" : "text-white");
 
   return (
     <motion.div
@@ -253,36 +250,22 @@ function CardDetailModal({
 
           {/* CARTA PROTAGONISTA */}
           <div className="flex flex-col items-center text-center gap-4 md:gap-5">
-            {/* CONTENEDOR DE LA CARTA */}
-            <div className="mx-auto w-40 md:w-56">
-                <div 
-                  className="relative w-full aspect-square rounded-[24px] bg-slate-900 border-[6px] border-black shadow-[0_14px_0_#020617,0_0_30px_rgba(0,0,0,0.7)] flex items-center justify-center"
-                   style={{ '--card-color': `hsl(var(--${card.colorClass.replace('bg-', '')}))` } as React.CSSProperties}
-                >
-                    <div 
-                      className={cn(
-                        "w-[78%] h-[78%] rounded-[20px] border-[4px] border-black flex flex-col items-center justify-center",
-                        card.colorClass
-                      )}
-                    >
-                        <span 
-                          className={cn(
-                            "font-display text-4xl md:text-5xl drop-shadow-[0_3px_0_#020617]",
-                            baseTextColor
-                          )}
-                        >
-                            {value}
-                        </span>
-                        <span 
-                          className={cn(
-                            "mt-2 text-[11px] md:text-xs uppercase tracking-[0.18em] bg-black/60 px-3 py-1 rounded-full",
-                             baseTextColor
-                          )}
-                        >
-                            {ribbonText}
-                        </span>
-                    </div>
+            <div className="mx-auto mb-4 md:mb-6 w-44 md:w-60">
+              <div className="relative w-full aspect-square rounded-[24px] bg-black border-[6px] border-black shadow-[0_14px_0_#020617,0_0_30px_rgba(0,0,0,0.7)] overflow-hidden flex items-center justify-center">
+                {/* FONDO DEL COLOR DE LA CARTA */}
+                <div className={cn("absolute inset-0", card.colorClass)} />
+
+                {/* CONTENIDO INTERIOR (solo el número y etiqueta) */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-display text-5xl md:text-6xl text-white drop-shadow-[0_3px_0_#020617]">
+                    {mainValue}
+                  </span>
+
+                  <span className="mt-2 text-[12px] md:text-sm uppercase tracking-[0.18em] bg-black/70 px-4 py-1 rounded-full">
+                    {labelBottom}
+                  </span>
                 </div>
+              </div>
             </div>
 
             {/* TÍTULO + TEXTO */}
@@ -344,7 +327,6 @@ function CardDetailModal({
     </motion.div>
   );
 }
-
 
 /* ─────────────────────
    CARTAS
