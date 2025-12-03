@@ -439,18 +439,6 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
 });
 
 export const revealCard = produce((draft: GameState, playerId: number, r: number, c: number) => {
-    // Only the current player can reveal cards, unless it's a temp reveal from an ability
-    if (draft.turnPhase !== 'REVEAL_CARD' && draft.currentPlayerIndex !== playerId) {
-      // Allow reveal if it's a temp ability trigger, but don't change game state
-      const player = draft.players[playerId];
-      const card = player.board[r][c];
-      if (card && !card.isFaceUp) {
-        card.isFaceUp = true;
-        draft.lastRevealedCard = { playerId, r, c, card: { ...card } };
-      }
-      return;
-    }
-    
     if (draft.turnPhase !== 'REVEAL_CARD' || draft.currentPlayerIndex !== playerId) return;
 
     const player = draft.players[playerId];
@@ -561,7 +549,8 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     
     triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
 
-    checkEndGame(draft);
+    // Do NOT check for endgame here, as abilities might reveal cards temporarily
+    // checkEndGame(draft); 
     if (!draft.gameOver) {
       return nextTurn(draft);
     }
@@ -648,6 +637,7 @@ export const hideTempReveal = produce((
 
   const card = player.board[r][c];
 
+  // Only hide it if it's still the same card that was temporarily revealed.
   if (card && card.uid === cardUid) {
     card.isFaceUp = false;
   }
