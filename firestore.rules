@@ -1,150 +1,28 @@
-/**
- * This ruleset enforces a security model for the 'Board Bombers' game application.
- *
- * Core Philosophy:
- * The security model is based on two primary patterns: strict user ownership for personal data
- * and a shared-access model for collaborative game sessions. The default posture is to deny
- * all access unless a rule explicitly grants it, ensuring that data is protected by default.
- *
- * Data Structure:
- * - /users/{userId}: Stores private user account information. Each user's data is isolated
- *   within their own document, accessible only by them.
- * - /games/{gameId}: Stores shared game session data. Access is managed collaboratively among
- *   a list of participants.
- *
- * Key Security Decisions:
- * - User Data Isolation: A user can only read or write their own document in the /users
- *   collection. Listing all users is strictly forbidden to protect user privacy.
- * - Shared Game Access: Authorization for game documents is determined by a denormalized
- *   `playerIds` array field within each game document. A user must be in this list to read
- *   or update the game state. This avoids slow and costly lookups to other collections.
- * - Immutable Player Lists: Once a game is created, the list of players cannot be changed.
- *   This prevents unauthorized users from being added to a game mid-session.
- * - Game Deletion Disabled: To prevent accidental or malicious data loss, game documents
- *   cannot be deleted through the client SDKs. Deletion should be handled by a trusted
- *   backend process if necessary.
- *
- * Denormalization for Authorization:
- * To ensure fast and secure access control, the `/games/{gameId}` documents must contain a
- * `playerIds` field, which is an array of user UIDs participating in the game. This allows
-*    the rules to check for membership directly on the document without needing to perform
- * additional reads.
- *
- * Structural Segregation:
- * The rules use separate top-level collections for user-private data (`/users`) and shared
- * game data (`/games`). This clear separation simplifies rule logic and enhances security
- * by preventing data access patterns from overlapping.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ------------------------------------------------------------------------
+    
     // Helper Functions
-    // ------------------------------------------------------------------------
-
-    /**
-     * Returns true if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /**
-     * Returns true if the requesting user's UID matches the provided userId.
-     * Use this for rules governing a user's own data.
-     */
+    
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    /**
-     * Returns true if the user is the owner of an existing document.
-     * CRITICAL: Use for all update and delete operations to prevent modifying non-existent data.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * Returns true if the user is a player in the game.
-     * This relies on a denormalized `playerIds` array in the game document.
-     */
-    function isGamePlayer() {
-      return isSignedIn() && request.auth.uid in resource.data.playerIds;
-    }
-
-    /**
-     * Returns true if the user is a player in an existing game document.
-     * CRITICAL: Use for game state updates.
-     */
-    function isExistingGamePlayer() {
-      return isGamePlayer() && resource != null;
-    }
-
-    /**
-     * Validates that the creator of a new game has included themselves in the player list.
-     * This is a critical check for ensuring the creator can access the game they made.
-     */
-    function creatorIsInPlayerList() {
-      return isSignedIn() && request.auth.uid in request.resource.data.playerIds;
-    }
-
-    /**
-     * Ensures the list of players is immutable. It cannot be changed after creation.
-     */
-    function playerListIsUnchanged() {
-      return request.resource.data.playerIds == resource.data.playerIds;
-    }
-
-    // ------------------------------------------------------------------------
-    // Collection Rules
-    // ------------------------------------------------------------------------
-
-    /**
-     * @description
-     *   Rules for a user's private account document. Only the owner of the document
-     *   can create, read, or modify their own data.
-     * @path
-     *   /users/{userId}
-     * @allow
-     *   A user with UID 'user_abc' can read their own document: (get) /users/user_abc
-     * @deny
-     *   A user with UID 'user_xyz' tries to read another user's document: (get) /users/user_abc
-     * @principle
-     *   Restricts access to a user's own data tree (Ownership model).
-     */
+    // Rules for user profiles
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Disallow listing documents in the users collection to protect privacy.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
-    /**
-     * @description
-     *   Rules for shared game sessions. Access is granted to users whose UIDs are present
-     *   in the game document's `playerIds` array. This array must be present on creation
-     *   and is immutable.
-     *
-     *   NOTE: This rule requires that each game document contains a field named `playerIds`
-     *   which is an array of strings (the UIDs of the players).
-     * @path
-     *   /games/{gameId}
-     * @allow
-     *   A user 'player_1' who is in the game's `playerIds` can read it: (get) /games/game_123
-     * @deny
-     *   A user 'spectator_4' who is NOT in `playerIds` tries to read it: (get) /games/game_123
-     * @principle
-     *   Enforces access control for a closed set of collaborators using denormalized data.
-     */
+    // Rules for game documents
     match /games/{gameId} {
-      allow get: if isGamePlayer();
-      allow list: if false; // Deny by default. Clients must query for games they are in.
-      allow create: if creatorIsInPlayerList();
-      allow update: if isExistingGamePlayer() && playerListIsUnchanged();
-      allow delete: if false; // Deleting games is a destructive action disabled by default.
+      // Any signed-in user can read game data
+      allow read: if isSignedIn();
+      // Only players in the game can write to it
+      allow write: if isSignedIn() && request.auth.uid in resource.data.playerIds;
     }
   }
 }

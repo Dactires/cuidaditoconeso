@@ -6,6 +6,8 @@ import type { Card as CardType, Player } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameSounds } from '@/hooks/use-game-sounds';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
@@ -13,7 +15,6 @@ import GameOverModal from '@/components/game/GameOverModal';
 import { Button } from '@/components/ui/button';
 import { User, Bot, Layers, Archive, Info, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 
 type Selection = {
   card: CardType;
@@ -35,8 +36,9 @@ function getBoardScore(board: (CardType | null)[][]): number {
   }, 0);
 }
 
-
 export default function GamePage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const { gameState, dispatch, initialized } = useGame(2);
   const { playFlip, playBomb, playDeal } = useGameSounds();
   const { toast } = useToast();
@@ -50,6 +52,12 @@ export default function GamePage() {
   const humanPlayer = players?.[humanPlayerId];
   const rivalPlayer = players?.[aiPlayerId];
   
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
   // Sound effects trigger
   useEffect(() => {
     if (lastRevealedCard) {
@@ -155,7 +163,7 @@ export default function GamePage() {
     }
   }, [explodingCard, dispatch]);
 
-  if (!initialized || !humanPlayer || !rivalPlayer || !currentPlayer) {
+  if (isUserLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer) {
     return (
       <div className="flex items-center justify-center h-full bg-background">
         <p className="text-foreground text-2xl font-display animate-pulse">
