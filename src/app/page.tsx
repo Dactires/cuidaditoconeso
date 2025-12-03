@@ -41,7 +41,67 @@ export default function GamePage() {
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile } = gameState;
+  const humanPlayerId = 0;
+  const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
+  const humanPlayer = players?.[humanPlayerId];
+  const rivalPlayer = players?.[aiPlayerId];
+  
+  // AI Logic Trigger
+  useEffect(() => {
+    if (gameOver || !initialized || currentPlayerIndex !== aiPlayerId) return;
+  
+    const performAiAction = (action: GameAction) => {
+      setTimeout(() => {
+        dispatch(action);
+      }, 1000); // Delay for user to see the action
+    };
+  
+    if (turnPhase === 'START_TURN') {
+      performAiAction({ type: 'START_TURN', payload: { player_id: aiPlayerId } });
+    } else if (turnPhase === 'REVEAL_CARD') {
+      // AI reveals a random face-down card
+      const availableCards: {r: number, c: number}[] = [];
+      rivalPlayer.board.forEach((row, r) => {
+        row.forEach((card, c) => {
+          if (card && !card.isFaceUp) {
+            availableCards.push({r, c});
+          }
+        });
+      });
+      if (availableCards.length > 0) {
+        const {r, c} = availableCards[Math.floor(Math.random() * availableCards.length)];
+        performAiAction({ type: 'REVEAL_CARD', payload: { player_id: aiPlayerId, r, c } });
+      } else {
+        // No cards to reveal, pass turn
+        performAiAction({ type: 'PASS_TURN', payload: { player_id: aiPlayerId } });
+      }
+    } else if (turnPhase === 'ACTION') {
+      // Simple AI: if hand is full, play first available character card on first available face-down spot
+      // Otherwise, just pass.
+      if (rivalPlayer.hand.length > 3) {
+        const cardToPlay = rivalPlayer.hand.find(c => c.type === 'Personaje');
+        if (cardToPlay) {
+            const availableSpots: {r: number, c: number}[] = [];
+            rivalPlayer.board.forEach((row, r) => {
+                row.forEach((card, c) => {
+                    if (!card || !card.isFaceUp) {
+                        availableSpots.push({ r, c });
+                    }
+                });
+            });
+            if (availableSpots.length > 0) {
+                const {r, c} = availableSpots[0];
+                performAiAction({ type: 'PLAY_CARD_OWN', payload: { player_id: aiPlayerId, card_in_hand: cardToPlay, target_r: r, target_c: c } });
+                return;
+            }
+        }
+      }
+      performAiAction({ type: 'PASS_TURN', payload: { player_id: aiPlayerId } });
+    }
+  
+  }, [currentPlayerIndex, turnPhase, rivalPlayer, dispatch, gameOver, initialized]);
+
 
   useEffect(() => {
     if (targetBoardPos && selectedHandCard && currentPlayer) {
@@ -89,32 +149,30 @@ export default function GamePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.lastRevealedCard, toast, currentPlayer, players]);
 
-  if (!initialized || !currentPlayer || !players || players.length === 0 || !players[0].hand) {
+  if (!initialized || !humanPlayer || !rivalPlayer || humanPlayer.hand.length === 0) {
     return (
         <div className="flex items-center justify-center h-full bg-background">
             <p className="text-foreground text-2xl">Cargando Juego...</p>
         </div>
     );
   }
-
   
-  const rivalPlayer = players[(currentPlayerIndex + 1) % players.length];
-  const currentPlayerScore = getBoardScore(currentPlayer.board);
+  const humanPlayerScore = getBoardScore(humanPlayer.board);
   const rivalPlayerScore = getBoardScore(rivalPlayer.board);
 
   const handleBoardClick = (playerId: number, r: number, c: number) => {
-    if (gameOver) return;
+    if (gameOver || currentPlayerIndex !== humanPlayerId) return;
 
-    if (turnPhase === 'REVEAL_CARD' && playerId === currentPlayer.id) {
+    if (turnPhase === 'REVEAL_CARD' && playerId === humanPlayer.id) {
       dispatch({ type: 'REVEAL_CARD', payload: { player_id: playerId, r, c } });
     } else if (turnPhase === 'ACTION' && selectedHandCard) {
       setTargetBoardPos({ playerId, r, c });
     } else if (
       turnPhase === 'ACTION' &&
       !selectedHandCard &&
-      playerId === currentPlayer.id
+      playerId === humanPlayer.id
     ) {
-      const card = currentPlayer.board[r][c];
+      const card = humanPlayer.board[r][c];
       if (card && card.isFaceUp) {
         setTargetBoardPos({ playerId, r, c });
         dispatch({
@@ -126,14 +184,14 @@ export default function GamePage() {
   };
 
   const handleHandCardClick = (card: CardType, index: number) => {
-    if (gameOver || turnPhase !== 'ACTION') return;
+    if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return;
 
     if (targetBoardPos) {
-      if (targetBoardPos.playerId === currentPlayer.id) {
+      if (targetBoardPos.playerId === humanPlayer.id) {
         dispatch({
           type: 'SWAP_CARD',
           payload: {
-            player_id: currentPlayer.id,
+            player_id: humanPlayer.id,
             board_r: targetBoardPos.r,
             board_c: targetBoardPos.c,
             card_in_hand: card,
@@ -147,34 +205,34 @@ export default function GamePage() {
   };
 
   const handleAction = (action: GameAction['type']) => {
-    if (gameOver) return;
+    if (gameOver || currentPlayerIndex !== humanPlayerId) return;
 
     if (action === 'START_TURN') {
-      dispatch({ type: 'START_TURN', payload: { player_id: currentPlayer.id } });
+      dispatch({ type: 'START_TURN', payload: { player_id: humanPlayer.id } });
     } else if (action === 'PASS_TURN') {
-      dispatch({ type: 'PASS_TURN', payload: { player_id: currentPlayer.id } });
+      dispatch({ type: 'PASS_TURN', payload: { player_id: humanPlayer.id } });
       setSelectedHandCard(null);
       setTargetBoardPos(null);
     }
   };
 
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
-    if (gameOver) return false;
+    if (gameOver || currentPlayerIndex !== humanPlayerId) return false;
     const card = players.find(p => p.id === playerId)?.board[r][c];
   
-    if (turnPhase === 'REVEAL_CARD' && playerId === currentPlayer.id && card && !card.isFaceUp) {
+    if (turnPhase === 'REVEAL_CARD' && playerId === humanPlayer.id && card && !card.isFaceUp) {
       return true;
     }
     if (turnPhase === 'ACTION') {
       if (selectedHandCard) {
-        if (selectedHandCard.card.type === 'Personaje' && playerId === currentPlayer.id && card && !card.isFaceUp) {
+        if (selectedHandCard.card.type === 'Personaje' && playerId === humanPlayer.id && card && !card.isFaceUp) {
           return true;
         }
         if (playerId === rivalPlayer.id && card && !card.isFaceUp) {
           return true;
         }
       } else {
-        if (playerId === currentPlayer.id && card && card.isFaceUp) {
+        if (playerId === humanPlayer.id && card && card.isFaceUp) {
           return true;
         }
       }
@@ -183,7 +241,7 @@ export default function GamePage() {
   };
 
   const isHandCardSelectable = (card: CardType) => {
-    if (gameOver || turnPhase !== 'ACTION') return false;
+    if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
     if (targetBoardPos) { 
       return card.type === 'Personaje';
     }
@@ -207,11 +265,11 @@ export default function GamePage() {
               <User className="h-12 w-12 text-primary-foreground" />
             </div>
             <span className="text-primary-foreground font-bold text-lg">Jugador 1 (Tú)</span>
-            <span className="text-white/80 text-base font-semibold">Puntaje: {currentPlayerScore}</span>
+            <span className="text-white/80 text-base font-semibold">Puntaje: {humanPlayerScore}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 w-full">
-            {currentPlayer.hand.map((card, index) => (
+            {humanPlayer.hand.map((card, index) => (
               <div key={card.uid} className="relative w-full aspect-square">
                  <GameCard 
                     card={card}
@@ -221,7 +279,7 @@ export default function GamePage() {
                 />
               </div>
             ))}
-             {Array.from({ length: 4 - currentPlayer.hand.length }).map((_, index) => (
+             {Array.from({ length: 4 - humanPlayer.hand.length }).map((_, index) => (
                 <div key={`placeholder-${index}`} className="w-full aspect-square rounded-md bg-black/20 border-2 border-dashed border-white/20" />
             ))}
           </div>
@@ -239,41 +297,40 @@ export default function GamePage() {
             
           {/* Rival Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-primary-foreground font-bold text-base">Jugador 2 (Rival) - Puntaje: {rivalPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-base">Jugador 2 (Rival IA) - Puntaje: {rivalPlayerScore}</span>
             <GameBoard 
               board={rivalPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-              isRival
             />
           </div>
 
           {/* Player Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-primary-foreground font-bold text-base">Jugador 1 (Tú) - Puntaje: {currentPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-base">Jugador 1 (Tú) - Puntaje: {humanPlayerScore}</span>
             <GameBoard 
-              board={currentPlayer.board} 
-              onCardClick={(r, c) => handleBoardClick(currentPlayer.id, r, c)}
-              isCardSelectable={(r, c) => isBoardCardSelectable(currentPlayer.id, r, c)}
+              board={humanPlayer.board} 
+              onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
             />
           </div>
 
           {/* Acciones */}
           <div className="flex flex-wrap justify-center items-center gap-2 text-xs h-10">
-            {turnPhase === 'START_TURN' && (
+            {turnPhase === 'START_TURN' && currentPlayerIndex === humanPlayerId && (
                 <Button size="sm" onClick={() => handleAction('START_TURN')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
                     Robar Carta
                 </Button>
             )}
-            {turnPhase === 'REVEAL_CARD' && (
+            {turnPhase === 'REVEAL_CARD' && currentPlayerIndex === humanPlayerId && (
                 <p className="text-center font-semibold text-accent">Revela una carta de tu tablero.</p>
             )}
-            {turnPhase === 'ACTION' && (
+             {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
                 <Button size="sm" variant="outline" className="bg-transparent text-primary-foreground hover:bg-white/10" disabled={gameState.isForcedToPlay} onClick={() => handleAction('PASS_TURN')}>
                     Pasar Turno
                 </Button>
             )}
-             {turnPhase === 'ACTION' && gameState.isForcedToPlay && (
+             {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
                 <p className="text-xs text-red-400 font-semibold text-center w-full">Tienes demasiadas cartas, debes jugar o intercambiar.</p>
             )}
             {turnPhase === 'GAME_OVER' && (
@@ -288,7 +345,7 @@ export default function GamePage() {
                 <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center border-4 border-white/80 shadow-lg">
                     <Bot className="h-12 w-12 text-secondary-foreground" />
                 </div>
-                <span className="text-primary-foreground font-bold text-lg">Jugador 2 (Rival)</span>
+                <span className="text-primary-foreground font-bold text-lg">Rival (IA)</span>
                 <span className="text-white/80 text-base font-semibold">Puntaje: {rivalPlayerScore}</span>
             </div>
             <div className="flex flex-col items-center gap-2">
