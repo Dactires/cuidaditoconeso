@@ -75,8 +75,8 @@ export function setupGame(numPlayers: number): GameState {
     for (const player of players) {
       const card = deck.pop();
       if(card) {
-        card.isFaceUp = true;
-        player.hand.push(card);
+        // Cards in hand are always face up for the player
+        player.hand.push({ ...card, isFaceUp: true });
       }
     }
   }
@@ -87,8 +87,7 @@ export function setupGame(numPlayers: number): GameState {
       for (const player of players) {
         const card = deck.pop();
         if (card) {
-            card.isFaceUp = false;
-            player.board[r][c] = card;
+            player.board[r][c] = { ...card, isFaceUp: false };
         }
       }
     }
@@ -103,7 +102,7 @@ export function setupGame(numPlayers: number): GameState {
     winner: null,
     finalScores: [],
     isForcedToPlay: false,
-    gameMessage: `Player 1's turn to start.`,
+    gameMessage: `Turno del Jugador 1 para empezar.`,
     turnPhase: 'START_TURN',
     finalTurnCounter: -1,
     lastRevealedCard: null,
@@ -121,7 +120,7 @@ function nextTurn(state: GameState): GameState {
       state.finalScores = state.players.map(p => ({id: p.id, score: p.score }));
       const winner = state.players.reduce((max, p) => p.score > max.score ? p : max, state.players[0]);
       state.winner = winner;
-      state.gameMessage = `Game over! Player ${winner.id + 1} wins!`;
+      state.gameMessage = `¡Fin del juego! ¡El Jugador ${winner.id + 1} gana!`;
       return state;
     }
   }
@@ -129,11 +128,11 @@ function nextTurn(state: GameState): GameState {
   state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
   state.turnPhase = 'START_TURN';
   state.isForcedToPlay = false;
-  state.gameMessage = `Player ${state.currentPlayerIndex + 1}'s turn.`;
+  state.gameMessage = `Turno del Jugador ${state.currentPlayerIndex + 1}.`;
 
   if (state.deck.length === 0 && state.finalTurnCounter === -1) {
     state.finalTurnCounter = state.players.length;
-    state.gameMessage = `The deck is empty! Final round begins. Player ${state.currentPlayerIndex + 1}'s turn.`;
+    state.gameMessage = `¡El mazo está vacío! Comienza la ronda final. Turno del Jugador ${state.currentPlayerIndex + 1}.`;
   }
 
   return state;
@@ -146,9 +145,9 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
     const newCard = draft.deck.pop()!;
     newCard.isFaceUp = true;
     player.hand.push(newCard);
-    draft.gameMessage = `Player ${playerId + 1} drew a card. Reveal a card on your board.`;
+    draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
-    draft.gameMessage = `Deck is empty! Reveal a card on your board.`;
+    draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;
   }
   draft.isForcedToPlay = player.hand.length >= MAX_HAND_SIZE;
   draft.turnPhase = 'REVEAL_CARD';
@@ -195,12 +194,12 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 
     if (card.type === 'Bomba') {
         applyExplosion(draft, player, r, c);
-        draft.gameMessage = `BOOM! Player ${playerId + 1} revealed a bomb. Choose your next action.`;
+        draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba. Elige tu próxima acción.`;
     } else {
         const newScore = getBoardScore(player.board);
         const scoreChange = newScore - player.score;
         player.score = newScore;
-        draft.gameMessage = `Player ${playerId + 1} revealed a ${card.value}. Choose your action.`;
+        draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
     }
 
     draft.turnPhase = 'ACTION';
@@ -267,7 +266,7 @@ export const passTurn = produce((draft: GameState, playerId: number) => {
     if (draft.turnPhase !== 'ACTION' || draft.currentPlayerIndex !== playerId) return;
     const player = draft.players[playerId];
     if (player.hand.length >= MAX_HAND_SIZE) {
-        draft.gameMessage = "You have too many cards! You must play or swap.";
+        draft.gameMessage = "¡Tienes demasiadas cartas! Debes jugar o intercambiar una.";
         return;
     }
     return nextTurn(draft);

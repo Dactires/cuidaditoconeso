@@ -78,7 +78,7 @@ export default function GamePage() {
         .then(result => {
           if (result) {
             toast({
-              title: `AI Analysis: Score Change ${result.scoreChange > 0 ? '+' : ''}${result.scoreChange}`,
+              title: `Análisis de IA: Cambio de Puntuación ${result.scoreChange > 0 ? '+' : ''}${result.scoreChange}`,
               description: result.explanation,
               duration: 5000,
             });
@@ -92,7 +92,7 @@ export default function GamePage() {
   if (!initialized || !currentPlayer || !players || players.length === 0 || !players[0].hand) {
     return (
         <div className="flex items-center justify-center h-full bg-background">
-            <p className="text-foreground text-2xl">Loading Game...</p>
+            <p className="text-foreground text-2xl">Cargando Juego...</p>
         </div>
     );
   }
@@ -119,7 +119,7 @@ export default function GamePage() {
         setTargetBoardPos({ playerId, r, c });
         dispatch({
           type: 'SET_MESSAGE',
-          payload: 'Now select a Character card from your hand to swap.',
+          payload: 'Ahora selecciona una carta de Personaje de tu mano para intercambiar.',
         });
       }
     }
@@ -206,8 +206,8 @@ export default function GamePage() {
             <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center border-4 border-white/80 shadow-lg">
               <User className="h-12 w-12 text-primary-foreground" />
             </div>
-            <span className="text-primary-foreground font-bold text-lg">Player 1 (You)</span>
-            <span className="text-white/80 text-base font-semibold">Score: {currentPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-lg">Jugador 1 (Tú)</span>
+            <span className="text-white/80 text-base font-semibold">Puntaje: {currentPlayerScore}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 w-full">
@@ -239,7 +239,7 @@ export default function GamePage() {
             
           {/* Rival Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-primary-foreground font-bold text-base">Player 2 (Rival) - Score: {rivalPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-base">Jugador 2 (Rival) - Puntaje: {rivalPlayerScore}</span>
             <GameBoard 
               board={rivalPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
@@ -250,7 +250,7 @@ export default function GamePage() {
 
           {/* Player Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-primary-foreground font-bold text-base">Player 1 (You) - Score: {currentPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-base">Jugador 1 (Tú) - Puntaje: {currentPlayerScore}</span>
             <GameBoard 
               board={currentPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(currentPlayer.id, r, c)}
@@ -262,22 +262,22 @@ export default function GamePage() {
           <div className="flex flex-wrap justify-center items-center gap-2 text-xs h-10">
             {turnPhase === 'START_TURN' && (
                 <Button size="sm" onClick={() => handleAction('START_TURN')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
-                    Draw Card
+                    Robar Carta
                 </Button>
             )}
             {turnPhase === 'REVEAL_CARD' && (
-                <p className="text-center font-semibold text-accent">Reveal a card on your board.</p>
+                <p className="text-center font-semibold text-accent">Revela una carta de tu tablero.</p>
             )}
             {turnPhase === 'ACTION' && (
                 <Button size="sm" variant="outline" className="bg-transparent text-primary-foreground hover:bg-white/10" disabled={gameState.isForcedToPlay} onClick={() => handleAction('PASS_TURN')}>
-                    Pass Turn
+                    Pasar Turno
                 </Button>
             )}
              {turnPhase === 'ACTION' && gameState.isForcedToPlay && (
-                <p className="text-xs text-red-400 font-semibold text-center w-full">You have too many cards and must play or swap.</p>
+                <p className="text-xs text-red-400 font-semibold text-center w-full">Tienes demasiadas cartas, debes jugar o intercambiar.</p>
             )}
             {turnPhase === 'GAME_OVER' && (
-                <p className="text-center font-bold text-2xl text-accent">Game Over!</p>
+                <p className="text-center font-bold text-2xl text-accent">¡Fin del Juego!</p>
             )}
           </div>
         </div>
@@ -288,8 +288,8 @@ export default function GamePage() {
                 <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center border-4 border-white/80 shadow-lg">
                     <Bot className="h-12 w-12 text-secondary-foreground" />
                 </div>
-                <span className="text-primary-foreground font-bold text-lg">Player 2 (Rival)</span>
-                <span className="text-white/80 text-base font-semibold">Score: {rivalPlayerScore}</span>
+                <span className="text-primary-foreground font-bold text-lg">Jugador 2 (Rival)</span>
+                <span className="text-white/80 text-base font-semibold">Puntaje: {rivalPlayerScore}</span>
             </div>
             <div className="flex flex-col items-center gap-2">
                 <div className="flex gap-4 items-center">
@@ -298,7 +298,7 @@ export default function GamePage() {
                     <div className="w-24 aspect-square relative">
                         <GameCard card={deck.length > 0 ? { ...deck[deck.length-1], isFaceUp: false } : null} onClick={() => {}} />
                     </div>
-                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Layers className="w-4 h-4"/> Deck: {deck.length}</div>
+                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Layers className="w-4 h-4"/> Mazo: {deck.length}</div>
                 </div>
 
                 {/* Descarte */}
@@ -307,10 +307,10 @@ export default function GamePage() {
                     {discardPile.length > 0 ? (
                         <GameCard card={{...discardPile[discardPile.length - 1], isFaceUp: true}} onClick={() => {}} />
                     ) : (
-                        <div className="w-full h-full rounded-md bg-black/20 border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-white/70">Empty</div>
+                        <div className="w-full h-full rounded-md bg-black/20 border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-white/70">Vacío</div>
                     )}
                     </div>
-                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Archive className="w-4 h-4" />Discard: {discardPile.length}</div>
+                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Archive className="w-4 h-4" />Descarte: {discardPile.length}</div>
                 </div>
                 </div>
             </div>
