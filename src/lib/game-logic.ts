@@ -31,44 +31,43 @@ const generateCardId = () => `card-${cardUid++}`;
 
 
 function createDeck(cardDefinitions: GameCardDef[]): Card[] {
-  cardUid = 0; // Reset UID counter for deterministic generation
-  const deck: Card[] = [];
+    cardUid = 0; // Reset UID counter for deterministic generation
+    const deck: Card[] = [];
+    
+    const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
   
-  const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
-
-  // Create character cards
-  for (const color of COLORS) {
-    for (const value of CHARACTER_VALUES) {
-        const defId = cardDefinitions.find(d => d.kind === 'color' && d.shortLabel.toLowerCase() === color.toLowerCase())?.id;
-        const def = defId ? cardDefMap.get(defId) : undefined;
-        
-        for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-          deck.push({
-            uid: generateCardId(),
-            type: 'Personaje',
-            color,
-            value,
-            isFaceUp: false,
-            imageUrl: def?.imageUrl,
-          });
-        }
+    // Create character cards
+    for (const color of COLORS) {
+      const defId = cardDefinitions.find(d => d.kind === 'color' && d.shortLabel.toLowerCase() === color.toLowerCase())?.id;
+      const def = defId ? cardDefMap.get(defId) : undefined;
+      for (const value of CHARACTER_VALUES) {
+          for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+            deck.push({
+              uid: generateCardId(),
+              type: 'Personaje',
+              color,
+              value,
+              isFaceUp: false,
+              imageUrl: def?.imageUrl,
+            });
+          }
+      }
     }
-  }
-
-  // Create bomb cards
-  const bombDef = cardDefMap.get('bomb');
-  for (let i = 0; i < BOMB_COUNT; i++) {
-    deck.push({ 
-        uid: generateCardId(), 
-        type: 'Bomba', 
-        color: null, 
-        value: null, 
-        isFaceUp: false, 
-        imageUrl: bombDef?.imageUrl 
-    });
-  }
-
-  return shuffle(deck);
+  
+    // Create bomb cards
+    const bombDef = cardDefMap.get('bomb');
+    for (let i = 0; i < BOMB_COUNT; i++) {
+      deck.push({ 
+          uid: generateCardId(), 
+          type: 'Bomba', 
+          color: null, 
+          value: null, 
+          isFaceUp: false, 
+          imageUrl: bombDef?.imageUrl 
+      });
+    }
+  
+    return shuffle(deck);
 }
 
 function getBoardScore(board: (Card | null)[][]): number {
