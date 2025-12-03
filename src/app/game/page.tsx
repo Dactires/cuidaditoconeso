@@ -552,12 +552,10 @@ export default function GamePage() {
                     <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{rivalPlayerScore}</span></span>
                 </div>
             </div>
-            <div className='flex gap-1'>
-            {rivalPlayer.hand.map((card, index) => (
-              <div key={index} className='w-8 h-11'>
-                <GameCard card={{...card, isFaceUp: false}} onClick={() => {}} isMobile />
-              </div>
-            ))}
+            <div className="flex items-center gap-1">
+              <span className="px-2 py-1 rounded-full bg-slate-800/80 border-[2px] border-black text-[11px] text-slate-200/90 font-mono">
+                Mano: {rivalPlayer.hand.length}
+              </span>
             </div>
         </div>
         <div
@@ -616,30 +614,32 @@ export default function GamePage() {
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
           />
         </div>
-         <div className="flex items-center justify-between w-full px-2 h-10">
-          <div className='w-1/3 flex justify-start'>
-            {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
-                <button onClick={handlePassTurn} className="comic-btn comic-btn-secondary !text-xs !py-1 !px-3">
+         <div className="flex items-center justify-between w-full px-2 h-8">
+            <div className="flex flex-col">
+              <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">
+                {user.displayName || 'Jugador'}
+              </span>
+              <span className="text-[11px] text-slate-200/70">
+                Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span>
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
+                <button
+                  onClick={handlePassTurn}
+                  className="comic-btn comic-btn-secondary !text-[11px] !py-1 !px-3"
+                >
                   Pasar
                 </button>
-            )}
-            {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
-                <p className="mt-1 text-[11px] text-amber-300 text-center">
+              )}
+              {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
+                <p className="text-[11px] text-amber-300 text-right">
                   Debes jugar una carta.
                 </p>
               )}
             </div>
-            <div className="w-1/3 flex justify-center" />
-            <div className="w-1/3 flex items-center justify-end gap-2">
-                <div className="flex flex-col text-right">
-                    <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">{user.displayName || 'Jugador'}</span>
-                    <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span></span>
-                </div>
-                <div className="h-8 w-8 rounded-full bg-sky-500 border-2 border-black flex items-center justify-center">
-                    <User className="h-5 w-5 text-slate-900" />
-                </div>
-            </div>
-        </div>
+          </div>
       </div>
       
       {/* Player Hand */}
