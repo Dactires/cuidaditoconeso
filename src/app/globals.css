@@ -491,3 +491,25 @@ main {
 html, body, button, input, select, textarea {
   font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
+
+.card-hand-fan > * {
+  transition: transform 0.2s ease-out;
+}
+
+.card-hand-fan:hover > * {
+  transform: translateY(-20px) !important;
+}
+
+.card-hand-fan > *:hover {
+  transform: translateY(-40px) !important;
+}
+
+.card-hand-fan > *:hover ~ * {
+  transform: translateX(40px) translateY(-20px) !important;
+}
+
+.card-hand-fan > *:not(:first-child) {
+  margin-left: -60px;
+}
+
+    

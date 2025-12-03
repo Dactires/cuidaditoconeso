@@ -25,7 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 type Selection = {
   card: CardType;
@@ -55,6 +57,9 @@ export default function GamePage() {
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
+  const isMobile = useIsMobile();
+
+  const [showDrawAnimation, setShowDrawAnimation] = useState<number | null>(null);
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard } = gameState;
   const humanPlayerId = 0;
@@ -86,6 +91,9 @@ export default function GamePage() {
   
     const performAiAction = (action: GameAction, delay = 1500) => {
       setTimeout(() => {
+        if (action.type === 'START_TURN') {
+          setShowDrawAnimation(aiPlayerId);
+        }
         dispatch(action);
       }, delay); 
     };
@@ -135,6 +143,7 @@ export default function GamePage() {
   useEffect(() => {
     if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN') return;
 
+    setShowDrawAnimation(humanPlayerId);
     const timer = setTimeout(() => {
       dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
       playDeal();
@@ -142,6 +151,13 @@ export default function GamePage() {
 
     return () => clearTimeout(timer);
   }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, playDeal]);
+
+  useEffect(() => {
+    if (showDrawAnimation !== null) {
+      const timer = setTimeout(() => setShowDrawAnimation(null), 1500); // Animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [showDrawAnimation]);
 
   // Handle card playing logic
   useEffect(() => {
@@ -174,7 +190,7 @@ export default function GamePage() {
     }
   }, [explodingCard, dispatch]);
 
-  if (isUserLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer) {
+  if (isUserLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer || isMobile === undefined) {
     return (
       <div className="flex items-center justify-center h-full bg-background">
         <p className="text-foreground text-2xl font-display animate-pulse">
@@ -263,18 +279,8 @@ export default function GamePage() {
     return targetBoardPos ? card.type === 'Personaje' : true;
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-6 font-body">
-      <GameOverModal
-        isOpen={gameOver}
-        winner={winner}
-        scores={finalScores}
-        onRestart={() => dispatch({ type: 'RESET_GAME' })}
-        onExit={() => router.push('/lobby')}
-      />
-
-      <div className="comic-arena">
-        {/* Botón de abandonar partida */}
+  const renderDesktopView = () => (
+    <div className="comic-arena">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
@@ -307,7 +313,6 @@ export default function GamePage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* indicador de turno arriba, centrado */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
           <span className="comic-turn-chip">
             {currentPlayerIndex === humanPlayerId ? 'Tu turno' : 'Turno del rival'}
@@ -315,9 +320,7 @@ export default function GamePage() {
         </div>
   
         <div className="comic-arena-inner">
-          {/* COLUMNA IZQUIERDA: jugador + mano */}
           <div className="flex flex-col gap-4 h-full">
-            {/* Panel jugador */}
             <div className="comic-panel px-4 py-3 flex items-center gap-3">
               <div className="h-11 w-11 rounded-full bg-sky-500 border-[3px] border-black flex items-center justify-center">
                 <User className="h-6 w-6 text-slate-900" />
@@ -332,7 +335,6 @@ export default function GamePage() {
               </div>
             </div>
   
-            {/* Panel mano */}
             <div className="comic-panel px-4 py-3 flex flex-col gap-3">
               <span className="comic-section-title">Tu mano</span>
               <div className="grid grid-cols-2 gap-3">
@@ -354,7 +356,6 @@ export default function GamePage() {
                 ))}
               </div>
   
-              {/* Botón pasar turno */}
               <div className="mt-2">
                 {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
                   <Button
@@ -376,9 +377,7 @@ export default function GamePage() {
             </div>
           </div>
   
-          {/* COLUMNA CENTRAL: solo los dos tableros, limpios */}
           <div className="flex flex-col items-center justify-center gap-8">
-            {/* Tablero rival */}
             <GameBoard
               board={rivalPlayer.board}
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
@@ -390,10 +389,8 @@ export default function GamePage() {
               }
             />
 
-            {/* Pequeño espacio entre tableros, sin textos ni etiquetas */}
             <div className="h-2" />
 
-            {/* Tablero jugador */}
             <GameBoard
               board={humanPlayer.board}
               onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
@@ -406,9 +403,7 @@ export default function GamePage() {
             />
           </div>
   
-          {/* COLUMNA DERECHA: rival + mazo + descarte + mensaje */}
           <div className="flex flex-col gap-4 h-full">
-            {/* Panel rival (info rápida) */}
             <div className="comic-panel px-4 py-3 flex items-center gap-3">
               <div className="h-11 w-11 rounded-full bg-red-500 border-[3px] border-black flex items-center justify-center">
                 <Bot className="h-6 w-6 text-slate-900" />
@@ -423,10 +418,8 @@ export default function GamePage() {
               </div>
             </div>
   
-            {/* Mazo + Descarte */}
             <div className="comic-panel px-4 py-3 flex flex-col gap-3">
               <div className="flex justify-between items-start gap-3">
-                {/* Mazo */}
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Mazo</span>
                   <div className="comic-card-slot">
@@ -440,7 +433,6 @@ export default function GamePage() {
                   </span>
                 </div>
   
-                {/* Descarte */}
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Descarte</span>
                   <div className="comic-card-slot">
@@ -463,7 +455,6 @@ export default function GamePage() {
                 </div>
               </div>
   
-              {/* Mensaje de juego */}
               <div className="mt-2 text-[11px] text-slate-200/80 leading-snug min-h-[3rem]">
                 {gameMessage}
               </div>
@@ -471,6 +462,182 @@ export default function GamePage() {
           </div>
         </div>
       </div>
+  );
+
+  const renderMobileView = () => (
+    <div className="h-full w-full flex flex-col p-2 gap-2 relative">
+      {/* Rival Area */}
+      <div className='flex flex-col items-center gap-2'>
+        <div className="flex items-center justify-between w-full px-2">
+            <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-black flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-slate-900" />
+                </div>
+                <div className="flex flex-col">
+                    <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">Rival (IA)</span>
+                    <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{rivalPlayerScore}</span></span>
+                </div>
+            </div>
+            <div className='flex gap-1'>
+            {rivalPlayer.hand.map((card, index) => (
+              <div key={index} className='w-8 h-11'>
+                <GameCard card={{...card, isFaceUp: false}} onClick={() => {}} />
+              </div>
+            ))}
+            </div>
+        </div>
+        <GameBoard
+            board={rivalPlayer.board}
+            onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+            isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+            explodingCard={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+            isMobile
+        />
+      </div>
+
+      <div className="flex-grow flex items-center justify-center relative">
+        <Swords className="h-8 w-8 text-slate-600" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+          <span className="comic-turn-chip !px-3 !py-1 !text-xs">
+            {currentPlayerIndex === humanPlayerId ? 'Tu turno' : 'Turno del rival'}
+          </span>
+        </div>
+      </div>
+
+      {/* Player Area */}
+      <div className='flex flex-col items-center gap-2'>
+         <div className="flex items-center justify-between w-full px-2">
+            <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-sky-500 border-2 border-black flex items-center justify-center">
+                    <User className="h-5 w-5 text-slate-900" />
+                </div>
+                <div className="flex flex-col">
+                    <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">Jugador 1 (Tú)</span>
+                    <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span></span>
+                </div>
+            </div>
+            {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
+                <Button
+                    size="sm"
+                    className="comic-btn comic-btn-secondary !py-1 !px-3 !text-xs"
+                    disabled={gameState.isForcedToPlay}
+                    onClick={handlePassTurn}
+                >
+                    Pasar
+                </Button>
+            )}
+        </div>
+        <GameBoard
+            board={humanPlayer.board}
+            onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+            isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+            explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+            isMobile
+        />
+      </div>
+      
+      {/* Player Hand */}
+      <AnimatePresence>
+        <div className="w-full h-28 flex justify-center items-end pb-2">
+          <div className="relative w-48 h-28 card-hand-fan">
+            {humanPlayer.hand.map((card, index) => (
+                <motion.div
+                  key={card.uid}
+                  className="absolute bottom-0 w-24"
+                  style={{
+                      transformOrigin: 'bottom center',
+                  }}
+                  initial={{ opacity: 0, y: 50, rotate: 0 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    rotate: (index - (humanPlayer.hand.length - 1) / 2) * 15,
+                  }}
+                  exit={{ opacity: 0, y: 30 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  onClick={() => handleHandCardClick(card, index)}
+                >
+                    <GameCard
+                        card={card}
+                        onClick={() => handleHandCardClick(card, index)}
+                        isSelected={selectedHandCard?.card.uid === card.uid}
+                        isSelectable={isHandCardSelectable(card)}
+                    />
+                </motion.div>
+            ))}
+          </div>
+        </div>
+      </AnimatePresence>
+
+      <div className="absolute bottom-2 right-2 z-20">
+         <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="comic-btn bg-red-600 !text-white hover:bg-red-700 !px-3 !py-1 !text-xs h-auto">
+              <LogOut className="h-3 w-3" />
+              Rendirse
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="comic-card">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="comic-title text-amber-300">¿Rendirse?</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-300">
+                Si abandonas la partida, contará como una derrota.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <button className="comic-btn comic-btn-secondary">Cancelar</button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <button onClick={() => router.push('/lobby')} className="comic-btn comic-btn-primary">
+                  Confirmar
+                </button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
+       <AnimatePresence>
+        {showDrawAnimation !== null && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="w-32 h-44">
+              <GameCard card={{type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back'}} onClick={()=>{}} />
+            </div>
+            <motion.div
+              className="absolute w-24 h-32"
+              initial={{ y: 0, scale: 1 }}
+              animate={ showDrawAnimation === humanPlayerId ?
+                { y: '200%', x: 0, scale: 0.8, transition: { duration: 0.8, ease: 'easeInOut' } } :
+                { y: '-200%', x: '50%', scale: 0.5, transition: { duration: 0.8, ease: 'easeInOut' } }
+              }
+            >
+              <GameCard card={deck[deck.length-1] || null} onClick={()=>{}} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-2 font-body overflow-hidden">
+      <GameOverModal
+        isOpen={gameOver}
+        winner={winner}
+        scores={finalScores}
+        onRestart={() => dispatch({ type: 'RESET_GAME' })}
+        onExit={() => router.push('/lobby')}
+      />
+
+      {isMobile ? renderMobileView() : renderDesktopView()}
     </div>
   );
 }
+
+    

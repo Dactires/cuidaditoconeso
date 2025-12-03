@@ -12,6 +12,7 @@ interface GameBoardProps {
   onCardClick?: (r: number, c: number) => void;
   isCardSelectable?: (r: number, c: number) => boolean;
   explodingCard?: ExplodingPos;
+  isMobile?: boolean;
 }
 
 /**
@@ -26,37 +27,46 @@ export default function GameBoard({
   onCardClick,
   isCardSelectable,
   explodingCard,
+  isMobile
 }: GameBoardProps) {
   return (
-    <div className="comic-panel comic-grid">
-      {board.map((row, r) =>
-        row.map((card, c) => {
-          const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
-          const selectable = isCardSelectable?.(r, c) ?? false;
-          const isExploding =
-            !!explodingCard && explodingCard.r === r && explodingCard.c === c;
+    <div className={cn("comic-panel flex items-center justify-center p-2", isMobile && '!p-2 !shadow-none !border-2')}>
+      <div className={cn("comic-grid", isMobile && '!p-1 !gap-1.5')}>
+        {board.map((row, r) =>
+          row.map((card, c) => {
+            const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
+            const selectable = isCardSelectable?.(r, c) ?? false;
+            const isExploding =
+              !!explodingCard && explodingCard.r === r && explodingCard.c === c;
 
-          return (
-            <div
-              key={key}
-              className={cn(
-                'comic-card-slot focus:outline-none',
-                selectable && 'cursor-pointer',
-                !selectable && 'cursor-default'
-              )}
-              onClick={() => selectable && onCardClick?.(r, c)}
-            >
-              <GameCard
-                card={card}
-                onClick={() => {}}
-                isSelected={false} // Selection is handled by parent through isSelectable
-                isSelectable={selectable}
-                isExploding={isExploding}
-              />
-            </div>
-          );
-        })
-      )}
+            return (
+              <button
+                key={key}
+                type="button"
+                className={cn(
+                  'comic-card-slot',
+                  isMobile && '!w-20 !h-auto',
+                  'focus:outline-none',
+                  selectable && 'cursor-pointer',
+                  !selectable && 'cursor-default'
+                )}
+                onClick={() => selectable && onCardClick?.(r, c)}
+                disabled={!selectable}
+              >
+                <GameCard
+                  card={card}
+                  onClick={() => {}}
+                  isSelected={false} // Selection is handled by parent
+                  isSelectable={selectable}
+                  isExploding={isExploding}
+                />
+              </button>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
+
+    
