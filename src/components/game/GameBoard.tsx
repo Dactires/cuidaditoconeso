@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import type { Card } from '@/lib/types';
 import GameCard from './GameCard';
@@ -37,6 +37,37 @@ export default function GameBoard({
   cardBackImageUrl,
 }: GameBoardProps) {
   const boardRef = React.useRef<HTMLDivElement>(null);
+  const [previousBoard, setPreviousBoard] = useState<(Card | null)[][]>(board);
+  const [refillingCards, setRefillingCards] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const newRefilling = new Set<string>();
+    
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[r].length; c++) {
+        const prevCard = previousBoard[r]?.[c];
+        const newCard = board[r]?.[c];
+        
+        // A new card appeared in a previously empty/exploding slot
+        if (newCard && !prevCard) {
+            newRefilling.add(newCard.uid);
+        }
+      }
+    }
+
+    if (newRefilling.size > 0) {
+      setRefillingCards(newRefilling);
+      // Clean up the refilling status after the animation duration
+      const timer = setTimeout(() => {
+        setRefillingCards(new Set());
+      }, 1000); // Animation duration + buffer
+      return () => clearTimeout(timer);
+    }
+
+    // Update previous board state for the next render
+    // Use a deep copy to avoid reference issues
+    setPreviousBoard(JSON.parse(JSON.stringify(board)));
+  }, [board]);
 
 
   return (
@@ -66,6 +97,7 @@ export default function GameBoard({
             // If a card is exploding in this slot, we render the exploding card temporarily,
             // even if the board data for this slot is already null.
             const cardToRender = isExplodingSlot ? explodingCardInfo.card : card;
+            const isRefilling = card ? refillingCards.has(card.uid) : false;
 
             return (
               <div
@@ -86,6 +118,8 @@ export default function GameBoard({
                   isMobile={isMobile}
                   isDisabled={isDimmed}
                   cardBackImageUrl={cardBackImageUrl}
+                  isRefilling={isRefilling}
+                  refillIndex={r * 3 + c} // Pass index for animation delay
                 />
               </div>
             );

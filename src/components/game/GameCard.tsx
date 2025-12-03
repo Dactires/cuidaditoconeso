@@ -21,6 +21,8 @@ interface GameCardProps {
   isDisabled?: boolean;
   cardBackImageUrl?: string;
   explodingCardInfo?: { r: number; c: number; playerId: number; card: Card } | null;
+  isRefilling?: boolean;
+  refillIndex?: number;
 }
 
 const cardVariants = {
@@ -50,6 +52,19 @@ const cardVariants = {
     opacity: 0.45,
     filter: "grayscale(0.3)",
   },
+  refill: (i: number) => ({
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 150,
+      damping: 20,
+      delay: i * 0.05,
+    },
+  }),
 };
 
 const getGlowColor = (color: string | null) => {
@@ -75,10 +90,23 @@ export default function GameCard({
   isDisabled = false,
   cardBackImageUrl,
   explodingCardInfo,
+  isRefilling = false,
+  refillIndex = 0,
 }: GameCardProps) {
 
   const cardToRender = isExploding && explodingCardInfo ? explodingCardInfo.card : card;
   const showFace = cardToRender?.isFaceUp ?? false;
+
+  const initialAnimation = isRefilling
+    ? {
+        x: isMobile ? 80 : 250, // Come from the right (deck side)
+        y: isMobile ? -50 : -100,
+        scale: 0.5,
+        rotate: 30,
+        opacity: 0,
+      }
+    : { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 };
+
 
   if (!cardToRender) {
     return (
@@ -131,27 +159,32 @@ export default function GameCard({
 
   return (
     <motion.div
-      layoutId={!isExploding ? `card-${finalCard.uid}`: undefined}
+      layoutId={!isExploding && !isRefilling ? `card-${finalCard.uid}`: undefined}
       variants={cardVariants}
-      initial="idle"
+      initial={initialAnimation}
       animate={
-        isDisabled || isDimmed
+        isRefilling
+          ? "refill"
+          : isDisabled || isDimmed
           ? "disabled"
           : isSelected
           ? "selected"
           : "idle"
       }
-      whileHover={!isMobile && !isDisabled && !isSelected ? "hover" : undefined}
-      whileTap={!isDisabled ? "pressed" : undefined}
+      custom={refillIndex} // Pass index for animation delay
+      whileHover={!isMobile && !isDisabled && !isSelected && !isRefilling ? "hover" : undefined}
+      whileTap={!isDisabled && !isRefilling ? "pressed" : undefined}
       className={cn(
         'w-full h-full relative aspect-square card-flipper',
         isSelectable && !isDimmed && 'cursor-pointer',
         animationClass,
       )}
       onClick={onClick}
+      style={{ transformStyle: "preserve-3d" }}
     >
         <motion.div 
             className="w-full h-full absolute card-face"
+            style={{ backfaceVisibility: "hidden" }}
             initial={false}
             animate={{ rotateY: showFace ? 180 : 0 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -168,6 +201,7 @@ export default function GameCard({
                 "w-full h-full absolute card-face",
                 glowClass
             )}
+            style={{ backfaceVisibility: "hidden" }}
             initial={false}
             animate={{ rotateY: showFace ? 0 : -180 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
