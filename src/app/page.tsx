@@ -12,6 +12,7 @@ import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import { Button } from '@/components/ui/button';
 import { User, Bot, Layers, Archive, Info, Swords } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 
 type Selection = {
@@ -427,14 +428,26 @@ export default function GamePage() {
 
 const PlayerInfo = ({player, score, isAI}: {player: Player, score: number, isAI: boolean}) => {
     return (
-        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-slate-900/50 border border-slate-700">
-            <div className={`h-10 w-10 rounded-full flex items-center justify-center border-2 ${isAI ? 'bg-red-800 border-red-500' : 'bg-blue-800 border-blue-500'}`}>
-                {isAI ? <Bot className="h-6 w-6 text-red-300" /> : <User className="h-6 w-6 text-blue-300" />}
-            </div>
-            <div className="flex flex-col items-start">
-                <span className="text-white font-display tracking-wider text-lg">{isAI ? "Rival (IA)" : "Jugador 1 (Tú)"}</span>
-                <span className="text-slate-400 text-base font-semibold">Puntaje: {score}</span>
-            </div>
+      <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-red-500/90 text-black shadow-[0_5px_0_rgba(0,0,0,0.7)] border-4 border-white relative">
+        <div className="absolute inset-0 rounded-full border-4 border-black pointer-events-none" />
+        <div
+          className={cn(
+            'h-10 w-10 rounded-full flex items-center justify-center border-4 border-black bg-white',
+            isAI ? 'bg-red-600' : 'bg-sky-500',
+          )}
+        >
+          {isAI ? (
+            <Bot className="h-6 w-6 text-black" />
+          ) : (
+            <User className="h-6 w-6 text-black" />
+          )}
         </div>
-    )
+        <div className="flex flex-col items-start pl-1">
+          <span className="font-display tracking-wider text-sm uppercase drop-shadow-[2px_2px_0_rgba(255,255,255,0.7)]">
+            {isAI ? 'Rival (IA)' : 'Jugador 1 (Tú)'}
+          </span>
+          <span className="text-xs font-semibold">Puntaje: {score}</span>
+        </div>
+      </div>
+    );
 }

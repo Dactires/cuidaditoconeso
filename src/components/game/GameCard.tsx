@@ -60,21 +60,27 @@ export default function GameCard({
       whileTap={isSelectable ? { scale: 0.96 } : {}}
       animate={baseAnimation}
     >
-      {/* Si está boca abajo → solo reverso */}
       {!card.isFaceUp ? (
-        <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center p-2 border-2 border-slate-700 shadow-inner">
-          <div className="w-full h-full rounded-md border-2 border-slate-700 border-dashed flex items-center justify-center">
-            <span className="text-slate-600 font-display font-bold text-2xl -rotate-12 opacity-70 select-none">
-              BOMBERS
-            </span>
+        <div className="w-full h-full rounded-2xl border-4 border-white shadow-[0_6px_0_rgba(0,0,0,0.7),0_0_0_4px_#000] overflow-hidden">
+          <div className="w-full h-full bg-sky-400 relative">
+            {/* Rayos simulados con gradientes diagonales simples */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.3),_transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgba(0,0,0,0.25)_1px,_transparent_0)] bg-[length:14px_14px]" />
+            <div className="relative w-full h-full flex items-center justify-center">
+              <span className="text-slate-900 font-display font-extrabold text-xl -rotate-12 drop-shadow-[3px_3px_0_rgba(255,255,255,0.9)] select-none">
+                BOMBERS
+              </span>
+            </div>
           </div>
         </div>
       ) : (
-        // Si está boca arriba → frente
+        // Si está boca arriba → frente estilo cómic
         <UICard
           className={cn(
-            'w-full h-full flex flex-col items-center justify-center border-2 text-white rounded-lg shadow-lg relative',
-            'border-slate-600',
+            'w-full h-full flex flex-col items-center justify-center text-white relative',
+            'rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/90',
+            'border-4 border-white',
+            'shadow-[0_6px_0_rgba(0,0,0,0.7),0_0_0_4px_#000]',
             style.bg,
             isSelectable && style.glow,
           )}
@@ -92,7 +98,7 @@ export default function GameCard({
           </div>
 
           {/* Valor central o icono de bomba */}
-          <CardTitle className="font-display text-5xl md:text-6xl font-bold">
+          <CardTitle className="font-display text-5xl md:text-6xl font-extrabold drop-shadow-[3px_3px_0_rgba(0,0,0,0.9)]">
             {card.type === 'Bomba' ? (
               <BombIcon className="w-12 h-12 md:w-14 md:h-14" />
             ) : (
