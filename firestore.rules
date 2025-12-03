@@ -30,5 +30,10 @@ service cloud.firestore {
     match /card-images/{cardId} {
         allow read, write: if isSignedIn();
     }
+
+    // Rules for music files, accessible by any authenticated user (admin panel is protected)
+    match /music/{fileName} {
+        allow read, write: if isSignedIn();
+    }
   }
 }

@@ -18,7 +18,7 @@ import {
   SidebarFooter,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, LogOut, CreditCard } from 'lucide-react';
+import { LayoutDashboard, LogOut, CreditCard, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AdminDashboardLayout({
@@ -92,6 +92,17 @@ export default function AdminDashboardLayout({
                   <Link href="/admin/dashboard/cards">
                     <CreditCard />
                     <span>Cartas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === '/admin/dashboard/music'}
+                >
+                  <Link href="/admin/dashboard/music">
+                    <Music />
+                    <span>Música</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
