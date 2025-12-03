@@ -280,10 +280,10 @@ export default function GamePage() {
       </AnimatePresence>
 
       {/* LAYOUT PRINCIPAL: 3 COLUMNAS */}
-      <div className="w-full max-w-6xl flex-1 flex flex-row items-center justify-center gap-8 pt-10 pb-4">
+      <div className="w-full max-w-7xl flex-1 flex flex-row items-center justify-center gap-8 pt-10 pb-4">
 
         {/* COLUMNA IZQUIERDA: JUGADOR + MANO */}
-        <div className="flex flex-col items-center gap-6 w-56">
+        <div className="flex flex-col items-center gap-6 w-64">
           <PlayerInfo player={humanPlayer} score={humanPlayerScore} isAI={false} />
 
           {/* Mano del jugador */}
@@ -293,7 +293,7 @@ export default function GamePage() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {humanPlayer.hand.map((card, index) => (
-                <div key={card.uid} className="w-20">
+                <div key={card.uid} className="w-28">
                   <GameCard
                     card={card}
                     onClick={() => handleHandCardClick(card, index)}
@@ -305,7 +305,7 @@ export default function GamePage() {
               {Array.from({ length: 4 - humanPlayer.hand.length }).map((_, index) => (
                 <div
                   key={`placeholder-${index}`}
-                  className="w-20 h-[105px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700"
+                  className="w-28 h-[150px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700"
                 />
               ))}
             </div>
@@ -362,13 +362,13 @@ export default function GamePage() {
         </div>
 
         {/* COLUMNA DERECHA: RIVAL + MAZO/DESCARTE + MENSAJE */}
-        <div className="flex flex-col items-center gap-6 w-56">
+        <div className="flex flex-col items-center gap-6 w-64">
           <PlayerInfo player={rivalPlayer} score={rivalPlayerScore} isAI={true} />
 
           {/* Mazo y descarte */}
           <div className="flex items-end gap-4">
             <div className="flex flex-col items-center">
-              <div className="w-20">
+              <div className="w-28 relative">
                 <GameCard
                   card={
                     deck.length > 0
@@ -383,7 +383,7 @@ export default function GamePage() {
               </div>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-20">
+              <div className="w-28 relative">
                 {discardPile.length > 0 ? (
                   <GameCard
                     card={{
@@ -393,7 +393,7 @@ export default function GamePage() {
                     onClick={() => {}}
                   />
                 ) : (
-                  <div className="w-20 h-[105px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-500">
+                  <div className="w-28 h-[150px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-500">
                     Vacío
                   </div>
                 )}
@@ -451,3 +451,5 @@ const PlayerInfo = ({player, score, isAI}: {player: Player, score: number, isAI:
       </div>
     );
 }
+
+    
