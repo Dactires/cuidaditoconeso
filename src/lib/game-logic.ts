@@ -34,12 +34,14 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
     // Create character cards with exact level
     for (const def of characterDefs) {
         const level = characterLevels[def.color] || 1; // Default to level 1 if not specified
-        for (let i = 0; i < (CARDS_PER_VALUE_COLOR * 5); i++) { // Total character cards for one color
-            deck.push({
+        // This creates 5 groups of 4 cards each for a single color, e.g., 4x Rojo-1, 4x Rojo-2...
+        // The user wants all cards to have the SAME level.
+        for (let i = 0; i < (CARDS_PER_VALUE_COLOR * 5); i++) {
+             deck.push({
                 uid: generateCardId(),
                 type: 'Personaje',
                 color: def.color,
-                value: level, // All cards have the exact same value/level
+                value: level, // All cards for this color get the SAME specified level
                 isFaceUp: false,
                 imageUrl: def.imageUrl,
                 ability: def.ability,
@@ -65,6 +67,7 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
 
     return shuffle(deck);
 }
+
 
 function getBoardScore(board: (Card | null)[][]): number {
   return board.flat().reduce((score, card) => {
@@ -232,6 +235,9 @@ function nextTurn(state: GameState): GameState {
 
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
+  } else if (state.finalTurnCounter === 0) {
+     checkEndGame(state);
+     return state;
   }
 
   // Check if current player's deck is empty
@@ -240,6 +246,7 @@ function nextTurn(state: GameState): GameState {
     if (ensurePlayerDeckHasCards(currentPlayer, 1)) {
         state.gameMessage = `El mazo del Jugador ${currentPlayer.id + 1} estaba vacío y fue barajado. ¡Tu turno!`;
     } else {
+        // This case should be rare now, but as a safeguard:
         state.finalTurnCounter = state.players.length;
         state.gameMessage = `¡El mazo del Jugador ${currentPlayer.id + 1} se agotó! Comienza la ronda final.`;
     }
@@ -263,7 +270,10 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
     draft.gameMessage = `¡No quedan cartas en el mazo! Revela una carta.`;
-    checkEndGame(draft); // Check if game should end now
+    // This will trigger the final turn sequence if not already active
+    if (draft.finalTurnCounter === -1) {
+      draft.finalTurnCounter = draft.players.length;
+    }
   }
   draft.isForcedToPlay = player.hand.length > MAX_HAND_SIZE;
   draft.turnPhase = 'REVEAL_CARD';
@@ -290,6 +300,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
         draft.turnPhase = 'ACTION';
     }
 
+    // Check for end game immediately after a card is revealed
     checkEndGame(draft);
 });
 
