@@ -58,7 +58,14 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
   // Create bomb cards
   const bombDef = cardDefMap.get('bomb');
   for (let i = 0; i < BOMB_COUNT; i++) {
-    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false, imageUrl: bombDef?.imageUrl });
+    deck.push({ 
+        uid: generateCardId(), 
+        type: 'Bomba', 
+        color: null, 
+        value: null, 
+        isFaceUp: false, 
+        imageUrl: bombDef?.imageUrl 
+    });
   }
 
   return shuffle(deck);
@@ -242,7 +249,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     if (!card || card.isFaceUp) return;
 
     card.isFaceUp = true;
-    draft.lastRevealedCard = card;
+    draft.lastRevealedCard = { ...card }; // Make a copy
 
     if (card.type === 'Bomba') {
         draft.explodingCard = { r, c, playerId };

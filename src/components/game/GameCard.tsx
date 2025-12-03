@@ -77,19 +77,31 @@ export default function GameCard({
 }: GameCardProps) {
 
   const [showTimer, setShowTimer] = React.useState(false);
+  const cardIsBomb = card?.type === 'Bomba';
 
   React.useEffect(() => {
-    if (card?.isFaceUp && card.type === 'Bomba') {
-      const timer = setTimeout(() => setShowTimer(true), 250); // Show timer after a short delay
-      const clearTimer = setTimeout(() => setShowTimer(false), 900); // Timer lasts for 650ms
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(clearTimer);
-      };
+    let timerTimeout: NodeJS.Timeout | null = null;
+    let clearTimerTimeout: NodeJS.Timeout | null = null;
+    
+    if (card?.isFaceUp && cardIsBomb) {
+      // Short delay to show the bomb image first
+      timerTimeout = setTimeout(() => {
+        setShowTimer(true);
+        // Duration of the timer itself
+        clearTimerTimeout = setTimeout(() => {
+          setShowTimer(false);
+        }, 650);
+      }, 250); 
     } else {
       setShowTimer(false);
     }
-  }, [card?.isFaceUp, card?.type]);
+
+    return () => {
+      if (timerTimeout) clearTimeout(timerTimeout);
+      if (clearTimerTimeout) clearTimeout(clearTimerTimeout);
+    };
+  }, [card?.isFaceUp, cardIsBomb]);
+
 
   if (!card) {
     return (
@@ -118,39 +130,35 @@ export default function GameCard({
 
     // FRONT OF THE CARD
 
-    // Bomb sequence
-    if (card.type === 'Bomba') {
-      return (
-        <>
-          {card.imageUrl && (
-            <Image src={card.imageUrl} alt="Imagen de una bomba" fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
-          )}
-           <AnimatePresence>
-            {showTimer && (
-              <motion.div
-                key="timer"
-                className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.1 }}
-              >
+    // If it's a bomb and the timer is active, show the timer overlay
+    if (cardIsBomb && showTimer) {
+        return (
+             <>
+                {card.imageUrl && (
+                    <Image src={card.imageUrl} alt="Imagen de una bomba" fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover brightness-50" />
+                )}
                 <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.1 }}
+                    key="timer"
+                    className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.1 }}
                 >
-                  <Clock className="w-1/2 h-1/2 text-amber-300 animate-ping" />
+                    <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.1 }}
+                    >
+                    <Clock className="w-1/2 h-1/2 text-amber-300 animate-ping" />
+                    </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
-      )
+             </>
+        )
     }
 
-    // Character card
+    // Otherwise, show the normal card front (bomb or character)
     return (
       <>
         {card.imageUrl ? (
