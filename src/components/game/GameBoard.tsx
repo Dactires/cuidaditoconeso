@@ -23,7 +23,7 @@ export default function GameBoard({
           row.map((card, c) => (
             <div
               key={`${r}-${c}`}
-              className="relative w-20 aspect-square md:w-24"
+              className="relative w-36 aspect-[2/3]"
             >
               <GameCard
                 card={card}
@@ -40,3 +40,5 @@ export default function GameBoard({
     </div>
   );
 }
+
+    

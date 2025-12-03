@@ -293,7 +293,7 @@ export default function GamePage() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {humanPlayer.hand.map((card, index) => (
-                <div key={card.uid} className="w-28">
+                <div key={card.uid} className="w-36 aspect-[2/3]">
                   <GameCard
                     card={card}
                     onClick={() => handleHandCardClick(card, index)}
@@ -305,7 +305,7 @@ export default function GamePage() {
               {Array.from({ length: 4 - humanPlayer.hand.length }).map((_, index) => (
                 <div
                   key={`placeholder-${index}`}
-                  className="w-28 h-[150px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700"
+                  className="w-36 aspect-[2/3] rounded-lg bg-black/20 border-2 border-dashed border-slate-700"
                 />
               ))}
             </div>
@@ -368,7 +368,7 @@ export default function GamePage() {
           {/* Mazo y descarte */}
           <div className="flex items-end gap-4">
             <div className="flex flex-col items-center">
-              <div className="w-28 relative">
+              <div className="w-36 aspect-[2/3] relative">
                 <GameCard
                   card={
                     deck.length > 0
@@ -383,7 +383,7 @@ export default function GamePage() {
               </div>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-28 relative">
+              <div className="w-36 aspect-[2/3] relative">
                 {discardPile.length > 0 ? (
                   <GameCard
                     card={{
@@ -451,5 +451,7 @@ const PlayerInfo = ({player, score, isAI}: {player: Player, score: number, isAI:
       </div>
     );
 }
+
+    
 
     
