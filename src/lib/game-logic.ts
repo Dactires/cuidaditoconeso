@@ -38,34 +38,37 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
 
     // Create character cards
     for (const color of COLORS) {
-        for (const value of CHARACTER_VALUES) {
-            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-                // Find the definition for the current color.
-                const defId = `color-${color.toLowerCase()}`;
-                const def = cardDefMap.get(defId);
-                deck.push({
-                  uid: generateCardId(),
-                  type: 'Personaje',
-                  color,
-                  value,
-                  isFaceUp: false,
-                  imageUrl: def?.imageUrl,
-                });
+        const defId = `color-${color.toLowerCase()}`;
+        const def = cardDefMap.get(defId);
+        if (def) {
+            for (const value of CHARACTER_VALUES) {
+                for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                    deck.push({
+                      uid: generateCardId(),
+                      type: 'Personaje',
+                      color,
+                      value,
+                      isFaceUp: false,
+                      imageUrl: def.imageUrl,
+                    });
+                }
             }
         }
     }
   
     // Create bomb cards
     const bombDef = cardDefMap.get('bomb');
-    for (let i = 0; i < BOMB_COUNT; i++) {
-      deck.push({ 
-          uid: generateCardId(), 
-          type: 'Bomba', 
-          color: null, 
-          value: null, 
-          isFaceUp: false, 
-          imageUrl: bombDef?.imageUrl 
-      });
+    if (bombDef) {
+        for (let i = 0; i < BOMB_COUNT; i++) {
+          deck.push({ 
+              uid: generateCardId(), 
+              type: 'Bomba', 
+              color: null, 
+              value: null, 
+              isFaceUp: false, 
+              imageUrl: bombDef.imageUrl 
+          });
+        }
     }
   
     return shuffle(deck);
@@ -201,11 +204,9 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   const player = draft.players[playerId];
   if (draft.deck.length > 0) {
     const newCard = draft.deck.pop()!;
-    const drawnCardId = generateCardId(); // generate a temporary unique id for animation
-    
-    const handCard = { ...newCard, uid: drawnCardId, isFaceUp: true };
+    const handCard = { ...newCard, isFaceUp: true };
     player.hand.push(handCard);
-    draft.lastDrawnCardId = drawnCardId;
+    draft.lastDrawnCardId = handCard.uid;
     draft.showDrawAnimation = true;
 
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
@@ -257,6 +258,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     if (card.type === 'Bomba') {
         draft.lastRevealedBomb = { playerId, r, c, cardUid: card.uid };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
+        draft.explodingCard = null; // Do not explode yet
     } else {
         const newScore = getBoardScore(player.board);
         const scoreChange = newScore - player.score;
@@ -264,7 +266,6 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
     }
 
-    draft.explodingCard = null;
     draft.turnPhase = 'ACTION';
     checkEndGame(draft);
 });
