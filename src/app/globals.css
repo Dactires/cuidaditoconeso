@@ -196,21 +196,6 @@
   .board-hit {
     animation: board-hit 0.35s ease-out;
   }
-
-  .comic-panel {
-    @apply rounded-3xl border-4 border-white/90 bg-sky-400/40 shadow-[0_10px_0_rgba(0,0,0,0.6)];
-    box-shadow:
-      0 10px 0 rgba(0, 0, 0, 0.6),
-      0 0 0 4px #000; /* borde negro tipo cómic */
-    backdrop-filter: blur(4px);
-  }
-
-  .comic-badge {
-    @apply rounded-full px-3 py-1 bg-amber-400 text-black font-display text-xs uppercase tracking-widest shadow-[0_4px_0_rgba(0,0,0,0.5)];
-    box-shadow:
-      0 4px 0 rgba(0, 0, 0, 0.5),
-      0 0 0 3px #000;
-  }
 }
 
 
@@ -505,7 +490,7 @@ main {
   }
 
   .comic-arena-inner {
-    @apply grid grid-cols-[260px_minmax(0,1.4fr)_260px]
+    @apply grid grid-cols-[260px_minmax(0,1fr)_260px]
       gap-6 px-8 py-8 items-start;
   }
 
@@ -515,7 +500,7 @@ main {
       rounded-[24px]
       border-[3px] border-slate-900
       shadow-[0_10px_0_#020617]
-      relative;
+      relative p-1;
   }
 
   /* Grid del tablero (9 cartas) */
@@ -545,13 +530,13 @@ main {
 
   /* Chip azul para "Tu turno / Turno rival" */
   .comic-turn-chip {
-    @apply px-6 py-2
+    @apply px-4 py-1.5
       rounded-full
-      bg-sky-500
+      bg-amber-400
       border-[3px] border-black
-      shadow-[0_6px_0_#0f172a]
+      shadow-[0_5px_0_#0f172a]
       text-slate-900
-      font-display text-xs md:text-sm
+      font-display text-[10px] md:text-xs
       tracking-[0.25em] uppercase;
   }
 

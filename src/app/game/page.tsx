@@ -363,23 +363,25 @@ export default function GamePage() {
         <div className="comic-arena-inner">
           <div className={cn(
             "flex flex-col gap-4 h-full transition-opacity duration-300",
-            turnPhase === 'ACTION' && isHumanTurn ? 'opacity-100' : 'opacity-60'
+            !isHumanTurn || turnPhase !== 'ACTION' ? 'opacity-60' : 'opacity-100'
           )}>
-            <div className="comic-panel px-4 py-3 flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-sky-500 border-[3px] border-black flex items-center justify-center">
-                <User className="h-6 w-6 text-slate-900" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-display tracking-[0.25em] text-[11px] uppercase text-slate-200/80">
-                  Jugador 1 (Tú)
-                </span>
-                <span className="text-xs text-slate-200/70">
-                  Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span>
-                </span>
+            <div className="bg-[#0d4b63] rounded-[24px] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] relative p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-full bg-sky-500 border-[3px] border-black flex items-center justify-center">
+                  <User className="h-6 w-6 text-slate-900" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-display tracking-[0.25em] text-[11px] uppercase text-slate-200/80">
+                    Jugador 1 (Tú)
+                  </span>
+                  <span className="text-xs text-slate-200/70">
+                    Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span>
+                  </span>
+                </div>
               </div>
             </div>
   
-            <div className="comic-panel px-4 py-3 flex flex-col gap-3">
+            <div className="bg-[#0d4b63] rounded-[24px] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] relative p-4 flex flex-col gap-3">
               <span className="comic-section-title">Tu mano</span>
               <div className="grid grid-cols-2 gap-3">
                 {humanPlayer.hand.map((card, index) => (
@@ -403,7 +405,7 @@ export default function GamePage() {
               </div>
   
               <div className="mt-2 flex items-center justify-center gap-2">
-                {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
+                {turnPhase === 'ACTION' && !gameState.isForcedToPlay && (
                     <button onClick={handlePassTurn} className="comic-btn comic-btn-secondary !text-xs !py-1 !px-3">
                       Pasar Turno
                     </button>
@@ -417,7 +419,7 @@ export default function GamePage() {
             </div>
           </div>
   
-          <div className="flex flex-col items-center justify-center gap-8">
+          <div className="flex flex-col items-center justify-start gap-8 pt-4">
             <div className={cn(
               "comic-panel transition-shadow duration-200",
               !isHumanTurn && "ring-4 ring-red-500/70 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
@@ -431,7 +433,7 @@ export default function GamePage() {
                     ? { r: explodingCard.r, c: explodingCard.c }
                     : undefined
                 }
-                isDimmed={isHumanTurn && !selectedHandCard}
+                isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               />
             </div>
@@ -452,14 +454,14 @@ export default function GamePage() {
                     ? { r: explodingCard.r, c: explodingCard.c }
                     : undefined
                 }
-                isDimmed={!isHumanTurn}
+                isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               />
             </div>
           </div>
   
           <div className="flex flex-col gap-4 h-full">
-            <div className="comic-panel px-4 py-3 flex items-center gap-3">
+            <div className="bg-[#0d4b63] rounded-[24px] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] relative p-4 flex items-center gap-3">
               <div className="h-11 w-11 rounded-full bg-red-500 border-[3px] border-black flex items-center justify-center">
                 <Bot className="h-6 w-6 text-slate-900" />
               </div>
@@ -473,7 +475,7 @@ export default function GamePage() {
               </div>
             </div>
   
-            <div className="comic-panel px-4 py-3 flex flex-col gap-3">
+            <div className="bg-[#0d4b63] rounded-[24px] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] relative p-4 flex flex-col gap-3">
               <div className="flex justify-between items-start gap-3">
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Mazo</span>
