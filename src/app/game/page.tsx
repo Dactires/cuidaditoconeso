@@ -290,26 +290,28 @@ export default function GamePage() {
               Abandonar partida
             </button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="comic-card">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="comic-title text-amber-300">¿Estás seguro que deseas rendirte?</AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-300">
-                Si abandonas la partida ahora, contará como una derrota en tus estadísticas.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel asChild>
-                <button className="comic-btn comic-btn-secondary">Cancelar</button>
-              </AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <button 
-                  onClick={() => router.push('/lobby')} 
-                  className="comic-btn bg-red-600 !text-white hover:bg-red-700 shadow-[0_4px_0_#991b1b] hover:shadow-[0_4px_0_#7f1d1d] active:shadow-[0_2px_0_#7f1d1d] active:translate-y-0.5"
-                >
-                  Rendirse
-                </button>
-              </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogContent>
+            <div className="comic-card">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="comic-title text-amber-300">¿Estás seguro que deseas rendirte?</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-300">
+                  Si abandonas la partida ahora, contará como una derrota en tus estadísticas.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4">
+                <AlertDialogCancel asChild>
+                  <button className="comic-btn comic-btn-secondary">Cancelar</button>
+                </AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <button 
+                    onClick={() => router.push('/lobby')} 
+                    className="comic-btn bg-red-600 !text-white hover:bg-red-700 shadow-[0_4px_0_#991b1b] hover:shadow-[0_4px_0_#7f1d1d] active:shadow-[0_2px_0_#7f1d1d] active:translate-y-0.5"
+                  >
+                    Rendirse
+                  </button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
           </AlertDialogContent>
         </AlertDialog>
 
@@ -533,27 +535,35 @@ export default function GamePage() {
       
       {/* Player Hand */}
       <div className="w-full h-28 flex justify-center items-end pb-2">
-        <div className="relative w-48 h-28 card-hand-fan">
+        <div className="relative w-full max-w-xs h-28 flex justify-center">
             {humanPlayer.hand.map((card, index) => {
-                const rotation = (index - (humanPlayer.hand.length - 1) / 2) * 15;
-                const translationY = Math.abs(index - (humanPlayer.hand.length - 1) / 2) * 5;
+                const totalCards = humanPlayer.hand.length;
+                const cardOffset = 30; // degrees
+                const fanAngle = totalCards * cardOffset;
+                const startAngle = -fanAngle / 2 + cardOffset/2;
+                const rotation = startAngle + index * cardOffset;
+
                 return (
                     <motion.div
                       key={card.uid}
-                      className="absolute bottom-0 w-24 origin-bottom"
+                      className="absolute bottom-0 w-24 h-32 origin-bottom"
                       initial={{ opacity: 0, y: 50, rotate: 0 }}
                       animate={{
                         opacity: 1,
-                        y: selectedHandCard?.card.uid === card.uid ? -20 : translationY,
+                        y: 0,
                         rotate: rotation,
-                        x: `calc(-50% + ${index * 20}px)`,
+                        transition: { type: 'spring', stiffness: 400, damping: 25, delay: index * 0.05 },
                       }}
-                      exit={{ opacity: 0, y: 30 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      whileHover={{ 
+                        y: -30, 
+                        zIndex: 50,
+                        rotate: rotation,
+                        scale: 1.1,
+                      }}
+                      exit={{ opacity: 0, y: 40, transition: { duration: 0.2 } }}
                       onClick={() => handleHandCardClick(card, index)}
                       style={{
-                          left: '50%',
-                          zIndex: selectedHandCard?.card.uid === card.uid ? 10 : index,
+                          zIndex: index,
                       }}
                     >
                         <GameCard
@@ -575,23 +585,25 @@ export default function GamePage() {
               <Settings className="h-5 w-5" />
             </button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="comic-card">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="comic-title text-amber-300">Ajustes</AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-300">
-                ¿Estás seguro que deseas abandonar la partida? Esta acción contará como una derrota.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel asChild>
-                <button className="comic-btn comic-btn-secondary">Cancelar</button>
-              </AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <button onClick={() => router.push('/lobby')} className="comic-btn bg-red-600 !text-white hover:bg-red-700">
-                  Rendirse
-                </button>
-              </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogContent>
+            <div className="comic-card">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="comic-title text-amber-300">Ajustes</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-300">
+                  ¿Estás seguro que deseas abandonar la partida? Esta acción contará como una derrota.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4">
+                <AlertDialogCancel asChild>
+                  <button className="comic-btn comic-btn-secondary">Cancelar</button>
+                </AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <button onClick={() => router.push('/lobby')} className="comic-btn bg-red-600 !text-white hover:bg-red-700">
+                    Rendirse
+                  </button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
           </AlertDialogContent>
         </AlertDialog>
       </div>
@@ -659,3 +671,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
