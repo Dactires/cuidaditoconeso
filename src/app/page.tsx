@@ -257,15 +257,15 @@ export default function GamePage() {
       <AnimatePresence>
         <motion.div
           key={currentPlayerIndex}
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.5 }}
-          className="absolute top-4 z-20"
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 0.3 }}
+          className="absolute top-2 z-20"
         >
-          <div className="px-6 py-2 rounded-full bg-slate-900/70 border border-slate-700 backdrop-blur-sm shadow-lg">
+          <div className="px-4 py-1 rounded-full bg-slate-900/80 border border-slate-700 backdrop-blur-sm shadow-md">
             <p
-              className="text-center font-display text-lg tracking-wider"
+              className="text-center font-display text-sm tracking-wider"
               style={{
                 color:
                   currentPlayerIndex === humanPlayerId
@@ -280,18 +280,18 @@ export default function GamePage() {
       </AnimatePresence>
 
       {/* LAYOUT PRINCIPAL: 3 COLUMNAS */}
-      <div className="w-full max-w-6xl flex-1 flex flex-row items-center justify-center gap-8 pt-16 pb-8">
+      <div className="w-full max-w-6xl flex-1 flex flex-row items-center justify-center gap-8 pt-10 pb-4">
 
         {/* COLUMNA IZQUIERDA: JUGADOR + MANO */}
         <div className="flex flex-col items-center gap-6 w-56">
           <PlayerInfo player={humanPlayer} score={humanPlayerScore} isAI={false} />
 
           {/* Mano del jugador */}
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-xs text-slate-400 font-display tracking-wider uppercase">
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-[10px] text-slate-400 font-display tracking-widest uppercase">
               Tu mano
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {humanPlayer.hand.map((card, index) => (
                 <div key={card.uid} className="w-20">
                   <GameCard
@@ -335,7 +335,7 @@ export default function GamePage() {
         </div>
 
         {/* COLUMNA CENTRAL: TABLEROS */}
-        <div className="flex flex-col items-center gap-6 flex-none">
+        <div className="flex flex-col items-center gap-4 flex-none max-h-[calc(100vh-180px)] justify-center">
           {/* Tablero rival */}
           <GameBoard
             board={rivalPlayer.board}
@@ -347,7 +347,7 @@ export default function GamePage() {
                 : undefined
             }
           />
-          <Swords className="h-10 w-10 text-slate-600" />
+          <Swords className="h-8 w-8 text-slate-600" />
           {/* Tu tablero */}
           <GameBoard
             board={humanPlayer.board}
