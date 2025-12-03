@@ -9,6 +9,7 @@ import {
   MAX_HAND_SIZE,
 } from './constants';
 import { produce } from 'immer';
+import type { GameCardDef } from './card-definitions';
 
 // --- HELPER FUNCTIONS ---
 
@@ -28,26 +29,34 @@ let cardUid = 0;
 const generateCardId = () => `card-${cardUid++}`;
 
 
-function createDeck(): Card[] {
+function createDeck(cardDefinitions: GameCardDef[]): Card[] {
   cardUid = 0; // Reset UID counter for deterministic generation
   const deck: Card[] = [];
+  
+  const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
+
   // Create character cards
   for (const color of COLORS) {
     for (const value of CHARACTER_VALUES) {
-      for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-        deck.push({
-          uid: generateCardId(),
-          type: 'Personaje',
-          color,
-          value,
-          isFaceUp: false,
-        });
-      }
+        const defId = `color-${color.toLowerCase()}`;
+        const def = cardDefMap.get(defId);
+        for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+          deck.push({
+            uid: generateCardId(),
+            type: 'Personaje',
+            color,
+            value,
+            isFaceUp: false,
+            imageUrl: def?.imageUrl,
+          });
+        }
     }
   }
+
   // Create bomb cards
+  const bombDef = cardDefMap.get('bomb');
   for (let i = 0; i < BOMB_COUNT; i++) {
-    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false });
+    deck.push({ uid: generateCardId(), type: 'Bomba', color: null, value: null, isFaceUp: false, imageUrl: bombDef?.imageUrl });
   }
 
   return shuffle(deck);
@@ -65,8 +74,8 @@ function getBoardScore(board: (Card | null)[][]): number {
 
 // --- CORE GAME LOGIC ---
 
-export function setupGame(numPlayers: number): GameState {
-  const deck = createDeck();
+export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): GameState {
+  const deck = createDeck(cardDefinitions);
   const players: Player[] = Array.from({ length: numPlayers }, (_, i) => ({
     id: i,
     hand: [],

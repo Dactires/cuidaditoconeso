@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useGame, GameAction } from '@/hooks/use-game';
 import type { Card as CardType, Player } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useGameSounds } from '@/hooks/use-game-sounds';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
 import GameBoard from '@/components/game/GameBoard';
@@ -26,6 +26,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
+import { collection, getDocs } from 'firebase/firestore';
 
 
 type Selection = {
@@ -70,11 +72,42 @@ const turnChipVariants = {
   }
 };
 
+const useCardDefinitionsWithImages = () => {
+    const firestore = useFirestore();
+    const [cardDefs, setCardDefs] = useState<GameCardDef[] | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCardImages = async () => {
+            setLoading(true);
+            const imageCollectionRef = collection(firestore, 'card-images');
+            const imageSnapshot = await getDocs(imageCollectionRef);
+            const imageUrls = new Map<string, string>();
+            imageSnapshot.forEach(doc => {
+                imageUrls.set(doc.id, doc.data().imageUrl);
+            });
+
+            const enrichedDefs = CARD_DEFINITIONS.map(def => ({
+                ...def,
+                imageUrl: imageUrls.get(def.id) || undefined,
+            }));
+            
+            setCardDefs(enrichedDefs);
+            setLoading(false);
+        };
+
+        fetchCardImages();
+    }, [firestore]);
+
+    return { cardDefs, loading };
+}
+
 
 export default function GamePage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isUserAuthLoading } = useUser();
   const router = useRouter();
-  const { gameState, dispatch, initialized } = useGame(2);
+  const { cardDefs, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
+  const { gameState, dispatch, initialized, resetGame } = useGame(2, cardDefs);
   const { playFlip, playBomb, playDeal } = useGameSounds();
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
@@ -90,10 +123,10 @@ export default function GamePage() {
   const rivalPlayer = players?.[aiPlayerId];
   
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserAuthLoading && !user) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserAuthLoading, router]);
 
   // Sound effects trigger
   useEffect(() => {
@@ -240,7 +273,7 @@ export default function GamePage() {
     }
   }, [lastRivalMove, dispatch]);
 
-  if (isUserLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer || isMobile === undefined) {
+  if (isUserAuthLoading || areCardDefsLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer || isMobile === undefined) {
     return (
       <div className="flex items-center justify-center h-full bg-background">
         <p className="text-foreground text-2xl font-display animate-pulse">
@@ -703,7 +736,7 @@ export default function GamePage() {
         isOpen={gameOver}
         winner={winner}
         scores={finalScores}
-        onRestart={() => dispatch({ type: 'RESET_GAME' })}
+        onRestart={resetGame}
         onExit={() => router.push('/lobby')}
       />
 

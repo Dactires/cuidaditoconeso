@@ -4,6 +4,7 @@ export interface Card {
   color: string | null;
   value: number | null;
   isFaceUp: boolean;
+  imageUrl?: string;
 }
 
 export interface Player {

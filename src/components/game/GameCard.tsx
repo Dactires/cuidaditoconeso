@@ -5,6 +5,7 @@ import type { Card } from '@/lib/types';
 import { BombIcon } from '@/components/icons/BombIcon';
 import { Card as UICard, CardContent, CardTitle } from '@/components/ui/card';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
+import Image from 'next/image';
 
 interface GameCardProps {
   card: Card | null;
@@ -145,22 +146,28 @@ export default function GameCard({
       ) : (
         <UICard
           className={cn(
-            'w-full h-full flex flex-col items-center justify-center relative aspect-square',
+            'w-full h-full flex flex-col items-center justify-center relative aspect-square overflow-hidden',
             'rounded-2xl border-[3px] border-black bg-sky-400',
-            cardStyling?.bg
+            card.imageUrl ? '' : cardStyling?.bg
           )}
         >
+          {card.imageUrl ? (
+            <Image src={card.imageUrl} alt={`Imagen de la carta`} fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
+          ) : null}
+
           <div className={cn("absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white", isMobile && "px-1 py-0.5 -top-1 -left-1")}>
             <p className={cn("font-display tracking-[0.2em] uppercase", isMobile ? "text-[8px]" : "text-xs")}>
               {card?.type === 'Bomba' ? 'Bomba' : card?.value}
             </p>
           </div>
 
-          <CardTitle className={cn("font-display font-black drop-shadow-[0_4px_0_#020617]", isMobile ? "text-5xl" : "text-6xl md:text-7xl")}>
-            {card?.type === 'Bomba'
-              ? <BombIcon className={cn(isMobile ? "w-12 h-12" : "w-16 h-16")} />
-              : card?.value}
-          </CardTitle>
+          {!card.imageUrl && (
+            <CardTitle className={cn("font-display font-black drop-shadow-[0_4px_0_#020617]", isMobile ? "text-5xl" : "text-6xl md:text-7xl")}>
+              {card?.type === 'Bomba'
+                ? <BombIcon className={cn(isMobile ? "w-12 h-12" : "w-16 h-16")} />
+                : card?.value}
+            </CardTitle>
+          )}
 
           <CardContent className={cn("px-2 py-0.5 absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 rounded-full border-[2px] border-white", isMobile && "px-1.5 py-0 -bottom-1")}>
             <p className={cn("font-display tracking-[0.25em] uppercase text-amber-300", isMobile ? "text-[7px]" : "text-[10px]")}>

@@ -11,6 +11,7 @@ export type GameCardDef = {
   textColor?: string;
   value: number | string;
   description: string;
+  imageUrl?: string;
 };
 
 export const CARD_DEFINITIONS: GameCardDef[] = [
@@ -48,15 +49,15 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
       "Los personajes verdes van del número 1 al 5. Ideal para probar diferentes combinaciones de mazo.",
   },
   {
-    id: "color-brown",
+    id: "color-amarillo",
     kind: "color",
-    label: "Personaje Marrón",
-    shortLabel: "Marrón",
+    label: "Personaje Amarillo",
+    shortLabel: "Amarillo",
     colorClass: "bg-amber-700",
     ribbonClass: "bg-amber-800",
     value: 1,
     description:
-      "Los personajes marrones también llegan hasta el número 5. Más adelante vas a poder desbloquearlos.",
+      "Los personajes amarillos también llegan hasta el número 5. Más adelante vas a poder desbloquearlos.",
   },
   {
     id: "bomb",

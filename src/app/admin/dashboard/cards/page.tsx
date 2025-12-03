@@ -120,9 +120,10 @@ function AdminCard({ card }: { card: GameCardDef }) {
               <Image
                 src={finalImageUrl}
                 alt={`Imagen de ${card.label}`}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-lg"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                priority
+                className="rounded-lg object-cover"
               />
             ) : (
               <span className="text-sm text-muted-foreground">Sin imagen</span>
