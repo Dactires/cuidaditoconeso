@@ -567,11 +567,13 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     player.board[r][c] = newBoardCard;
     player.score = getBoardScore(player.board);
     
-    draft.sfxUrl = '/sfx/flip.mp3';
-    triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
+    // Use the complete card definition from the board for ability trigger
+    const finalCardOnBoard = player.board[r][c];
+    if (finalCardOnBoard) {
+        triggerAbilities(draft, finalCardOnBoard, "ON_PLAY_OWN_BOARD");
+    }
 
     if (!draft.gameOver) {
-       // Do not check for endgame here if it's an ability card that reveals, etc.
        const ability = playedCard.ability?.json ? JSON.parse(playedCard.ability.json) : null;
        if (ability?.action !== 'REVEAL_RANDOM_BRIEFLY') {
             checkEndGame(draft);
