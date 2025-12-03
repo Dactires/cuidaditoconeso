@@ -28,32 +28,59 @@ function shuffle<T>(array: T[]): T[] {
 let cardUid = 0;
 const generateCardId = () => `card-${cardUid++}`;
 
-function createDeck(cardDefinitions: GameCardDef[]): Card[] {
+function createDeck(cardDefinitions: GameCardDef[], characterLevels: { [color: string]: number } = {}): Card[] {
     cardUid = 0; // Reset UID counter
     const deck: Card[] = [];
-    
-    const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
+    const characterDefs = cardDefinitions.filter(def => def.kind === 'character');
+    const bombDef = cardDefinitions.find(def => def.id === 'bomb');
 
-    // --- CORREGIDO: Lógica de creación de cartas de personaje ---
-    cardDefinitions.forEach(def => {
-        if (def.kind === 'character') {
-            CHARACTER_VALUES.forEach(value => {
-                for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-                    deck.push({
-                        uid: generateCardId(),
-                        type: 'Personaje',
-                        color: def.color,
-                        value: value, // Asigna el valor del 1 al 5
-                        isFaceUp: false,
-                        imageUrl: def.imageUrl, // Usa la imagen de la definición base
-                    });
-                }
-            });
+    // Create character cards based on levels
+    characterDefs.forEach(def => {
+        const level = characterLevels[def.color] || 1; // Default to level 1
+        const valueDistribution = [0, 0, 0, 0, 0]; // Counts for values 1-5
+
+        // This logic creates a distribution based on level.
+        // Level 1: [5,0,0,0,0] -> five cards of value 1
+        // Level 2: [3,2,0,0,0] -> three of value 1, two of value 2
+        // Level 3: [2,2,1,0,0] -> etc.
+        // Level 4: [1,2,1,1,0]
+        // Level 5: [1,1,1,1,1]
+        let cardsToDistribute = CARDS_PER_VALUE_COLOR * CHARACTER_VALUES.length; // This is not right, should be just 5 cards per color
+        cardsToDistribute = 5; // Simplified to 5 cards per color total in the deck
+        
+        let pool = [];
+        for (let i = 1; i <= level; i++) {
+            pool.push(i);
         }
+        
+        // This is a simple way to create a distribution that favors higher levels
+        const distribution = [0,0,0,0,0];
+        const baseCount = Math.floor(5 / level);
+        for(let i=0; i<level; i++) {
+            distribution[i] = baseCount;
+        }
+        let remainder = 5 % level;
+        for(let i=level-1; i>=0 && remainder > 0; i--) {
+            distribution[i]++;
+            remainder--;
+        }
+
+        distribution.forEach((count, index) => {
+            const value = index + 1;
+            for (let i = 0; i < count; i++) {
+                deck.push({
+                    uid: generateCardId(),
+                    type: 'Personaje',
+                    color: def.color,
+                    value: value,
+                    isFaceUp: false,
+                    imageUrl: def.imageUrl,
+                });
+            }
+        });
     });
   
     // Create bomb cards
-    const bombDef = cardDefMap.get('bomb');
     if (bombDef) {
         for (let i = 0; i < BOMB_COUNT; i++) {
           deck.push({ 
@@ -83,7 +110,10 @@ function getBoardScore(board: (Card | null)[][]): number {
 function ensureDeckHasCards(draft: GameState, count: number): boolean {
     while (draft.deck.length < count) {
         if (draft.discardPile.length === 0) {
-            return false; // Not enough cards in total
+            // If there are no cards in discard, it might be an issue, but we shouldn't get stuck.
+            // This might happen at the very start of the game if the deck is too small.
+            // For now, we return false to indicate we couldn't fulfill the request.
+            return false;
         }
         draft.deck.push(...shuffle(draft.discardPile.map(c => ({...c, isFaceUp: false}))));
         draft.discardPile = [];
@@ -96,7 +126,15 @@ function ensureDeckHasCards(draft: GameState, count: number): boolean {
 // --- CORE GAME LOGIC ---
 
 export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): GameState {
-  const deck = createDeck(cardDefinitions);
+  // For now, all characters are level 1
+  const characterLevels = {
+    'Rojo': 1,
+    'Azul': 1,
+    'Verde': 1,
+    'Amarillo': 1
+  };
+  const deck = createDeck(cardDefinitions, characterLevels);
+
   const players: Player[] = Array.from({ length: numPlayers }, (_, i) => ({
     id: i,
     hand: [],
@@ -168,6 +206,10 @@ const checkEndGame = (draft: GameState) => {
     draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
   }
 
+  if (draft.finalTurnCounter > 0) {
+    // This part seems to be handled in nextTurn now.
+  }
+
   if (draft.finalTurnCounter === 0 && !draft.gameOver) {
       draft.gameOver = true;
       draft.turnPhase = 'GAME_OVER';
@@ -206,8 +248,13 @@ function nextTurn(state: GameState): GameState {
   }
   
   if (state.deck.length === 0 && state.finalTurnCounter === -1) {
-    state.finalTurnCounter = state.players.length;
-    state.gameMessage = `¡El mazo está vacío! Comienza la ronda final.`;
+    if (ensureDeckHasCards(state, 1)) {
+        // Deck was refilled, continue normally
+    } else {
+        // Deck is empty and cannot be refilled, start final turns
+        state.finalTurnCounter = state.players.length;
+        state.gameMessage = `¡El mazo se agotó! Comienza la ronda final.`;
+    }
   }
   
   checkEndGame(state);
@@ -228,8 +275,8 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
 
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
-    draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;
-    checkEndGame(draft); // check if game ends now
+    draft.gameMessage = `El mazo está vacío y no se puede rellenar. Revela una carta.`;
+    checkEndGame(draft); // Check if game should end now
   }
   draft.isForcedToPlay = player.hand.length > MAX_HAND_SIZE;
   draft.turnPhase = 'REVEAL_CARD';
@@ -250,14 +297,14 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     if (card.type === 'Bomba') {
         draft.lastRevealedBomb = { playerId, r, c, cardUid: card.uid };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
+        // No change in turn phase here, wait for animation trigger
     } else {
         const newScore = getBoardScore(player.board);
-        const scoreChange = newScore - player.score;
         player.score = newScore;
         draft.gameMessage = `Jugador ${playerId + 1} reveló un ${card.value}. Elige tu acción.`;
+        draft.turnPhase = 'ACTION';
     }
 
-    draft.turnPhase = 'ACTION';
     checkEndGame(draft);
 });
 
@@ -267,16 +314,22 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
 
     if (!explodingCard || explodingCard.type !== 'Bomba') return;
     
-    // Mark the card for animation, but don't remove it from the board yet
+    // Mark the card for animation
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
     draft.lastRevealedBomb = null;
+    // CRUCIAL: Don't remove the card from the board here. It will be removed in resolveExplosion.
 });
 
 export const resolveExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
   const player = draft.players[playerId];
   const centerCard = player.board[r][c];
 
-  if (!centerCard || centerCard.type !== 'Bomba') return;
+  if (!centerCard || centerCard.type !== 'Bomba') {
+      // This can happen if the state changes between animation start and end.
+      // We just clean up the exploding card state.
+      draft.explodingCard = null;
+      return;
+  };
 
   // Move the bomb to the discard pile and clear its slot
   draft.discardPile.push({ ...centerCard, isFaceUp: true });
@@ -303,7 +356,7 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
     }
   }
   
-  // Prepare slots for refill animation
+  // Prepare slots for refill animation by staging them
   ensureDeckHasCards(draft, positionsToRefill.length);
   draft.refillingSlots = [];
   positionsToRefill.forEach(pos => {
@@ -316,6 +369,7 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
 
   player.score = getBoardScore(player.board);
   draft.explodingCard = null; // Clear the explosion state
+  draft.turnPhase = 'ACTION'; // After explosion, player can act
   draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
   checkEndGame(draft);
 });
@@ -324,7 +378,7 @@ export const finishRefillAnimation = produce((draft: GameState, payload: { playe
     const { playerId, r, c, card } = payload;
     const player = draft.players[playerId];
     
-    // Place the card on the board
+    // Place the card on the board, ensuring it's face down
     player.board[r][c] = { ...card, isFaceUp: false };
 
     // Remove it from the refilling list
@@ -333,6 +387,7 @@ export const finishRefillAnimation = produce((draft: GameState, payload: { playe
         draft.refillingSlots.splice(slotIndex, 1);
     }
 
+    // If all animations are done, check for game end state again
     if (draft.refillingSlots.length === 0) {
         checkEndGame(draft);
     }
@@ -344,6 +399,7 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     const player = draft.players[playerId];
     const targetCard = player.board[r][c];
 
+    // Can only play character cards on your own board
     if (cardInHand.type !== 'Personaje' || !player.hand.some(c => c.uid === cardInHand.uid) || (targetCard && targetCard.isFaceUp)) return;
     
     if(targetCard) draft.discardPile.push({...targetCard, isFaceUp: true});
@@ -367,6 +423,7 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     const rival = draft.players[(playerId + 1) % draft.players.length];
     const targetCard = rival.board[r][c];
     
+    // You can play any card on rival's board
     if (!player.hand.some(c => c.uid === cardInHand.uid) || (targetCard && targetCard.isFaceUp)) return;
 
     if(targetCard) draft.discardPile.push({...targetCard, isFaceUp: true});
@@ -374,6 +431,7 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
     
+    // Card placed on rival's board is always face down
     const newBoardCard = { ...playedCard, isFaceUp: false };
     rival.board[r][c] = newBoardCard;
 
@@ -387,13 +445,16 @@ export const swapCard = produce((draft: GameState, playerId: number, r: number, 
     const player = draft.players[playerId];
     const boardCard = player.board[r][c];
 
-    if (cardInHand.type !== 'Personaje' || !boardCard || !boardCard.isFaceUp || !player.hand.some(c => c.uid === cardInHand.uid)) return;
+    // Can only swap with your own face-up character cards
+    if (cardInHand.type !== 'Personaje' || !boardCard || !boardCard.isFaceUp || boardCard.type !== 'Personaje' || !player.hand.some(c => c.uid === cardInHand.uid)) return;
     
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
 
+    // The card from the board goes to hand, face up
     player.hand.push({ ...boardCard, isFaceUp: true });
     
+    // The card from hand goes to board, face up
     const newBoardCard = { ...playedCard, isFaceUp: true };
     player.board[r][c] = newBoardCard;
 
@@ -419,6 +480,7 @@ export const passTurn = produce((draft: GameState, playerId: number) => {
 export const clearExplosion = produce((draft: GameState) => {
   if (!draft.explodingCard) return;
   const { playerId, r, c } = draft.explodingCard;
+  // This action now triggers the resolution after the animation.
   return resolveExplosion(draft, playerId, r, c);
 });
 
@@ -430,5 +492,3 @@ export const clearDrawnCard = produce((draft: GameState) => {
   draft.lastDrawnCardId = null;
   draft.showDrawAnimation = false;
 });
-
-    

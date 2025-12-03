@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -36,8 +37,8 @@ const TAB_META: Record<TabId, { label: string; desc: string }> = {
     desc: 'Modo principal donde jugás partidas ranked 1 vs 1.',
   },
   collection: {
-    label: 'Colección',
-    desc: 'Muy pronto vas a poder mejorar y personalizar tus cartas.',
+    label: 'Cartas',
+    desc: 'Aquí podés ver tu mazo actual, mejorar tus cartas y explorar tu colección.',
   },
   shop: {
     label: 'Tienda',
@@ -164,7 +165,6 @@ export default function MobileLobby({
     }
 
     if (activeTab === 'collection') {
-      // sin AnimatePresence, sin motion envolviendo todo
       return (
         <div className="h-full -mx-3">
           <MobileCollection />
