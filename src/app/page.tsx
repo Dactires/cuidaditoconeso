@@ -102,6 +102,16 @@ export default function GamePage() {
   
   }, [currentPlayerIndex, turnPhase, rivalPlayer, dispatch, gameOver, initialized]);
 
+  // Human player auto-draw
+  useEffect(() => {
+    if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN') return;
+
+    const timer = setTimeout(() => {
+      dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
+    }, 500); // Small delay for effect
+
+    return () => clearTimeout(timer);
+  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId]);
 
   useEffect(() => {
     if (targetBoardPos && selectedHandCard && currentPlayer) {
@@ -216,9 +226,7 @@ export default function GamePage() {
   const handleAction = (action: GameAction['type']) => {
     if (gameOver || currentPlayerIndex !== humanPlayerId) return;
 
-    if (action === 'START_TURN') {
-      dispatch({ type: 'START_TURN', payload: { player_id: humanPlayer.id } });
-    } else if (action === 'PASS_TURN') {
+    if (action === 'PASS_TURN') {
       dispatch({ type: 'PASS_TURN', payload: { player_id: humanPlayer.id } });
       setSelectedHandCard(null);
       setTargetBoardPos(null);
@@ -295,10 +303,10 @@ export default function GamePage() {
         </div>
 
         {/* COLUMNA CENTRAL - TABLEROS */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-8">
             {/* Game Status */}
             {gameMessage && (
-                <div className="text-primary-foreground text-center text-lg font-semibold px-4 py-2 bg-black/40 rounded-lg shadow-inner flex items-center gap-2">
+                <div className="text-primary-foreground text-center text-lg font-semibold px-4 py-2 bg-black/40 rounded-lg shadow-inner flex items-center gap-2 h-12">
                     <Info className="w-5 h-5 flex-shrink-0" />
                     <span>{gameMessage}</span>
                 </div>
@@ -306,7 +314,6 @@ export default function GamePage() {
             
           {/* Rival Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-primary-foreground font-bold text-base">Jugador 2 (Rival IA) - Puntaje: {rivalPlayerScore}</span>
             <GameBoard 
               board={rivalPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
@@ -317,7 +324,6 @@ export default function GamePage() {
 
           {/* Player Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-primary-foreground font-bold text-base">Jugador 1 (Tú) - Puntaje: {humanPlayerScore}</span>
             <GameBoard 
               board={humanPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
@@ -329,9 +335,7 @@ export default function GamePage() {
           {/* Acciones */}
           <div className="flex flex-wrap justify-center items-center gap-2 text-xs h-10">
             {turnPhase === 'START_TURN' && currentPlayerIndex === humanPlayerId && (
-                <Button size="sm" onClick={() => handleAction('START_TURN')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
-                    Robar Carta
-                </Button>
+              <p className="text-center font-semibold text-accent">Robando carta...</p>
             )}
             {turnPhase === 'REVEAL_CARD' && currentPlayerIndex === humanPlayerId && (
                 <p className="text-center font-semibold text-accent">Revela una carta de tu tablero.</p>

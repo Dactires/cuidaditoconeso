@@ -18,12 +18,7 @@ export type GameAction =
   | { type: 'CLEAR_EXPLOSION' };
 
 const getInitialState = (numPlayers: number): GameState => ({
-  players: Array.from({ length: numPlayers }, (_, i) => ({
-    id: i,
-    hand: [],
-    board: Array(3).fill(null).map(() => Array(3).fill(null)),
-    score: 0,
-  })),
+  players: [],
   deck: [],
   discardPile: [],
   currentPlayerIndex: 0,
@@ -31,7 +26,7 @@ const getInitialState = (numPlayers: number): GameState => ({
   winner: null,
   finalScores: [],
   isForcedToPlay: false,
-  gameMessage: 'Loading game...',
+  gameMessage: 'Cargando partida...',
   turnPhase: 'START_TURN',
   finalTurnCounter: -1,
   lastRevealedCard: null,
@@ -72,8 +67,7 @@ export function useGame(numPlayers: number) {
     const [initialized, setInitialized] = useState(false);
   
     useEffect(() => {
-      // Initialize game only on the client side to avoid hydration issues
-      if (typeof window !== 'undefined' && !initialized) {
+      if (!initialized) {
         dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers } });
         setInitialized(true);
       }
