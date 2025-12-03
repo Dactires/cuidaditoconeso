@@ -35,13 +35,14 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     const deck: Card[] = [];
     
     const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
-  
+
     // Create character cards
     for (const color of COLORS) {
-      const defId = cardDefinitions.find(d => d.kind === 'color' && d.shortLabel.toLowerCase() === color.toLowerCase())?.id;
-      const def = defId ? cardDefMap.get(defId) : undefined;
       for (const value of CHARACTER_VALUES) {
           for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+            // Find the definition for the current color.
+            // This is safer than relying on array order.
+            const def = cardDefinitions.find(d => d.kind === 'color' && d.label.toLowerCase().includes(color.toLowerCase()));
             deck.push({
               uid: generateCardId(),
               type: 'Personaje',
@@ -199,10 +200,12 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   if (draft.deck.length > 0) {
     const newCard = draft.deck.pop()!;
     const drawnCardId = generateCardId(); // generate a temporary unique id for animation
-    newCard.isFaceUp = true;
-    newCard.uid = drawnCardId; // assign it for tracking
+    
+    // Create a new card object for the hand
+    const handCard = { ...newCard, uid: drawnCardId, isFaceUp: true };
     draft.lastDrawnCardId = drawnCardId;
-    player.hand.push(newCard);
+    player.hand.push(handCard);
+
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
     draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;
@@ -272,13 +275,13 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
 
     if (cardInHand.type !== 'Personaje' || !player.hand.some(c => c.uid === cardInHand.uid) || (targetCard && targetCard.isFaceUp)) return;
     
-    if(targetCard) draft.discardPile.push(targetCard);
+    if(targetCard) draft.discardPile.push({...targetCard});
     
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
     
-    playedCard.isFaceUp = true;
-    player.board[r][c] = playedCard;
+    const newBoardCard = { ...playedCard, isFaceUp: true };
+    player.board[r][c] = newBoardCard;
     player.score = getBoardScore(player.board);
 
     checkEndGame(draft);
@@ -295,13 +298,14 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     
     if (!player.hand.some(c => c.uid === cardInHand.uid) || (targetCard && targetCard.isFaceUp)) return;
 
-    if(targetCard) draft.discardPile.push(targetCard);
+    if(targetCard) draft.discardPile.push({...targetCard});
 
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
     
-    playedCard.isFaceUp = false;
-    rival.board[r][c] = playedCard;
+    // Create a new card object for the rival's board, ensuring it's face down.
+    const newBoardCard = { ...playedCard, isFaceUp: false };
+    rival.board[r][c] = newBoardCard;
 
     draft.lastRivalMove = { playerId: rival.id, r, c };
     
@@ -318,10 +322,13 @@ export const swapCard = produce((draft: GameState, playerId: number, r: number, 
     const handCardIndex = player.hand.findIndex(c => c.uid === cardInHand.uid);
     const [playedCard] = player.hand.splice(handCardIndex, 1);
 
-    player.hand.push(boardCard);
+    // Make a copy of the board card for the hand
+    player.hand.push({ ...boardCard, isFaceUp: true });
     
-    playedCard.isFaceUp = true;
-    player.board[r][c] = playedCard;
+    // Place a copy of the hand card on the board
+    const newBoardCard = { ...playedCard, isFaceUp: true };
+    player.board[r][c] = newBoardCard;
+
     player.score = getBoardScore(player.board);
     
     checkEndGame(draft);
