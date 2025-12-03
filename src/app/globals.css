@@ -103,26 +103,23 @@
   
   @keyframes explode-card {
     0% {
-      transform: scale(1.05) rotate(-2deg);
-      opacity: 1;
-    }
-    20% {
-      transform: scale(1.4) rotate(3deg);
+      transform: scale(1) rotate(0deg);
       opacity: 1;
     }
     40% {
-        transform: scale(1.2) rotate(-3deg);
-        opacity: 1;
+      transform: scale(2) rotate(-5deg);
+      opacity: 1;
     }
     100% {
-      transform: scale(0) rotate(15deg);
+      transform: scale(0) rotate(10deg);
       opacity: 0;
     }
   }
 
   .animate-explode {
     position: relative;
-    animation: explode-card 0.9s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+    z-index: 10;
+    animation: explode-card 0.6s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
   }
 
   @keyframes rival-play {

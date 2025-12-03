@@ -78,35 +78,8 @@ export default function GameCard({
   explodingCardInfo,
 }: GameCardProps) {
 
-  const [showTimer, setShowTimer] = React.useState(false);
   const cardToRender = isExploding && explodingCardInfo ? explodingCardInfo.card : card;
-  const cardIsBomb = cardToRender?.type === 'Bomba';
   const showFace = cardToRender?.isFaceUp ?? false;
-
-
-  React.useEffect(() => {
-    let timerTimeout: NodeJS.Timeout | null = null;
-    let clearTimerTimeout: NodeJS.Timeout | null = null;
-    
-    if (showFace && cardIsBomb) {
-      // Short delay to show the bomb image first
-      timerTimeout = setTimeout(() => {
-        setShowTimer(true);
-        // Duration of the timer itself
-        clearTimerTimeout = setTimeout(() => {
-          setShowTimer(false);
-        }, 650);
-      }, 250); 
-    } else {
-      setShowTimer(false);
-    }
-
-    return () => {
-      if (timerTimeout) clearTimeout(timerTimeout);
-      if (clearTimerTimeout) clearTimeout(clearTimerTimeout);
-    };
-  }, [showFace, cardIsBomb]);
-
 
   if (!cardToRender) {
     return (
@@ -135,36 +108,6 @@ export default function GameCard({
     }
 
     // FRONT OF THE CARD
-
-    // If it's a bomb and the timer is active, show the timer overlay
-    if (finalCard.type === 'Bomba' && showTimer) {
-        return (
-             <>
-                {finalCard.imageUrl && (
-                    <Image src={finalCard.imageUrl} alt="Imagen de una bomba" fill className="object-cover" priority />
-                )}
-                <motion.div
-                    key="timer"
-                    className="absolute inset-0 flex items-center justify-center bg-black/60"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.1 }}
-                >
-                    <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.1 }}
-                    >
-                    <Clock className="w-1/2 h-1/2 text-amber-300 animate-ping" />
-                    </motion.div>
-                </motion.div>
-             </>
-        )
-    }
-
-    // Otherwise, show the normal card front (bomb or character)
     return (
       <>
         {finalCard.imageUrl ? (
