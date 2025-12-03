@@ -119,7 +119,7 @@ export default function GamePage() {
   const isMobile = useIsMobile();
   const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation, cardsToRefill } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -155,6 +155,20 @@ export default function GamePage() {
     }, 650); // Delay to show the bomb card art
     return () => clearTimeout(timer);
   }, [lastRevealedBomb, dispatch, playBomb, playFlip]);
+
+    // Animate board refills
+    useEffect(() => {
+      if (cardsToRefill.length > 0) {
+        cardsToRefill.forEach((slot, index) => {
+          setTimeout(() => {
+            dispatch({
+              type: 'REFILL_BOARD_SLOT',
+              payload: { playerId: slot.playerId, r: slot.r, c: slot.c },
+            });
+          }, index * 150); // Staggered animation
+        });
+      }
+    }, [cardsToRefill, dispatch]);
 
   // AI Logic Trigger
   useEffect(() => {

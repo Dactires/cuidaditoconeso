@@ -137,6 +137,7 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     lastDrawnCardId: null,
     lastRevealedBomb: null,
     showDrawAnimation: false,
+    cardsToRefill: [],
   };
 }
 
@@ -250,48 +251,52 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
 
     if (!explodingCard || explodingCard.type !== 'Bomba') return;
 
-    // Set the exploding card info, which now includes the card data itself for the animation
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
-    draft.lastRevealedBomb = null; // Clear the trigger
+    draft.lastRevealedBomb = null;
 
     const coordsToReplace = new Set<string>();
-
-    // The center card (the bomb) is always replaced
     coordsToReplace.add(`${r},${c}`);
 
-    // Check adjacent cards (up, down, left, right)
     const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
     for (const [ar, ac] of coordsToCheck) {
         if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
             const adjCard = player.board[ar][ac];
-            // Only face-up cards are destroyed by the blast
             if (adjCard && adjCard.isFaceUp) {
                 coordsToReplace.add(`${ar},${ac}`);
             }
         }
     }
 
-    // Replace all affected cards
     coordsToReplace.forEach(coord => {
         const [row, col] = coord.split(',').map(Number);
         const oldCard = player.board[row][col];
         if (oldCard) {
             draft.discardPile.push({ ...oldCard, isFaceUp: true });
         }
-        if (draft.deck.length > 0) {
-            const newCard = draft.deck.pop()!;
-            player.board[row][col] = { ...newCard, isFaceUp: false };
-        } else {
-            player.board[row][col] = null;
-        }
+        player.board[row][col] = null;
+        draft.cardsToRefill.push({ playerId, r: row, c: col });
     });
     
-    // Recalculate score after explosion and refilling
     player.score = getBoardScore(player.board);
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
 });
 
+export const refillBoardSlot = produce((draft: GameState, playerId: number, r: number, c: number) => {
+  const player = draft.players[playerId];
+  
+  if (draft.deck.length > 0) {
+    const newCard = draft.deck.pop()!;
+    player.board[r][c] = { ...newCard, isFaceUp: false };
+  } else {
+    player.board[r][c] = null;
+  }
+
+  // Remove the refilled slot from the list
+  draft.cardsToRefill = draft.cardsToRefill.filter(
+    slot => !(slot.playerId === playerId && slot.r === r && slot.c === c)
+  );
+});
 
 export const playCardOwnBoard = produce((draft: GameState, playerId: number, cardInHand: Card, r: number, c: number) => {
     if (draft.turnPhase !== 'ACTION' || draft.currentPlayerIndex !== playerId) return;

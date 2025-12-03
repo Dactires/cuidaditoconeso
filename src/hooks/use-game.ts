@@ -20,7 +20,8 @@ export type GameAction =
   | { type: 'CLEAR_EXPLOSION' }
   | { type: 'CLEAR_RIVAL_MOVE' }
   | { type: 'CLEAR_DRAWN_CARD' }
-  | { type: 'TRIGGER_EXPLOSION'; payload: { playerId: number; r: number; c: number }};
+  | { type: 'TRIGGER_EXPLOSION'; payload: { playerId: number; r: number; c: number } }
+  | { type: 'REFILL_BOARD_SLOT', payload: { playerId: number, r: number, c: number } };
 
 const getInitialState = (numPlayers: number): GameState => ({
   players: [],
@@ -40,6 +41,7 @@ const getInitialState = (numPlayers: number): GameState => ({
   lastDrawnCardId: null,
   lastRevealedBomb: null,
   showDrawAnimation: false,
+  cardsToRefill: [],
 });
 
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -52,6 +54,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         return Game.revealCard(state, action.payload.player_id, action.payload.r, action.payload.c);
     case 'TRIGGER_EXPLOSION':
       return Game.triggerExplosion(state, action.payload.playerId, action.payload.r, action.payload.c);
+    case 'REFILL_BOARD_SLOT':
+      return Game.refillBoardSlot(state, action.payload.playerId, action.payload.r, action.payload.c);
     case 'PLAY_CARD_OWN':
       return Game.playCardOwnBoard(state, action.payload.player_id, action.payload.card_in_hand, action.payload.target_r, action.payload.target_c);
     case 'PLAY_CARD_RIVAL':
