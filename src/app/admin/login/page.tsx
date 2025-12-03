@@ -38,17 +38,25 @@ export default function AdminLoginPage() {
 
   React.useEffect(() => {
     async function checkAdmin() {
-        if (user) {
-            const token = await user.getIdTokenResult();
-            if (token.claims.superadmin) {
-                router.push('/admin/dashboard'); // Redirige al dashboard de admin si ya es admin
-            }
+      if (user) {
+        const token = await user.getIdTokenResult();
+        if (token.claims.superadmin) {
+          router.push('/admin/dashboard'); // Redirige al dashboard de admin si ya es admin
+        } else {
+            // Si el usuario no es superadmin, cierra la sesión para permitir el login de admin.
+            await auth.signOut();
+            toast({
+                variant: 'destructive',
+                title: 'Acceso Denegado',
+                description: 'La sesión actual no tiene permisos de superadmin. Por favor, inicie sesión con una cuenta de administrador.',
+            });
         }
+      }
     }
     if (!isUserLoading) {
-        checkAdmin();
+      checkAdmin();
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, auth, toast]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -81,10 +89,19 @@ export default function AdminLoginPage() {
     }
   }
 
-  if (isUserLoading || user) {
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="comic-title text-2xl animate-pulse">Verificando...</p>
+      </div>
+    );
+  }
+
+  // Si hay un usuario pero aún no se ha redirigido, se muestra la pantalla de carga para evitar un parpadeo
+  if (user) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="comic-title text-2xl animate-pulse">Redirigiendo...</p>
       </div>
     );
   }
