@@ -319,7 +319,6 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     explodingCard: null,
     lastRivalMove: null,
     lastDrawnCardId: null,
-    lastRevealedBomb: null,
     showDrawAnimation: false,
     refillingSlots: [],
     tempReveal: null,
@@ -327,23 +326,44 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
-    // 1) NUEVA REGLA: tablero lleno de cartas boca arriba
+    // 1) NUEVA REGLA: tablero lleno de personajes
     let gameShouldEnd = false;
 
     for (const player of draft.players) {
         const board = player.board.flat();
-        if (board.every(card => card !== null && card.isFaceUp)) {
+        const isFullOfCharacters = board.every(card => card !== null && card.type === "Personaje");
+        if (isFullOfCharacters) {
             gameShouldEnd = true;
             break;
         }
     }
 
     if (gameShouldEnd && draft.finalTurnCounter === -1) {
-        draft.finalTurnCounter = draft.players.length; // Cada jugador tiene un último turno
-        draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
+        // Final inmediato por tablero lleno de personajes
+        draft.gameOver = true;
+        draft.turnPhase = 'GAME_OVER';
+
+        draft.players.forEach(p => {
+          p.score = getBoardScore(p.board);
+        });
+        draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
+
+        const scores = draft.players.map(p => p.score);
+        const maxScore = Math.max(...scores);
+        const winners = draft.players.filter(p => p.score === maxScore);
+
+        if (winners.length > 1) {
+            draft.winner = null;
+            draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
+        } else {
+            draft.winner = winners[0];
+            const winnerName = winners[0].id === 0 ? "Jugador 1 (Tú)" : `Rival (IA)`;
+            draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
+        }
+        return; // importante: no seguimos con la lógica de ronda final
     }
 
-    // 2) Lógica de ronda final
+    // 2) Lógica de ronda final por mazo vacío
     if (draft.finalTurnCounter === 0 && !draft.gameOver) {
         draft.gameOver = true;
         draft.turnPhase = 'GAME_OVER';
@@ -422,6 +442,18 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
 });
 
 export const revealCard = produce((draft: GameState, playerId: number, r: number, c: number) => {
+    // Only the current player can reveal cards, unless it's a temp reveal from an ability
+    if (draft.turnPhase !== 'REVEAL_CARD' && draft.currentPlayerIndex !== playerId) {
+      // Allow reveal if it's a temp ability trigger, but don't change game state
+      const player = draft.players[playerId];
+      const card = player.board[r][c];
+      if (card && !card.isFaceUp) {
+        card.isFaceUp = true;
+        draft.lastRevealedCard = { playerId, r, c, card: { ...card } };
+      }
+      return;
+    }
+    
     if (draft.turnPhase !== 'REVEAL_CARD' || draft.currentPlayerIndex !== playerId) return;
 
     const player = draft.players[playerId];
@@ -434,7 +466,8 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     draft.explodingCard = null;
 
     if (card.type === 'Bomba') {
-        draft.lastRevealedBomb = { playerId, r, c, cardUid: card.uid };
+        // Trigger explosion immediately in the state
+        draft.explodingCard = { playerId, r, c, card: { ...card } };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
     } else {
         player.score = getBoardScore(player.board);
@@ -448,20 +481,17 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
     const player = draft.players[playerId];
     const explodingCard = player.board[r][c];
-    if (!explodingCard || explodingCard.type !== 'Bomba') return;
+    if (!explodingCard) return; // Card might already be removed by resolveExplosion
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
-    draft.lastRevealedBomb = null;
 });
 
 export const resolveExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
   const player = draft.players[playerId];
   const centerCard = player.board[r][c];
 
-  if (!centerCard || centerCard.type !== 'Bomba') {
-      draft.explodingCard = null;
-      return;
-  };
+  if (!centerCard) return; // Already resolved
 
+  // Discard the bomb itself
   player.discardPile.push({ ...centerCard, isFaceUp: true });
   player.board[r][c] = null;
 
@@ -612,6 +642,9 @@ export const hideTempReveal = produce((
 ) => {
   const { playerId, r, c, cardUid } = payload;
   const player = draft.players[playerId];
+  
+  if (!draft.tempReveal || draft.tempReveal.cardUid !== cardUid) return;
+
   const card = player.board[r][c];
 
   if (card && card.uid === cardUid) {

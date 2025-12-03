@@ -22,13 +22,10 @@ export type GameAction =
   | { type: 'CLEAR_RIVAL_MOVE' }
   | { type: 'CLEAR_DRAWN_CARD' }
   | { type: 'TRIGGER_EXPLOSION'; payload: { playerId: number; r: number; c: number } }
-  | { type: 'HIDE_TEMP_REVEAL'; payload: { playerId: number; r: number; c: number; cardUid: string } }
-  | { type: 'FINISH_REFILL_ANIMATION'; payload: { playerId: number; r: number; c: number; card: Card }};
+  | { type: 'HIDE_TEMP_REVEAL'; payload: { playerId: number; r: number; c: number; cardUid: string } };
 
 const getInitialState = (numPlayers: number): GameState => ({
   players: [],
-  deck: [],
-  discardPile: [],
   currentPlayerIndex: 0,
   gameOver: false,
   winner: null,
@@ -41,7 +38,6 @@ const getInitialState = (numPlayers: number): GameState => ({
   explodingCard: null,
   lastRivalMove: null,
   lastDrawnCardId: null,
-  lastRevealedBomb: null,
   showDrawAnimation: false,
   refillingSlots: [],
 });
@@ -75,8 +71,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       if (!state.explodingCard) return state;
       const { playerId, r, c } = state.explodingCard;
       return Game.resolveExplosion(state, playerId, r, c);
-    case 'FINISH_REFILL_ANIMATION':
-        return Game.finishRefillAnimation(state, action.payload);
     case 'CLEAR_RIVAL_MOVE':
       return Game.clearRivalMove(state);
     case 'CLEAR_DRAWN_CARD':

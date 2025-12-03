@@ -134,7 +134,7 @@ export default function GamePage() {
   const [showDeckAnimation, setShowDeckAnimation] = useState(false);
 
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -150,26 +150,25 @@ export default function GamePage() {
   // Sound effects trigger
   useEffect(() => {
     if (lastRevealedCard) {
-      if (lastRevealedCard.card.type !== 'Bomba') {
-        playFlip();
-      }
+        if (lastRevealedCard.card.type !== 'Bomba') {
+            playFlip();
+        }
     }
   }, [lastRevealedCard, playFlip]);
 
   // When a bomb is revealed, first show it, then trigger explosion
   useEffect(() => {
-    if (!lastRevealedBomb) return;
-    playFlip(); // Play flip sound for the bomb reveal
-    const { playerId, r, c } = lastRevealedBomb;
-    const timer = setTimeout(() => {
-      playBomb(); // Play bomb sound with the explosion
-      dispatch({
-        type: 'TRIGGER_EXPLOSION',
-        payload: { playerId, r, c },
-      });
-    }, 650); // Delay to show the bomb card art
-    return () => clearTimeout(timer);
-  }, [lastRevealedBomb, dispatch, playBomb, playFlip]);
+      if (!explodingCard) return;
+      playFlip(); // Play flip sound for the bomb reveal
+      const { playerId, r, c } = explodingCard;
+      const timer = setTimeout(() => {
+          playBomb(); // Play bomb sound with the explosion
+          dispatch({
+              type: 'CLEAR_EXPLOSION',
+          });
+      }, 650); // Delay to show the bomb card art
+      return () => clearTimeout(timer);
+  }, [explodingCard, dispatch, playBomb, playFlip]);
   
   // Refill animation controller
   useEffect(() => {
@@ -303,16 +302,6 @@ export default function GamePage() {
       setTargetBoardPos(null);
     }
   }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer]);
-
-  // Clear explosion animation state
-  useEffect(() => {
-    if (explodingCard) {
-      const timer = setTimeout(() => {
-        dispatch({ type: 'CLEAR_EXPLOSION' });
-      }, 900); // Corresponds to animation duration
-      return () => clearTimeout(timer);
-    }
-  }, [explodingCard, dispatch]);
 
   // Clear rival move animation state
   useEffect(() => {
