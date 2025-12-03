@@ -13,8 +13,9 @@ import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import { Button } from '@/components/ui/button';
-import { User, Bot, Layers, Archive, Info, Swords } from 'lucide-react';
+import { User, Bot, Layers, Archive, Info, Swords, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Selection = {
   card: CardType;
@@ -258,8 +259,28 @@ export default function GamePage() {
         isOpen={gameOver}
         winner={winner}
         scores={finalScores}
-        onClose={() => dispatch({ type: 'RESET_GAME' })}
+        onRestart={() => dispatch({ type: 'RESET_GAME' })}
+        onExit={() => router.push('/lobby')}
       />
+
+       {/* Botón de Salir */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-4 z-30 text-slate-400 hover:text-white hover:bg-slate-800/50"
+              onClick={() => router.push('/lobby')}
+            >
+              <LogOut className="h-6 w-6" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Abandonar Partida</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Indicador de turno arriba */}
       <AnimatePresence>
