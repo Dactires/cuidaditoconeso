@@ -84,11 +84,8 @@ export default function MobileLobby({
   const renderContent = () => {
     if (activeTab === 'battle') {
       return (
-        <motion.div
+        <div
           className="space-y-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
         >
           <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-2 pt-2 pb-3">
             <div className="flex items-center justify-between mb-1">
@@ -162,7 +159,7 @@ export default function MobileLobby({
             subtitle="Ganás un cofre especial al conseguir 3 victorias hoy."
             icon={<Sword className="w-5 h-5 text-amber-300" />}
           />
-        </motion.div>
+        </div>
       );
     }
 
@@ -177,11 +174,8 @@ export default function MobileLobby({
 
     // resto de pestañas en construcción
     return (
-      <motion.div
+      <div
         className="space-y-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
       >
         <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-3 py-6 flex flex-col items-center justify-center text-center gap-3">
           <motion.div
@@ -211,7 +205,7 @@ export default function MobileLobby({
           subtitle="Mientras terminamos esta sección, podés seguir sumando trofeos."
           icon={<Star className="w-5 h-5 text-sky-300" />}
         />
-      </motion.div>
+      </div>
     );
   };
 
@@ -281,7 +275,15 @@ export default function MobileLobby({
           ref={mainRef}
           className="flex-1 overflow-y-auto px-3 pb-2 no-scrollbar"
         >
-          {renderContent()}
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="h-full"
+          >
+            {renderContent()}
+          </motion.div>
         </main>
       </div>
 
