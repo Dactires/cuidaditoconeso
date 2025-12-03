@@ -18,6 +18,7 @@ interface GameCardProps {
   isDimmed?: boolean;
   isInHand?: boolean;
   isDisabled?: boolean;
+  cardBackImageUrl?: string;
 }
 
 const colorMap: { [key: string]: { bg: string; glow: string; text: string } } = {
@@ -76,6 +77,7 @@ export default function GameCard({
   isDimmed = false,
   isInHand = false,
   isDisabled = false,
+  cardBackImageUrl,
 }: GameCardProps) {
 
   const x = useMotionValue(0);
@@ -134,13 +136,19 @@ export default function GameCard({
       {!card.isFaceUp ? (
         <div className="w-full h-full rounded-2xl bg-[#0f172a] p-1 border-[3px] border-black shadow-[0_6px_0px_rgba(0,0,0,0.75)]">
             <div className="relative w-full h-full rounded-xl bg-sky-400 border-[3px] border-black overflow-hidden">
-                <div className="absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_1px_1px,#38bdf8_1px,transparent_0)] bg-[length:8px_8px]" />
-                <div className="relative h-full w-full flex flex-col items-center justify-center gap-1">
-                    <BombIcon className={cn("drop-shadow-[0_3px_0_#020617]", isMobile ? "w-6 h-6" : "w-8 h-8")} />
-                    <span className={cn("font-display tracking-[0.25em] uppercase text-slate-900 drop-shadow-[0_2px_0_#f9fafb]", isMobile ? "text-[8px]" : "text-xs")}>
-                        Board Bombers
-                    </span>
-                </div>
+               {cardBackImageUrl ? (
+                  <Image src={cardBackImageUrl} alt="Reverso de la carta" fill sizes="10vw" className="object-cover" />
+                ) : (
+                  <>
+                    <div className="absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_1px_1px,#38bdf8_1px,transparent_0)] bg-[length:8px_8px]" />
+                    <div className="relative h-full w-full flex flex-col items-center justify-center gap-1">
+                        <BombIcon className={cn("drop-shadow-[0_3px_0_#020617]", isMobile ? "w-6 h-6" : "w-8 h-8")} />
+                        <span className={cn("font-display tracking-[0.25em] uppercase text-slate-900 drop-shadow-[0_2px_0_#f9fafb]", isMobile ? "text-[8px]" : "text-xs")}>
+                            Board Bombers
+                        </span>
+                    </div>
+                  </>
+                )}
             </div>
         </div>
       ) : (
@@ -156,24 +164,19 @@ export default function GameCard({
           ) : null}
 
           <div className={cn("absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white", isMobile && "px-1 py-0.5 -top-1 -left-1")}>
-            <p className={cn("font-display tracking-[0.2em] uppercase", isMobile ? "text-[8px]" : "text-xs")}>
-              {card?.type === 'Bomba' ? 'Bomba' : card?.value}
+            <p className={cn("font-display tracking-[0.2em] uppercase", isMobile ? "text-lg" : "text-xl")}>
+              {card?.type === 'Bomba' ? <BombIcon className="w-4 h-4" /> : card?.value}
             </p>
           </div>
 
           {!card.imageUrl && (
-            <CardTitle className={cn("font-display font-black drop-shadow-[0_4px_0_#020617]", isMobile ? "text-5xl" : "text-6xl md:text-7xl")}>
+            <CardTitle className={cn("font-display font-black drop-shadow-[0_4px_0_#020617]", "text-6xl md:text-7xl")}>
               {card?.type === 'Bomba'
                 ? <BombIcon className={cn(isMobile ? "w-12 h-12" : "w-16 h-16")} />
                 : card?.value}
             </CardTitle>
           )}
 
-          <CardContent className={cn("px-2 py-0.5 absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 rounded-full border-[2px] border-white", isMobile && "px-1.5 py-0 -bottom-1")}>
-            <p className={cn("font-display tracking-[0.25em] uppercase text-amber-300", isMobile ? "text-[7px]" : "text-[10px]")}>
-              {card?.type}
-            </p>
-          </CardContent>
         </UICard>
       )}
     </motion.div>

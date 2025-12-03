@@ -75,10 +75,12 @@ const turnChipVariants = {
 const useCardDefinitionsWithImages = () => {
     const firestore = useFirestore();
     const [cardDefs, setCardDefs] = useState<GameCardDef[] | null>(null);
+    const [cardBackImageUrl, setCardBackImageUrl] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchCardImages = async () => {
+            if (!firestore) return;
             setLoading(true);
             const imageCollectionRef = collection(firestore, 'card-images');
             const imageSnapshot = await getDocs(imageCollectionRef);
@@ -92,6 +94,7 @@ const useCardDefinitionsWithImages = () => {
                 imageUrl: imageUrls.get(def.id) || undefined,
             }));
             
+            setCardBackImageUrl(imageUrls.get('card-back'));
             setCardDefs(enrichedDefs);
             setLoading(false);
         };
@@ -99,14 +102,14 @@ const useCardDefinitionsWithImages = () => {
         fetchCardImages();
     }, [firestore]);
 
-    return { cardDefs, loading };
+    return { cardDefs, cardBackImageUrl, loading };
 }
 
 
 export default function GamePage() {
   const { user, isUserLoading: isUserAuthLoading } = useUser();
   const router = useRouter();
-  const { cardDefs, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
+  const { cardDefs, cardBackImageUrl, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
   const { gameState, dispatch, initialized, resetGame } = useGame(2, cardDefs);
   const { playFlip, playBomb, playDeal } = useGameSounds();
   const { toast } = useToast();
@@ -426,6 +429,7 @@ export default function GamePage() {
                       isDisabled={!isHandCardSelectable(card)}
                       isInHand
                       isMobile={false}
+                      cardBackImageUrl={cardBackImageUrl}
                     />
                   </div>
                 ))}
@@ -470,6 +474,7 @@ export default function GamePage() {
                 }
                 isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+                cardBackImageUrl={cardBackImageUrl}
               />
             </div>
             
@@ -493,6 +498,7 @@ export default function GamePage() {
                 }
                 isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+                cardBackImageUrl={cardBackImageUrl}
               />
             </div>
           </div>
@@ -517,7 +523,7 @@ export default function GamePage() {
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Mazo</span>
                   <motion.div className="relative comic-card-slot">
-                    {deck.length > 0 && <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} />}
+                    {deck.length > 0 && <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />}
                      <AnimatePresence>
                         {lastDrawnCardId && (
                           <motion.div
@@ -528,7 +534,7 @@ export default function GamePage() {
                             exit={{ opacity: 0, scale: 0.8, y: -120 }}
                             transition={{ duration: 0.45, ease: [0.18, 0.89, 0.32, 1.28] }}
                           >
-                            <GameCard card={{ type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back-drawn' }} onClick={()=>{}} isInHand />
+                            <GameCard card={{ type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back-drawn' }} onClick={()=>{}} isInHand cardBackImageUrl={cardBackImageUrl} />
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -545,6 +551,7 @@ export default function GamePage() {
                       <GameCard
                         card={{ ...discardPile[discardPile.length - 1], isFaceUp: true }}
                         onClick={() => {}}
+                        cardBackImageUrl={cardBackImageUrl}
                       />
                     ) : (
                       <div className="w-full h-full rounded-xl border-2 border-dashed border-slate-700/70 bg-slate-900/40 flex items-center justify-center">
@@ -605,6 +612,7 @@ export default function GamePage() {
               isMobile
               isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+              cardBackImageUrl={cardBackImageUrl}
           />
         </div>
       </div>
@@ -645,6 +653,7 @@ export default function GamePage() {
               isMobile
               isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+              cardBackImageUrl={cardBackImageUrl}
           />
         </div>
          <div className="flex items-center justify-between w-full px-2 h-8">
@@ -692,6 +701,7 @@ export default function GamePage() {
                 isDisabled={!isHandCardSelectable(card)}
                 isInHand
                 isMobile
+                cardBackImageUrl={cardBackImageUrl}
               />
           </motion.div>
         ))}

@@ -1,5 +1,5 @@
 
-export type CardKind = "color" | "bomb" | "hero" | "power";
+export type CardKind = "color" | "bomb" | "hero" | "power" | "back";
 
 export type GameCardDef = {
   id: string;
@@ -15,6 +15,16 @@ export type GameCardDef = {
 };
 
 export const CARD_DEFINITIONS: GameCardDef[] = [
+  {
+    id: "card-back",
+    kind: "back",
+    label: "Reverso de la Carta",
+    shortLabel: "Reverso",
+    colorClass: "bg-slate-500",
+    ribbonClass: "bg-slate-700",
+    value: "B",
+    description: "Esta es la imagen que se mostrará en el dorso de todas las cartas del juego cuando estén boca abajo.",
+  },
   {
     id: "color-red",
     kind: "color",

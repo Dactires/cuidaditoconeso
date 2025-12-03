@@ -15,6 +15,7 @@ interface GameBoardProps {
   isMobile?: boolean;
   isDimmed?: boolean;
   lastRivalMove?: Pos;
+  cardBackImageUrl?: string;
 }
 
 /**
@@ -28,6 +29,7 @@ export default function GameBoard({
   isMobile,
   isDimmed,
   lastRivalMove,
+  cardBackImageUrl,
 }: GameBoardProps) {
   return (
     <div
@@ -74,6 +76,7 @@ export default function GameBoard({
                   isRivalMove={isRivalMove}
                   isMobile={isMobile}
                   isDisabled={isDimmed}
+                  cardBackImageUrl={cardBackImageUrl}
                 />
               </div>
             );
