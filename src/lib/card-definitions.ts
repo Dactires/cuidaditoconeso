@@ -26,7 +26,7 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     description: "Esta es la imagen que se mostrará en el dorso de todas las cartas del juego cuando estén boca abajo.",
   },
   {
-    id: "color-red",
+    id: "color-rojo",
     kind: "color",
     label: "Personaje Rojo",
     shortLabel: "Rojo",
@@ -37,7 +37,7 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
       "Los personajes rojos van del número 1 al 5 en el mazo. Por ahora solo está disponible el nivel 1.",
   },
   {
-    id: "color-blue",
+    id: "color-azul",
     kind: "color",
     label: "Personaje Azul",
     shortLabel: "Azul",
@@ -48,7 +48,7 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
       "Los personajes azules van del número 1 al 5 en el mazo. Próximamente vas a poder subirlos de nivel.",
   },
   {
-    id: "color-green",
+    id: "color-verde",
     kind: "color",
     label: "Personaje Verde",
     shortLabel: "Verde",
