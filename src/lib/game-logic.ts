@@ -173,6 +173,7 @@ const triggerAbilities = (
     case "DISCARD_NEIGHBOR": {
       const pos = findCardPosition(currentPlayer.board, playedCard.uid);
       if (!pos) break;
+
       const dir = ability.params?.direction || "RIGHT";
       const targetC = dir === "RIGHT" ? pos.c + 1 : pos.c - 1;
       const targetR = pos.r;
@@ -185,15 +186,15 @@ const triggerAbilities = (
         if (neighbor) {
           currentPlayer.discardPile.push({ ...neighbor, isFaceUp: true });
           currentPlayer.board[targetR][targetC] = null;
-          
-          // Refill the slot
+
+          // Rellenar inmediatamente
           if (ensurePlayerDeckHasCards(currentPlayer, 1)) {
-              const newCard = currentPlayer.deck.pop()!;
-              draft.refillingSlots.push({ playerId: currentPlayer.id, r: targetR, c: targetC, card: newCard });
+            const newCard = currentPlayer.deck.pop()!;
+            currentPlayer.board[targetR][targetC] = { ...newCard, isFaceUp: false };
           }
         }
       }
-      draft.gameMessage = `¡${playedCard.ability.name}! Descartaste una carta y se repone tu tablero.`;
+      draft.gameMessage = `¡${playedCard.ability.name}! Descartaste una carta y se repuso tu tablero.`;
       break;
     }
 
@@ -326,63 +327,72 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
-    // 1) End condition: A board is filled with face-up character cards
-    let gameShouldEnd = false;
-    for (const player of draft.players) {
-        const boardIsFullOfCharacters = player.board
-            .flat()
-            .every(card => card?.type === 'Personaje' && card.isFaceUp);
-        if (boardIsFullOfCharacters) {
-            gameShouldEnd = true;
-            break;
-        }
+  // 1) NUEVA REGLA: tablero lleno de personajes boca arriba
+  let someoneHasFullCharacters = false;
+  for (const player of draft.players) {
+    const isFullOfCharacters = player.board
+      .flat()
+      .every(
+        (card) =>
+          card !== null && card.type === 'Personaje' && card.isFaceUp
+      );
+    if (isFullOfCharacters) {
+      someoneHasFullCharacters = true;
+      break;
+    }
+  }
+
+  if (someoneHasFullCharacters) {
+    // Final inmediato por tablero lleno de personajes
+    draft.gameOver = true;
+    draft.turnPhase = 'GAME_OVER';
+
+    draft.players.forEach((p) => {
+      p.score = getBoardScore(p.board);
+    });
+    draft.finalScores = draft.players.map((p) => ({ id: p.id, score: p.score }));
+
+    const maxScore = Math.max(...draft.finalScores.map((s) => s.score));
+    const winners = draft.players.filter((p) => p.score === maxScore);
+
+    if (winners.length > 1) {
+      draft.winner = null; // Tie
+      draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
+    } else {
+      draft.winner = winners[0];
+      const winnerName =
+        winners[0].id === 0 ? 'Jugador 1 (Tú)' : `Rival (IA)`;
+      draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
     }
 
-    if (gameShouldEnd) {
-        draft.gameOver = true;
-        draft.turnPhase = 'GAME_OVER';
-        draft.players.forEach(p => {
-            p.score = getBoardScore(p.board);
-        });
-        draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
+    return; // importante: no seguimos con la lógica de ronda final
+  }
 
-        const maxScore = Math.max(...draft.finalScores.map(s => s.score));
-        const winners = draft.players.filter(p => p.score === maxScore);
-        
-        if (winners.length > 1) {
-            draft.winner = null; // Tie
-            draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
-        } else {
-            draft.winner = winners[0];
-            const winnerName = winners[0].id === 0 ? "Jugador 1 (Tú)" : `Rival (IA)`;
-            draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
-        }
-        return; // Exit early as the game is over
+  // 2) si querés mantener tu lógica de ronda final por mazo vacío,
+  // dejá abajo tu código de finalTurnCounter.
+  if (draft.finalTurnCounter === 0 && !draft.gameOver) {
+    draft.gameOver = true;
+    draft.turnPhase = 'GAME_OVER';
+
+    draft.players.forEach((p) => {
+      p.score = getBoardScore(p.board);
+    });
+    draft.finalScores = draft.players.map((p) => ({ id: p.id, score: p.score }));
+
+    const scores = draft.players.map((p) => p.score);
+    const maxScore = Math.max(...scores);
+    const winners = draft.players.filter((p) => p.score === maxScore);
+
+    if (winners.length > 1) {
+      draft.winner = null;
+      draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
+    } else {
+      draft.winner = winners[0];
+      const winnerName =
+        winners[0].id === 0 ? 'Jugador 1 (Tú)' : `Rival (IA)`;
+      draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana!`;
     }
-
-    // 2) End condition: Final turn counter reaches zero due to depleted deck
-    if (draft.finalTurnCounter === 0 && !draft.gameOver) {
-        draft.gameOver = true;
-        draft.turnPhase = 'GAME_OVER';
-
-        draft.players.forEach(p => {
-            p.score = getBoardScore(p.board);
-        });
-        draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
-
-        const scores = draft.players.map(p => p.score);
-        const maxScore = Math.max(...scores);
-        const winners = draft.players.filter(p => p.score === maxScore);
-
-        if (winners.length > 1) {
-            draft.winner = null;
-            draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
-        } else {
-            draft.winner = winners[0];
-            const winnerName = winners[0].id === 0 ? "Jugador 1 (Tú)" : `Rival (IA)`;
-            draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana!`;
-        }
-    }
+  }
 };
 
 function nextTurn(state: GameState): GameState {
@@ -474,15 +484,19 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
   const player = draft.players[playerId];
   const centerCard = player.board[r][c];
 
-  if (!centerCard) return; // Already resolved
+  if (!centerCard || centerCard.type !== 'Bomba') {
+    draft.explodingCard = null;
+    return;
+  }
 
-  // Discard the bomb itself
+  // 1) Descarta la bomba
   player.discardPile.push({ ...centerCard, isFaceUp: true });
   player.board[r][c] = null;
 
   const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
   const positionsToRefill: { r: number; c: number }[] = [{ r, c }];
 
+  // 2) Descarta SOLO adyacentes volteados
   for (const [ar, ac] of coordsToCheck) {
     if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
       const adjCard = player.board[ar][ac];
@@ -493,18 +507,19 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
       }
     }
   }
-  
+
+  // 3) Rellena inmediatamente con cartas boca abajo
   ensurePlayerDeckHasCards(player, positionsToRefill.length);
-  draft.refillingSlots = [];
-  positionsToRefill.forEach(pos => {
+  for (const pos of positionsToRefill) {
     if (player.deck.length > 0) {
       const newCard = player.deck.pop()!;
-      draft.refillingSlots.push({ playerId: playerId, r: pos.r, c: pos.c, card: newCard });
+      player.board[pos.r][pos.c] = { ...newCard, isFaceUp: false };
     }
-  });
+  }
 
   player.score = getBoardScore(player.board);
   draft.explodingCard = null;
+  draft.refillingSlots = []; // ya no lo usás para la bomba
   draft.turnPhase = 'ACTION';
   draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
   checkEndGame(draft);
@@ -549,8 +564,7 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     
     triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
 
-    // Do NOT check for endgame here, as abilities might reveal cards temporarily
-    // checkEndGame(draft); 
+    checkEndGame(draft);
     if (!draft.gameOver) {
       return nextTurn(draft);
     }
@@ -643,3 +657,4 @@ export const hideTempReveal = produce((
   }
   draft.tempReveal = null;
 });
+
