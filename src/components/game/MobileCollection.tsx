@@ -19,10 +19,8 @@ type SelectedCard = GameCardDef | null;
 export default function MobileCollection() {
   const [selected, setSelected] = useState<SelectedCard>(null);
 
-  const deck = CARD_DEFINITIONS;
-  const collectionUnlocked = CARD_DEFINITIONS.filter(
-    (c) => c.kind === "color"
-  );
+  const deck = CARD_DEFINITIONS.filter(def => def.kind === 'character' || def.kind === 'bomb' || def.kind === 'hero' || def.kind === 'power');
+  const collectionUnlocked = CARD_DEFINITIONS.filter(c => c.kind === "character");
   const collectionLocked = LOCKED_PLACEHOLDERS;
 
   return (
@@ -31,7 +29,7 @@ export default function MobileCollection() {
       <section className="px-3 pt-1 pb-2">
         <div className="flex items-baseline justify-between mb-1">
           <h2 className="comic-title text-white text-sm tracking-[0.22em]">
-            MAZO (8 / 8)
+            MAZO ({deck.length} / {deck.length})
           </h2>
           <span className="text-[10px] text-slate-300 font-mono">
             Toque una carta para ver detalles
@@ -95,12 +93,12 @@ function CardDetailModal({
   card: GameCardDef;
   onClose: () => void;
 }) {
-  const currentLevel = card.kind === "color" ? 1 : 1;
-  const maxLevel = card.kind === "color" ? 5 : 1;
-  const hasLevels = card.kind === "color";
+  const currentLevel = card.kind === "character" ? 1 : 1;
+  const maxLevel = card.kind === "character" ? 5 : 1;
+  const hasLevels = card.kind === "character";
 
   const ribbonText =
-    card.kind === "color"
+    card.kind === "character"
       ? card.shortLabel
       : card.kind === "bomb"
       ? "BOMBA"
@@ -285,7 +283,7 @@ function DeckCard({
             baseTextColor
           )}
         >
-          {card.kind === "color"
+          {card.kind === "character"
             ? card.shortLabel
             : card.kind === "bomb"
             ? "BOMBA"

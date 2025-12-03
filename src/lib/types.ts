@@ -1,4 +1,5 @@
 
+
 export interface Card {
   uid: string;
   type: 'Personaje' | 'Bomba';

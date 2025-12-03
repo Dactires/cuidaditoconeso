@@ -1,8 +1,6 @@
 
 import { GameState, Player, Card } from './types';
 import {
-  COLORS,
-  CHARACTER_VALUES,
   CARDS_PER_VALUE_COLOR,
   BOMB_COUNT,
   INITIAL_HAND_SIZE,
@@ -36,31 +34,25 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
 
     // Create character cards
-    for (const color of COLORS) {
-        for (const value of CHARACTER_VALUES) {
-            const defId = `color-${color.toLowerCase()}`;
-            const baseDef = cardDefMap.get(defId);
-            
-            if (baseDef) {
-                for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-                    deck.push({
-                      uid: generateCardId(),
-                      type: 'Personaje',
-                      color,
-                      value,
-                      isFaceUp: false,
-                      imageUrl: baseDef.imageUrl,
-                    });
-                }
+    cardDefinitions.forEach(def => {
+        if (def.kind === 'character') {
+            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                deck.push({
+                  uid: generateCardId(),
+                  type: 'Personaje',
+                  color: def.color,
+                  value: def.value,
+                  isFaceUp: false,
+                  imageUrl: def.imageUrl,
+                });
             }
         }
-    }
+    });
   
     // Create bomb cards
     const bombDef = cardDefMap.get('bomb');
     if (bombDef) {
         for (let i = 0; i < BOMB_COUNT; i++) {
-          // Create a NEW object for each card
           deck.push({ 
               uid: generateCardId(), 
               type: 'Bomba', 

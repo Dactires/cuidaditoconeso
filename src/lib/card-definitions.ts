@@ -1,118 +1,112 @@
 
-export type CardKind = "color" | "bomb" | "hero" | "power" | "back";
+export type CardKind = "character" | "bomb" | "hero" | "power" | "back";
 
 export type GameCardDef = {
   id: string;
   kind: CardKind;
   label: string;
   shortLabel: string;
+  color: string;
   colorClass: string;
   ribbonClass: string;
   textColor?: string;
-  value: number | string;
+  value: number;
   description: string;
   imageUrl?: string;
 };
 
+const characterDescriptions = {
+  rojo: "Los personajes rojos son conocidos por su agresividad y poder de ataque directo. Ideales para estrategias ofensivas.",
+  azul: "Los personajes azules son maestros de la estrategia y el control, a menudo manipulando el tablero a su favor.",
+  verde: "Los personajes verdes se centran en el crecimiento y la defensa, acumulando poder de forma sostenida.",
+  amarillo: "Los personajes amarillos son versátiles y traen un elemento de sorpresa e ingenio al juego.",
+};
+
+const createCharacterCards = (color: string, colorClass: string, ribbonClass: string, textColor?: string): GameCardDef[] => {
+    const cards: GameCardDef[] = [];
+    for (let i = 1; i <= 5; i++) {
+        cards.push({
+            id: `character-${color.toLowerCase()}-${i}`,
+            kind: 'character',
+            label: `Personaje ${color} ${i}`,
+            shortLabel: `${color}`,
+            color: color,
+            colorClass,
+            ribbonClass,
+            textColor,
+            value: i,
+            description: characterDescriptions[color.toLowerCase() as keyof typeof characterDescriptions],
+            imageUrl: undefined, // Se cargará desde la DB
+        });
+    }
+    return cards;
+};
+
+
 export const CARD_DEFINITIONS: GameCardDef[] = [
+  // --- REVERSO ---
   {
     id: "card-back",
     kind: "back",
     label: "Reverso de la Carta",
     shortLabel: "Reverso",
+    color: "Gris",
     colorClass: "bg-slate-500",
     ribbonClass: "bg-slate-700",
-    value: "B",
+    value: 0,
     description: "Esta es la imagen que se mostrará en el dorso de todas las cartas del juego cuando estén boca abajo.",
   },
-  {
-    id: "color-rojo",
-    kind: "color",
-    label: "Personaje Rojo",
-    shortLabel: "Rojo",
-    colorClass: "bg-red-500",
-    ribbonClass: "bg-red-700",
-    value: 1,
-    description:
-      "Los personajes rojos van del número 1 al 5 en el mazo. Por ahora solo está disponible el nivel 1.",
-  },
-  {
-    id: "color-azul",
-    kind: "color",
-    label: "Personaje Azul",
-    shortLabel: "Azul",
-    colorClass: "bg-sky-500",
-    ribbonClass: "bg-sky-700",
-    value: 1,
-    description:
-      "Los personajes azules van del número 1 al 5 en el mazo. Próximamente vas a poder subirlos de nivel.",
-  },
-  {
-    id: "color-verde",
-    kind: "color",
-    label: "Personaje Verde",
-    shortLabel: "Verde",
-    colorClass: "bg-emerald-500",
-    ribbonClass: "bg-emerald-700",
-    value: 1,
-    description:
-      "Los personajes verdes van del número 1 al 5. Ideal para probar diferentes combinaciones de mazo.",
-  },
-  {
-    id: "color-amarillo",
-    kind: "color",
-    label: "Personaje Amarillo",
-    shortLabel: "Amarillo",
-    colorClass: "bg-yellow-400",
-    ribbonClass: "bg-yellow-500",
-    textColor: "text-slate-900",
-    value: 1,
-    description:
-      "Los personajes amarillos también llegan hasta el número 5. Más adelante vas a poder desbloquearlos.",
-  },
+  
+  // --- PERSONAJES ---
+  ...createCharacterCards('Rojo', 'bg-red-500', 'bg-red-700'),
+  ...createCharacterCards('Azul', 'bg-sky-500', 'bg-sky-700'),
+  ...createCharacterCards('Verde', 'bg-emerald-500', 'bg-emerald-700'),
+  ...createCharacterCards('Amarillo', 'bg-yellow-400', 'bg-yellow-500', 'text-slate-900'),
+
+  // --- BOMBAS Y PODERES ---
   {
     id: "bomb",
     kind: "bomb",
     label: "Bomba",
     shortLabel: "Bomba",
-    colorClass: "bg-red-600",
-    ribbonClass: "bg-red-800",
-    value: 5,
-    description:
-      "La Bomba es una carta clave. Toda la mecánica de bombas está en construcción, pero ya forma parte del mazo base.",
+    color: "Negro",
+    colorClass: "bg-slate-800",
+    ribbonClass: "bg-slate-950",
+    value: 0,
+    description: "La Bomba destruye las cartas adyacentes que estén boca arriba. Úsala con estrategia para limpiar el tablero.",
   },
   {
     id: "hero",
     kind: "hero",
     label: "Héroe",
     shortLabel: "Héroe",
+    color: "Dorado",
     colorClass: "bg-yellow-400",
     ribbonClass: "bg-yellow-500",
     textColor: "text-slate-900",
     value: 6,
-    description:
-      "El Héroe es la carta de más valor. Tendrá habilidades especiales más adelante. Por ahora es una carta clave pero simple.",
+    description: "El Héroe es una carta de alto valor. Tendrá habilidades especiales más adelante. Por ahora es una carta clave pero simple.",
   },
   {
     id: "power1",
     kind: "power",
     label: "Poder 1",
     shortLabel: "Poder",
+    color: "Morado",
     colorClass: "bg-purple-500",
     ribbonClass: "bg-purple-700",
-    value: "P",
-    description:
-      "Esta carta es un poder básico. El sistema de poderes está en construcción.",
+    value: 0,
+    description: "Esta carta es un poder básico. El sistema de poderes está en construcción.",
   },
   {
     id: "power2",
     kind: "power",
     label: "Poder 2",
     shortLabel: "Poder",
+    color: "Indigo",
     colorClass: "bg-indigo-500",
     ribbonClass: "bg-indigo-700",
-    value: "P",
-    description:
-      "Segundo slot de Poder del mazo. Más adelante vas a poder cambiar qué poder usás en cada espacio.",
+    value: 0,
+    description: "Segundo slot de Poder del mazo. Más adelante vas a poder cambiar qué poder usás en cada espacio.",
   },
 ];
