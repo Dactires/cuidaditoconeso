@@ -59,48 +59,60 @@ export default function AdminDashboardLayout({
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <div className="flex-grow">
+    <div className="flex h-screen flex-col">
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center gap-2">
+              <div className="flex-grow">
                 <h2 className="font-semibold comic-title text-lg">Superadmin</h2>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
+              </div>
+              <SidebarTrigger />
             </div>
-            <SidebarTrigger />
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/admin/dashboard'}>
-                <Link href="/admin/dashboard">
-                  <LayoutDashboard />
-                  <span>Dashboard</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/admin/dashboard/cards'}>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === '/admin/dashboard'}
+                >
+                  <Link href="/admin/dashboard">
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === '/admin/dashboard/cards'}
+                >
                   <Link href="/admin/dashboard/cards">
                     <CreditCard />
                     <span>Cartas</span>
                   </Link>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-            <Button variant="ghost" onClick={handleLogout} className="w-full justify-start gap-2">
-                <LogOut /> <span>Cerrar Sesión</span>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter>
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start gap-2"
+            >
+              <LogOut /> <span>Cerrar Sesión</span>
             </Button>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <div className="p-4 sm:p-6 lg:p-8 min-h-0 overflow-y-auto">
-            {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
   );
 }
