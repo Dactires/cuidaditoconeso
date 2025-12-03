@@ -228,19 +228,9 @@ export default function GamePage() {
   const handleHandCardClick = (card: CardType, index: number) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return;
 
-    // On mobile, this will select/deselect for targeting.
-    // On desktop, this could be extended for drag-and-drop.
     setSelectedHandCard(
       selectedHandCard?.card.uid === card.uid ? null : { card, index },
     );
-  };
-
-  const handlePassTurn = () => {
-    if (gameOver || currentPlayerIndex !== humanPlayerId || turnPhase !== 'ACTION') return;
-    if (gameState.isForcedToPlay) return;
-    dispatch({ type: 'PASS_TURN', payload: { player_id: humanPlayer.id } });
-    setSelectedHandCard(null);
-    setTargetBoardPos(null);
   };
 
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
@@ -263,6 +253,8 @@ export default function GamePage() {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
     return true;
   };
+  
+  const isHumanTurn = currentPlayerIndex === humanPlayerId;
 
   const renderDesktopView = () => (
     <div className="comic-arena">
@@ -300,14 +292,34 @@ export default function GamePage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-          <span className="comic-turn-chip">
-            {currentPlayerIndex === humanPlayerId ? 'Tu turno' : 'Turno del rival'}
-          </span>
-        </div>
+        <AnimatePresence>
+          {showDrawAnimation === humanPlayerId && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: {duration: 0.2} }}
+              exit={{ opacity: 0, transition: {delay: 0.8, duration: 0.3} }}
+            >
+              <motion.div
+                  className="absolute z-20"
+                  style={{ top: '30%' }}
+                  initial={{ scale: 0.5, opacity: 0}}
+                  animate={{ scale: 1, opacity: 1, y: -80, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
+                  exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
+              >
+                  <span className="comic-turn-chip !px-6 !py-2 !text-lg">
+                      Tu Turno
+                  </span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
   
         <div className="comic-arena-inner">
-          <div className="flex flex-col gap-4 h-full">
+          <div className={cn(
+            "flex flex-col gap-4 h-full transition-opacity duration-300",
+            isHumanTurn && turnPhase === 'ACTION' ? 'opacity-100' : 'opacity-60'
+          )}>
             <div className="comic-panel px-4 py-3 flex items-center gap-3">
               <div className="h-11 w-11 rounded-full bg-sky-500 border-[3px] border-black flex items-center justify-center">
                 <User className="h-6 w-6 text-slate-900" />
@@ -332,6 +344,7 @@ export default function GamePage() {
                       onClick={() => handleHandCardClick(card, index)}
                       isSelected={selectedHandCard?.card.uid === card.uid}
                       isSelectable={isHandCardSelectable(card)}
+                      isDimmed={!isHumanTurn || turnPhase !== 'ACTION'}
                     />
                   </div>
                 ))}
@@ -363,6 +376,7 @@ export default function GamePage() {
                   ? { r: explodingCard.r, c: explodingCard.c }
                   : undefined
               }
+              isDimmed={isHumanTurn && turnPhase !== 'GAME_OVER'}
             />
 
             <div className="h-2" />
@@ -376,6 +390,7 @@ export default function GamePage() {
                   ? { r: explodingCard.r, c: explodingCard.c }
                   : undefined
               }
+              isDimmed={!isHumanTurn || turnPhase !== 'REVEAL_CARD'}
             />
           </div>
   
@@ -468,6 +483,7 @@ export default function GamePage() {
             isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
             explodingCard={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
             isMobile
+            isDimmed={isHumanTurn && turnPhase !== 'GAME_OVER'}
         />
       </div>
 
@@ -481,6 +497,7 @@ export default function GamePage() {
             isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
             explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
             isMobile
+            isDimmed={!isHumanTurn || turnPhase !== 'REVEAL_CARD'}
         />
         <div className="flex items-center justify-between w-full px-2">
             <div className='w-1/3 flex justify-start'>
@@ -504,7 +521,10 @@ export default function GamePage() {
       </div>
       
       {/* Player Hand */}
-      <div className="w-full flex justify-center items-center gap-1 px-1 h-28 shrink-0">
+      <div className={cn(
+        "w-full flex justify-center items-center gap-1 px-1 h-28 shrink-0 transition-opacity duration-300",
+        isHumanTurn && turnPhase === 'ACTION' ? 'opacity-100' : 'opacity-60'
+      )}>
         {humanPlayer.hand.map((card, index) => (
           <motion.div
             key={card.uid}
@@ -521,6 +541,7 @@ export default function GamePage() {
               isSelected={selectedHandCard?.card.uid === card.uid}
               isSelectable={isHandCardSelectable(card)}
               isMobile
+              isDimmed={!isHumanTurn || turnPhase !== 'ACTION'}
             />
           </motion.div>
         ))}
@@ -569,6 +590,7 @@ export default function GamePage() {
             {showDrawAnimation === humanPlayerId && (
                  <motion.div
                     className="absolute z-20"
+                    style={{ top: '35%' }}
                     initial={{ scale: 0.5, opacity: 0}}
                     animate={{ scale: 1, opacity: 1, y: -80, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
                     exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}

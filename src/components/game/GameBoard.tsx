@@ -13,24 +13,26 @@ interface GameBoardProps {
   isCardSelectable?: (r: number, c: number) => boolean;
   explodingCard?: ExplodingPos;
   isMobile?: boolean;
+  isDimmed?: boolean;
 }
 
 /**
  * Tablero 3x3 estilo cómic.
- * Usa:
- *  - .comic-panel   → marco azul con sombra
- *  - .comic-grid    → grid 3x3 con padding
- *  - .comic-card-slot → tamaño fijo cuadrado para cada carta
  */
 export default function GameBoard({
   board,
   onCardClick,
   isCardSelectable,
   explodingCard,
-  isMobile
+  isMobile,
+  isDimmed,
 }: GameBoardProps) {
   return (
-    <div className={cn("comic-panel flex items-center justify-center", isMobile ? 'p-2 !shadow-none !border-2 w-full max-w-xs' : 'px-4 py-4')}>
+    <div className={cn(
+        "comic-panel flex items-center justify-center transition-opacity duration-300",
+        isMobile ? 'p-2 !shadow-none !border-2 w-full max-w-xs' : 'px-4 py-4',
+        isDimmed && 'opacity-50'
+      )}>
       <div className={cn("comic-grid", isMobile && '!p-0 !gap-1.5')}>
         {board.map((row, r) =>
           row.map((card, c) => {
@@ -51,7 +53,7 @@ export default function GameBoard({
                   !selectable && 'cursor-default'
                 )}
                 onClick={() => selectable && onCardClick?.(r, c)}
-                disabled={!selectable}
+                disabled={!selectable || isDimmed}
               >
                 <GameCard
                   card={card}
@@ -60,6 +62,7 @@ export default function GameBoard({
                   isSelectable={selectable}
                   isExploding={isExploding}
                   isMobile={isMobile}
+                  isDimmed={isDimmed}
                 />
               </button>
             );

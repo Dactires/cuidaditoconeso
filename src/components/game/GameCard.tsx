@@ -13,6 +13,7 @@ interface GameCardProps {
   isSelectable?: boolean;
   isExploding?: boolean;
   isMobile?: boolean;
+  isDimmed?: boolean;
 }
 
 const colorMap: { [key: string]: { bg: string; glow: string; text: string } } = {
@@ -31,11 +32,12 @@ export default function GameCard({
   isSelectable = false,
   isExploding = false,
   isMobile = false,
+  isDimmed = false,
 }: GameCardProps) {
   // Slot vacío (por ejemplo casillero sin carta)
   if (!card) {
     return (
-      <div className="w-full h-full rounded-lg bg-black/20 border-2 border-dashed border-slate-700" />
+      <div className="w-full h-full rounded-lg bg-black/20 border-2 border-dashed border-slate-700 aspect-square" />
     );
   }
 
@@ -54,7 +56,8 @@ export default function GameCard({
   return (
     <motion.div
       className={cn(
-        'w-full h-full cursor-pointer relative',
+        'w-full h-full relative aspect-square',
+        isSelectable && 'cursor-pointer',
         isSelected && !isMobile && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
         isSelected && isMobile && 'ring-2 ring-amber-300',
       )}
