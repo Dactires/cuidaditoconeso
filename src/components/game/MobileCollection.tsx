@@ -31,7 +31,7 @@ export default function MobileCollection({ allCards }: { allCards: GameCardDef[]
     uid: def.id,
     type: def.kind === 'bomb' ? 'Bomba' : 'Personaje', // Simplificado
     color: def.color,
-    value: def.value,
+    value: def.kind === 'character' ? 1 : def.value, // Personajes empiezan en nivel 1
     isFaceUp: true,
     imageUrl: def.imageUrl,
   }));
@@ -79,7 +79,7 @@ export default function MobileCollection({ allCards }: { allCards: GameCardDef[]
                 uid: cardDef.id,
                 type: cardDef.kind === 'bomb' ? 'Bomba' : 'Personaje',
                 color: cardDef.color,
-                value: cardDef.value,
+                value: cardDef.kind === 'character' ? 1 : cardDef.value,
                 isFaceUp: true,
                 imageUrl: cardDef.imageUrl
             };
@@ -129,6 +129,7 @@ function CardDetailModal({
   const currentLevel = card.kind === "character" ? 1 : 1;
   const maxLevel = card.kind === "character" ? 5 : 1;
   const hasLevels = card.kind === "character";
+  const progressPercent = hasLevels ? (currentLevel / maxLevel) * 20 : 0; // Show 20% for level 1 of 5
 
   const ribbonText =
     card.kind === "character"
@@ -146,7 +147,7 @@ function CardDetailModal({
     uid: card.id,
     type: card.kind === 'bomb' ? 'Bomba' : 'Personaje',
     color: card.color,
-    value: card.value,
+    value: card.kind === 'character' ? currentLevel : card.value,
     isFaceUp: true,
     imageUrl: card.imageUrl,
   };
@@ -217,10 +218,10 @@ function CardDetailModal({
                     </span>
                   </div>
                   <div className="h-3 rounded-full bg-slate-900 border-[2px] border-black overflow-hidden shadow-[0_2px_0_#020617]">
-                    <div className="h-full w-1/5 bg-emerald-400" />
+                    <div className="h-full bg-emerald-400" style={{ width: `${progressPercent}%` }} />
                   </div>
                   <span className="block mt-1 text-[10px] text-slate-300">
-                    Próximamente vas a poder subirla hasta el número {maxLevel}.
+                    Próximamente podrás subirla de nivel.
                   </span>
                 </>
               ) : (
@@ -240,7 +241,7 @@ function CardDetailModal({
                 SUBIR DE NIVEL
               </button>
               <span className="text-[10px] text-center text-slate-300">
-                Función en construcción. Más adelante vas a poder gastar recursos
+                Función en construcción. Más adelante podrás gastar recursos
                 para mejorar esta carta.
               </span>
             </div>
@@ -267,6 +268,3 @@ function LockedCard({ label }: { label: string }) {
     </div>
   );
 }
-
-
-    

@@ -125,7 +125,7 @@ export default function GameCard({
     // BACK OF THE CARD
     if (!isFront) {
       if (cardBackImageUrl) {
-        return <Image src={cardBackImageUrl} alt="Reverso de la carta" fill sizes="10vw" className="object-cover" />;
+        return <Image src={cardBackImageUrl} alt="Reverso de la carta" fill sizes="10vw" className="object-cover" priority />;
       }
       return (
         <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center gap-1 border-2 border-black">
@@ -141,7 +141,7 @@ export default function GameCard({
         return (
              <>
                 {finalCard.imageUrl && (
-                    <Image src={finalCard.imageUrl} alt="Imagen de una bomba" fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
+                    <Image src={finalCard.imageUrl} alt="Imagen de una bomba" fill className="object-cover" priority />
                 )}
                 <motion.div
                     key="timer"
@@ -168,7 +168,7 @@ export default function GameCard({
     return (
       <>
         {finalCard.imageUrl ? (
-          <Image src={finalCard.imageUrl} alt={`Imagen de la carta ${finalCard.uid}`} fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
+          <Image src={finalCard.imageUrl} alt={`Imagen de la carta ${finalCard.uid}`} fill className="object-cover" priority />
         ) : (
           <div className="w-full h-full bg-slate-500" />
         )}
@@ -178,7 +178,7 @@ export default function GameCard({
             "absolute top-1 left-1 px-2 py-0.5 rounded-full bg-black/60 text-white border-2 border-white/50 backdrop-blur-sm",
             isMobile && "px-1 py-0 text-sm"
           )}>
-            <p className={cn("font-display tracking-[0.1em] uppercase", isMobile ? "text-base" : "text-6xl md:text-7xl")}>
+            <p className={cn("font-display tracking-[0.1em] uppercase", isMobile ? "text-base" : "text-xl")}>
               {finalCard.value}
             </p>
           </div>
