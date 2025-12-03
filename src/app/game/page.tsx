@@ -581,7 +581,7 @@ export default function GamePage() {
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent>
-            <div className="comic-card">
+             <div className="comic-card">
               <AlertDialogHeader>
                 <AlertDialogTitle className="comic-title text-amber-300">Ajustes</AlertDialogTitle>
                 <AlertDialogDescription className="text-slate-300">
