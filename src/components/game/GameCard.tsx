@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { Card } from '@/lib/types';
 import { BombIcon } from '@/components/icons/BombIcon';
 import { Card as UICard, CardContent, CardTitle } from '@/components/ui/card';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface GameCardProps {
   card: Card | null;
@@ -23,95 +23,91 @@ const colorMap: { [key: string]: { bg: string; glow: string; text: string } } = 
 
 const bombColor = { bg: 'bg-orange-800', glow: 'shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]', text: 'text-orange-200' };
 
-const flipVariants = {
-  hidden: { rotateY: 180 },
-  visible: { rotateY: 0 },
-};
-
-const explosionVariants = {
-  initial: { scale: 1, x: 0, y: 0, rotate: 0 },
-  exploding: {
-    scale: [1, 1.2, 0],
-    rotate: [0, 10, -10, 0],
-    x: [0, 5, -5, 0],
-    y: [0, -10, 10, 0],
-    opacity: [1, 1, 0],
-    transition: { duration: 0.8, ease: "circOut" },
+export default function GameCard({
+  card,
+  onClick,
+  isSelected = false,
+  isSelectable = false,
+  isExploding = false,
+}: GameCardProps) {
+  // Slot vacío (por ejemplo casillero sin carta)
+  if (!card) {
+    return (
+      <div className="w-full h-full rounded-lg bg-black/20 border-2 border-dashed border-slate-700" />
+    );
   }
-}
 
-export default function GameCard({ card, onClick, isSelected = false, isSelectable = false, isExploding = false }: GameCardProps) {
-  
-  const cardStyling = card?.type === 'Personaje' && card.color ? colorMap[card.color] : bombColor;
+  const style =
+    card.type === 'Personaje' && card.color ? colorMap[card.color] : bombColor;
 
-  const cardContent = (
+  const baseAnimation = isExploding
+    ? {
+        scale: [1, 1.2, 0.8, 0],
+        opacity: [1, 1, 0.8, 0],
+        rotate: [0, 5, -5, 0],
+        transition: { duration: 0.6, ease: 'easeOut' },
+      }
+    : { scale: 1, opacity: 1 };
+
+  return (
     <motion.div
-      className="absolute w-full h-full"
-      style={{ backfaceVisibility: 'hidden' }}
-      variants={flipVariants}
-      initial={false}
-      animate={{ rotateY: card?.isFaceUp ? 0 : 180 }}
-      transition={{ duration: 0.5, ease: 'easeInOut' }}
+      className={cn(
+        'w-full h-full rounded-lg cursor-pointer relative',
+        isSelected && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
+      )}
+      onClick={onClick}
+      whileHover={isSelectable ? { scale: 1.05, y: -4 } : {}}
+      whileTap={isSelectable ? { scale: 0.96 } : {}}
+      animate={baseAnimation}
     >
-      {/* Card Front */}
-      <div className="absolute w-full h-full" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(0deg)'}}>
-        <UICard
-          className={cn(
-            'w-full h-full flex flex-col items-center justify-center border-2 text-white rounded-lg shadow-lg relative',
-            'border-slate-600',
-            cardStyling?.bg,
-            isSelectable && cardStyling?.glow
-          )}
-        >
-          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-black/30">
-            <p className={cn("text-xs font-bold font-display tracking-widest", cardStyling?.text)}>
-              {card?.type === 'Bomba' ? 'BOMBA' : card?.value}
-            </p>
-          </div>
-          <CardTitle className="font-display text-7xl font-bold">
-            {card?.type === 'Bomba'
-              ? <BombIcon className="w-16 h-16" />
-              : card?.value}
-          </CardTitle>
-           <CardContent className="p-1 absolute bottom-1">
-            <p className="text-xs font-display tracking-wider font-semibold uppercase opacity-60">{card?.type}</p>
-          </CardContent>
-        </UICard>
-      </div>
-
-      {/* Card Back */}
-      <div className="w-full h-full" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+      {/* Si está boca abajo → solo reverso */}
+      {!card.isFaceUp ? (
         <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center p-2 border-2 border-slate-700 shadow-inner">
-           <div className="w-full h-full rounded-md border-2 border-slate-700 border-dashed flex items-center justify-center">
+          <div className="w-full h-full rounded-md border-2 border-slate-700 border-dashed flex items-center justify-center">
             <span className="text-slate-600 font-display font-bold text-2xl -rotate-12 opacity-70 select-none">
               BOMBERS
             </span>
           </div>
         </div>
-      </div>
-    </motion.div>
-  );
-
-  return (
-    <motion.div
-      className='w-full h-full'
-      style={{ perspective: 1000 }}
-      onClick={!card ? undefined : onClick}
-      variants={isExploding ? explosionVariants : undefined}
-      animate={isExploding ? "exploding" : "initial"}
-    >
-        <motion.div
-            className={cn('relative w-full h-full cursor-pointer rounded-lg', !card && 'cursor-default')}
-            whileHover={isSelectable ? { scale: 1.05, y: -5 } : {}}
-            whileTap={isSelectable ? { scale: 0.95 } : {}}
+      ) : (
+        // Si está boca arriba → frente
+        <UICard
+          className={cn(
+            'w-full h-full flex flex-col items-center justify-center border-2 text-white rounded-lg shadow-lg relative',
+            'border-slate-600',
+            style.bg,
+            isSelectable && style.glow,
+          )}
         >
-        {isSelected && <motion.div className="absolute -inset-1 rounded-lg bg-accent z-[-1]" layoutId="selection-glow" />}
-        {!card ? (
-            <div className="w-full h-full rounded-lg bg-black/20 border border-dashed border-slate-700" />
-        ) : (
-           cardContent
-        )}
-        </motion.div>
+          {/* Esquina superior con valor o BOMBA */}
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-black/40">
+            <p
+              className={cn(
+                'text-xs font-bold font-display tracking-widest',
+                style.text,
+              )}
+            >
+              {card.type === 'Bomba' ? 'BOMBA' : card.value}
+            </p>
+          </div>
+
+          {/* Valor central o icono de bomba */}
+          <CardTitle className="font-display text-5xl md:text-6xl font-bold">
+            {card.type === 'Bomba' ? (
+              <BombIcon className="w-12 h-12 md:w-14 md:h-14" />
+            ) : (
+              card.value
+            )}
+          </CardTitle>
+
+          {/* Tipo de carta abajo */}
+          <CardContent className="p-1 absolute bottom-1">
+            <p className="text-[10px] font-display tracking-wider font-semibold uppercase opacity-70">
+              {card.type}
+            </p>
+          </CardContent>
+        </UICard>
+      )}
     </motion.div>
   );
 }
