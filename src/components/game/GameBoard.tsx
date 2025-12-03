@@ -30,12 +30,13 @@ export default function GameBoard({
   lastRivalMove,
 }: GameBoardProps) {
   return (
-    <div className={cn(
-      "flex items-center justify-center transition-opacity duration-300",
-      isMobile ? 'p-2 w-full max-w-xs' : 'px-4 py-4',
-      isDimmed && 'opacity-50'
-    )}>
-      <div className={cn("comic-grid", isMobile && '!p-0 !gap-1.5')}>
+    <div
+      className={cn(
+        "w-full flex items-center justify-center",
+        isMobile ? "p-2" : "p-3"
+      )}
+    >
+      <div className={cn("comic-grid max-w-[360px] w-full", isMobile && '!p-0 !gap-1.5')}>
         {board.map((row, r) =>
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;

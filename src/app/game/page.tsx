@@ -420,10 +420,12 @@ export default function GamePage() {
           </div>
   
           <div className="flex flex-col items-center justify-start gap-8 pt-4">
-            <div className={cn(
-              "comic-panel transition-shadow duration-200",
-              !isHumanTurn && "ring-4 ring-red-500/70 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
-            )}>
+             <div
+              className={cn(
+                "comic-board-panel transition-shadow duration-200",
+                !isHumanTurn && "ring-4 ring-red-500/70 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
+              )}
+            >
               <GameBoard
                 board={rivalPlayer.board}
                 onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
@@ -440,11 +442,13 @@ export default function GamePage() {
             
             <div className="h-2" />
 
-            <div className={cn(
-              "comic-panel transition-shadow duration-200",
-              rivalJustPlayed && "board-hit",
-              isHumanTurn && "ring-4 ring-sky-400/70 shadow-[0_0_40px_rgba(56,189,248,0.6)]"
-            )}>
+            <div
+              className={cn(
+                "comic-board-panel transition-shadow duration-200",
+                rivalJustPlayed && "board-hit",
+                isHumanTurn && "ring-4 ring-sky-400/70 shadow-[0_0_40px_rgba(56,189,248,0.6)]"
+              )}
+            >
               <GameBoard
                 board={humanPlayer.board}
                 onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
@@ -556,10 +560,12 @@ export default function GamePage() {
             ))}
             </div>
         </div>
-        <div className={cn(
-          "comic-panel transition-shadow duration-200 w-full",
-          !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-        )}>
+        <div
+          className={cn(
+            "comic-board-panel transition-shadow duration-200",
+            !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+          )}
+        >
           <GameBoard
               board={rivalPlayer.board}
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
@@ -593,11 +599,13 @@ export default function GamePage() {
 
       {/* Player Area */}
       <div className='flex flex-col items-center gap-2'>
-        <div className={cn(
-            "comic-panel transition-shadow duration-200 w-full",
+        <div
+          className={cn(
+            "comic-board-panel transition-shadow duration-200",
             rivalJustPlayed && "board-hit",
             isHumanTurn && "ring-2 ring-sky-400/70 shadow-[0_0_20px_rgba(56,189,248,0.5)]"
-          )}>
+          )}
+        >
           <GameBoard
               board={humanPlayer.board}
               onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
