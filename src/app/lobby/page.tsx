@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import MobileLobby from '@/components/game/MobileLobby';
 import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
 import { collection, getDocs } from 'firebase/firestore';
+import { useMusicPlayer } from '@/hooks/use-music-player';
 
 
 // Hook para cargar las imágenes de las cartas
@@ -53,6 +54,7 @@ export default function LobbyPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const { cardDefsWithImages, loading: areCardsLoading } = useCardDefinitionsWithImages();
   const router = useRouter();
+  const { playLobbyMusic, stopAllMusic } = useMusicPlayer();
 
   const isUserLoading = isAuthLoading || areCardsLoading;
 
@@ -61,6 +63,13 @@ export default function LobbyPage() {
       router.push('/login');
     }
   }, [user, isAuthLoading, router]);
+
+  useEffect(() => {
+    // Play lobby music when component mounts, stop other tracks
+    stopAllMusic();
+    playLobbyMusic();
+  }, [playLobbyMusic, stopAllMusic]);
+
 
   if (isUserLoading || !user || !cardDefsWithImages) {
     return (

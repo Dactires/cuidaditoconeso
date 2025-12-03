@@ -30,6 +30,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
 import { collection, getDocs } from 'firebase/firestore';
 import { MAX_HAND_SIZE } from '@/lib/constants';
+import { useMusicPlayer } from '@/hooks/use-music-player';
 
 
 type Selection = {
@@ -135,7 +136,7 @@ export default function GamePage() {
 
   // Stable state for animations to prevent race conditions
   const [stableRefillingSlots, setStableRefillingSlots] = useState<typeof gameState.refillingSlots>([]);
-
+  const { playBattleMusic, stopAllMusic } = useMusicPlayer();
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
   const humanPlayerId = 0;
@@ -149,6 +150,15 @@ export default function GamePage() {
       router.push('/login');
     }
   }, [user, isUserAuthLoading, router]);
+
+    useEffect(() => {
+    stopAllMusic();
+    playBattleMusic();
+
+    return () => {
+      stopAllMusic();
+    };
+  }, [playBattleMusic, stopAllMusic]);
 
   // Sound effects trigger for any revealed card
   useEffect(() => {

@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { Inter, Bangers } from 'next/font/google';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { MusicProvider } from '@/hooks/use-music-player';
 
 export const metadata: Metadata = {
   title: 'Board Bombers',
@@ -30,8 +31,10 @@ export default function RootLayout({
     <html lang="en" className="h-full overflow-hidden">
       <body className={cn('antialiased h-full bg-background font-body', bangers.variable, inter.variable)}>
         <FirebaseClientProvider>
-          <main className="h-full">{children}</main>
-          <Toaster />
+            <MusicProvider>
+              <main className="h-full">{children}</main>
+              <Toaster />
+            </MusicProvider>
         </FirebaseClientProvider>
       </body>
     </html>
