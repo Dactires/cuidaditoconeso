@@ -119,8 +119,10 @@ export default function GamePage() {
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
   const isMobile = useIsMobile();
   const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
+  const [showDeckAnimation, setShowDeckAnimation] = useState(false);
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
+
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRevealedBomb, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -156,6 +158,19 @@ export default function GamePage() {
     }, 650); // Delay to show the bomb card art
     return () => clearTimeout(timer);
   }, [lastRevealedBomb, dispatch, playBomb, playFlip]);
+  
+  // Refill animation controller
+  useEffect(() => {
+    if (refillingSlots && refillingSlots.length > 0) {
+      setShowDeckAnimation(true);
+      const totalAnimationTime = (refillingSlots.length * 100) + 500; // 0.1s stagger + 0.5s duration
+      const timer = setTimeout(() => {
+        setShowDeckAnimation(false);
+      }, totalAnimationTime);
+      return () => clearTimeout(timer);
+    }
+  }, [refillingSlots]);
+
 
   // AI Logic Trigger
   useEffect(() => {
@@ -332,6 +347,13 @@ export default function GamePage() {
     );
   };
   
+    const handleRefillAnimationComplete = (playerId: number, r: number, c: number, card: CardType) => {
+        dispatch({
+            type: 'FINISH_REFILL_ANIMATION',
+            payload: { playerId, r, c, card },
+        });
+    };
+  
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
     if (gameOver || !isHumanTurn) return false;
     const player = players.find(p => p.id === playerId);
@@ -485,6 +507,7 @@ export default function GamePage() {
             >
               <GameBoard
                 board={rivalPlayer.board}
+                playerId={rivalPlayer.id}
                 onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
                 isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
                 explodingCardInfo={
@@ -495,6 +518,8 @@ export default function GamePage() {
                 isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
                 cardBackImageUrl={cardBackImageUrl}
+                refillingSlots={refillingSlots}
+                onRefillAnimationComplete={handleRefillAnimationComplete}
               />
             </div>
             
@@ -509,6 +534,7 @@ export default function GamePage() {
             >
               <GameBoard
                 board={humanPlayer.board}
+                playerId={humanPlayer.id}
                 onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
                 isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
                 explodingCardInfo={
@@ -519,6 +545,8 @@ export default function GamePage() {
                 isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
                 cardBackImageUrl={cardBackImageUrl}
+                refillingSlots={refillingSlots}
+                onRefillAnimationComplete={handleRefillAnimationComplete}
               />
             </div>
           </div>
@@ -544,7 +572,7 @@ export default function GamePage() {
                   <span className="comic-section-title">Mazo</span>
                    <div className="relative comic-card-slot">
                     <AnimatePresence>
-                      {showDrawAnimation && deck.length > 0 && (
+                      {(showDrawAnimation || showDeckAnimation) && deck.length > 0 && (
                         <motion.div
                           key="deck"
                           initial={{ opacity: 0, y: -10, scale: 0.9 }}
@@ -640,6 +668,7 @@ export default function GamePage() {
         >
           <GameBoard
               board={rivalPlayer.board}
+              playerId={rivalPlayer.id}
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
               explodingCardInfo={explodingCard && explodingCard.playerId === rivalPlayer.id ? explodingCard : undefined}
@@ -647,6 +676,8 @@ export default function GamePage() {
               isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               cardBackImageUrl={cardBackImageUrl}
+              refillingSlots={refillingSlots}
+              onRefillAnimationComplete={handleRefillAnimationComplete}
           />
         </div>
       </div>
@@ -681,6 +712,7 @@ export default function GamePage() {
         >
           <GameBoard
               board={humanPlayer.board}
+              playerId={humanPlayer.id}
               onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
               explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? explodingCard : undefined}
@@ -688,6 +720,8 @@ export default function GamePage() {
               isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               cardBackImageUrl={cardBackImageUrl}
+              refillingSlots={refillingSlots}
+              onRefillAnimationComplete={handleRefillAnimationComplete}
           />
         </div>
          <div className="flex items-center justify-between w-full px-2 h-8">

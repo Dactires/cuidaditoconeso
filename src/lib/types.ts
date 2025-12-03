@@ -1,3 +1,4 @@
+
 export interface Card {
   uid: string;
   type: 'Personaje' | 'Bomba';
@@ -32,4 +33,5 @@ export interface GameState {
   lastDrawnCardId: string | null;
   lastRevealedBomb: { playerId: number; r: number; c: number; cardUid: string; } | null;
   showDrawAnimation: boolean;
+  refillingSlots: { playerId: number; r: number; c: number; card: Card }[];
 }
