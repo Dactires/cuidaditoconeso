@@ -344,13 +344,6 @@ export default function GamePage() {
               </div>
   
               <div className="mt-2 flex items-center justify-center gap-2">
-                 <button 
-                  onClick={handlePassTurn} 
-                  className="comic-btn comic-btn-secondary !px-4 !py-1 !text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={gameState.isForcedToPlay || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId}
-                >
-                  Pasar
-                </button>
                 {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
                   <p className="mt-1 text-[11px] text-amber-300 text-center">
                     Debes jugar o intercambiar una carta.
@@ -491,23 +484,13 @@ export default function GamePage() {
         />
         <div className="flex items-center justify-between w-full px-2">
             <div className='w-1/3 flex justify-start'>
-               {turnPhase === 'ACTION' && (
-                  <button 
-                    onClick={handlePassTurn} 
-                    className="comic-btn comic-btn-secondary !px-3 !py-1 !text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={gameState.isForcedToPlay}
-                  >
-                    Pasar
-                  </button>
-               )}
-            </div>
-            <div className='w-1/3 flex justify-center'>
              {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
                 <p className="mt-1 text-[11px] text-amber-300 text-center">
                   Debes jugar una carta.
                 </p>
               )}
             </div>
+            <div className="w-1/3 flex justify-center" />
             <div className="w-1/3 flex items-center justify-end gap-2">
                 <div className="flex flex-col text-right">
                     <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">{user.displayName || 'Jugador'}</span>
@@ -587,7 +570,7 @@ export default function GamePage() {
                  <motion.div
                     className="absolute z-20"
                     initial={{ scale: 0.5, opacity: 0}}
-                    animate={{ scale: 1, opacity: 1, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
+                    animate={{ scale: 1, opacity: 1, y: -80, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
                     exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
                  >
                     <span className="comic-turn-chip !px-6 !py-2 !text-lg">
