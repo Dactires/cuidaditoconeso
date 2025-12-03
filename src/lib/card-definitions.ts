@@ -63,8 +63,9 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     kind: "color",
     label: "Personaje Amarillo",
     shortLabel: "Amarillo",
-    colorClass: "bg-amber-700",
-    ribbonClass: "bg-amber-800",
+    colorClass: "bg-yellow-400",
+    ribbonClass: "bg-yellow-500",
+    textColor: "text-slate-900",
     value: 1,
     description:
       "Los personajes amarillos también llegan hasta el número 5. Más adelante vas a poder desbloquearlos.",

@@ -136,7 +136,7 @@ export default function GamePage() {
   useEffect(() => {
     if (lastRevealedCard) {
       if (lastRevealedCard.type === 'Bomba') {
-        playBomb();
+        setTimeout(() => playBomb(), 800); // Delay bomb sound until explosion
       } else {
         playFlip();
       }
@@ -231,6 +231,16 @@ export default function GamePage() {
 
     return () => clearTimeout(timer);
   }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, playDeal]);
+  
+  // Clear drawn card animation state
+  useEffect(() => {
+    if (lastDrawnCardId) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'CLEAR_DRAWN_CARD' });
+      }, 500); 
+      return () => clearTimeout(timer);
+    }
+  }, [lastDrawnCardId, dispatch]);
 
   // Handle card playing logic
   useEffect(() => {
@@ -300,7 +310,6 @@ export default function GamePage() {
     }
 
     if (turnPhase === 'REVEAL_CARD' && playerId === humanPlayer.id) {
-      playFlip();
       dispatch({ type: 'REVEAL_CARD', payload: { player_id: playerId, r, c } });
     }
   };
@@ -707,6 +716,7 @@ export default function GamePage() {
           </motion.div>
         ))}
       </div>
+      <div className="h-4" />
 
       <div className="absolute top-2 right-2 z-20">
          <AlertDialog>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useReducer, useEffect, useState } from 'react';
@@ -45,7 +46,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'START_TURN':
       return Game.drawCard(state, action.payload.player_id);
     case 'REVEAL_CARD':
-      return Game.revealCard(state, action.payload.player_id, action.payload.r, action.payload.c);
+        return Game.revealCard(state, action.payload.player_id, action.payload.r, action.payload.c);
     case 'PLAY_CARD_OWN':
       return Game.playCardOwnBoard(state, action.payload.player_id, action.payload.card_in_hand, action.payload.target_r, action.payload.target_c);
     case 'PLAY_CARD_RIVAL':

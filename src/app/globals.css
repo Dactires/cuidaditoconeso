@@ -125,7 +125,7 @@
 
   .animate-explode {
     position: relative;
-    animation: explode-card 0.45s cubic-bezier(0.2, 0.9, 0.4, 1.4) forwards;
+    animation: explode-card 0.45s cubic-bezier(0.2, 0.9, 0.4, 1.4) 0.9s forwards;
   }
 
   @keyframes rival-play {
@@ -181,6 +181,16 @@
   .board-hit {
     animation: board-hit 0.35s ease-out;
   }
+
+  .card-flipper {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  .card-face {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
 }
 
 

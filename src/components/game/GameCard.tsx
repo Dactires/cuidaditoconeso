@@ -1,10 +1,13 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
 import type { Card } from '@/lib/types';
 import { BombIcon } from '@/components/icons/BombIcon';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { Clock } from 'lucide-react';
+import React from 'react';
 
 interface GameCardProps {
   card: Card | null;
@@ -49,6 +52,16 @@ const cardVariants = {
   },
 };
 
+const getGlowColor = (color: string | null) => {
+  switch (color) {
+    case 'Rojo': return 'shadow-[0_0_12px_2px_rgba(239,68,68,0.7)]';
+    case 'Azul': return 'shadow-[0_0_12px_2px_rgba(59,130,246,0.7)]';
+    case 'Verde': return 'shadow-[0_0_12px_2px_rgba(34,197,94,0.7)]';
+    case 'Amarillo': return 'shadow-[0_0_12px_2px_rgba(251,191,36,0.7)]';
+    default: return 'shadow-none';
+  }
+}
+
 export default function GameCard({
   card,
   onClick,
@@ -62,7 +75,22 @@ export default function GameCard({
   isDisabled = false,
   cardBackImageUrl,
 }: GameCardProps) {
-  // Slot vacío (casillero sin carta)
+
+  const [showTimer, setShowTimer] = React.useState(false);
+
+  React.useEffect(() => {
+    if (card?.isFaceUp && card.type === 'Bomba') {
+      const timer = setTimeout(() => setShowTimer(true), 100);
+      const clearTimer = setTimeout(() => setShowTimer(false), 900);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(clearTimer);
+      };
+    } else {
+      setShowTimer(false);
+    }
+  }, [card?.isFaceUp, card?.type]);
+
   if (!card) {
     return (
       <div className={cn(
@@ -73,24 +101,22 @@ export default function GameCard({
   }
 
   const animationClass = isRivalMove ? 'animate-rival-play' : isExploding ? 'animate-explode' : '';
+  const glowClass = card.isFaceUp && card.type === 'Personaje' ? getGlowColor(card.color) : '';
 
-  const renderCardContent = () => {
-    // Carta Boca Abajo
-    if (!card.isFaceUp) {
+  const renderCardFace = (isFront: boolean) => {
+    // BACK OF THE CARD
+    if (!isFront) {
       if (cardBackImageUrl) {
         return <Image src={cardBackImageUrl} alt="Reverso de la carta" fill sizes="10vw" className="object-cover" />;
       }
       return (
-        <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center gap-1 border border-black">
+        <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center gap-1 border-2 border-black">
           <BombIcon className={cn("drop-shadow-[0_2px_0_#020617]", isMobile ? "w-5 h-5" : "w-7 h-7")} />
-          <span className={cn("font-display tracking-[0.2em] uppercase text-slate-900 drop-shadow-[0_1px_0_#f9fafb]", isMobile ? "text-[7px]" : "text-[10px]")}>
-              Board Bombers
-          </span>
         </div>
       );
     }
 
-    // Carta Boca Arriba
+    // FRONT OF THE CARD
     return (
       <>
         {card.imageUrl ? (
@@ -99,21 +125,50 @@ export default function GameCard({
           <div className="w-full h-full bg-slate-500" />
         )}
         
-        <div className={cn(
-          "absolute top-1 left-1 px-2 py-0.5 rounded-full bg-black/60 text-white border border-white/50 backdrop-blur-sm",
-          isMobile && "px-1 py-0 text-sm"
-        )}>
-          <p className={cn("font-display tracking-[0.1em] uppercase", isMobile ? "text-base" : "text-lg")}>
-            {card.type === 'Bomba' ? <BombIcon className="w-3 h-3" /> : card.value}
-          </p>
-        </div>
+        {card.type === 'Personaje' && (
+          <div className={cn(
+            "absolute top-1 left-1 px-2 py-0.5 rounded-full bg-black/60 text-white border-2 border-white/50 backdrop-blur-sm",
+            isMobile && "px-1 py-0 text-sm"
+          )}>
+            <p className={cn("font-display tracking-[0.1em] uppercase", isMobile ? "text-base" : "text-6xl md:text-7xl")}>
+              {card.value}
+            </p>
+          </div>
+        )}
+
+        {card.type === 'Bomba' && (
+           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+             <AnimatePresence>
+              {showTimer ? (
+                <motion.div
+                  key="timer"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                >
+                  <Clock className="w-1/2 h-1/2 text-amber-300 animate-ping" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="bomb"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <BombIcon className="w-2/3 h-2/3 text-white drop-shadow-[0_0_8px_#ef4444]" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+           </div>
+        )}
       </>
     );
   };
 
   return (
     <motion.div
-      layout
       layoutId={`card-${card.uid}`}
       variants={cardVariants}
       initial="idle"
@@ -126,20 +181,42 @@ export default function GameCard({
       }
       whileHover={!isMobile && !isDisabled && !isSelected ? "hover" : undefined}
       whileTap={!isDisabled ? "pressed" : undefined}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className={cn(
-        'w-full h-full relative aspect-square',
+        'w-full h-full relative aspect-square card-flipper',
         isSelectable && !isDimmed && 'cursor-pointer',
         animationClass,
       )}
       onClick={onClick}
     >
-      <div className={cn(
-          "relative w-full aspect-square overflow-hidden border border-black",
-          isInHand && !isMobile ? "rounded-xl shadow-[0_3px_0_#0a0a0a]" : "rounded-2xl shadow-[0_4px_0_#0a0a0a]"
-      )}>
-        {renderCardContent()}
-      </div>
+        <motion.div 
+            className="w-full h-full absolute card-face"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(0deg)' }}
+            animate={{ rotateY: card.isFaceUp ? 180 : 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+        >
+            <div className={cn(
+                "relative w-full aspect-square overflow-hidden border-2 border-black",
+                isInHand && !isMobile ? "rounded-xl shadow-[0_3px_0_#0a0a0a]" : "rounded-2xl shadow-[0_4px_0_#0a0a0a]"
+            )}>
+                {renderCardFace(false)}
+            </div>
+        </motion.div>
+        <motion.div 
+            className={cn(
+                "w-full h-full absolute card-face",
+                glowClass
+            )}
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            animate={{ rotateY: card.isFaceUp ? 0 : -180 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+        >
+            <div className={cn(
+                "relative w-full aspect-square overflow-hidden border-2 border-black",
+                isInHand && !isMobile ? "rounded-xl shadow-[0_3px_0_#0a0a0a]" : "rounded-2xl shadow-[0_4px_0_#0a0a0a]"
+            )}>
+                {renderCardFace(true)}
+            </div>
+        </motion.div>
     </motion.div>
   );
 }
