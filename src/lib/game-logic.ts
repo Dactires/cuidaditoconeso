@@ -39,20 +39,19 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     for (const color of COLORS) {
         for (const value of CHARACTER_VALUES) {
             const defId = `color-${color.toLowerCase()}`;
-            const valueDefId = `color-${color.toLowerCase()}-${value}`;
-            const valueDef = cardDefMap.get(valueDefId);
             const baseDef = cardDefMap.get(defId);
             
-            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-                // Create a NEW object for each card
-                deck.push({
-                  uid: generateCardId(),
-                  type: 'Personaje',
-                  color,
-                  value,
-                  isFaceUp: false,
-                  imageUrl: valueDef?.imageUrl || baseDef?.imageUrl, // Use specific image, fallback to base
-                });
+            if (baseDef) {
+                for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                    deck.push({
+                      uid: generateCardId(),
+                      type: 'Personaje',
+                      color,
+                      value,
+                      isFaceUp: false,
+                      imageUrl: baseDef.imageUrl,
+                    });
+                }
             }
         }
     }
