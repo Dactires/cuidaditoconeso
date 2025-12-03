@@ -73,18 +73,20 @@ export default function AdminDashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/admin/dashboard" passHref>
-                <SidebarMenuButton asChild isActive={pathname === '/admin/dashboard'}>
-                  <a><LayoutDashboard /><span>Dashboard</span></a>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton asChild isActive={pathname === '/admin/dashboard'}>
+                <Link href="/admin/dashboard">
+                  <LayoutDashboard />
+                  <span>Dashboard</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/admin/dashboard/cards" passHref>
                 <SidebarMenuButton asChild isActive={pathname === '/admin/dashboard/cards'}>
-                   <a><CreditCard /><span>Cartas</span></a>
+                  <Link href="/admin/dashboard/cards">
+                    <CreditCard />
+                    <span>Cartas</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>

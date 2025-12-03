@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -23,6 +24,11 @@ service cloud.firestore {
       allow read: if isSignedIn();
       // Only players in the game can write to it
       allow write: if isSignedIn() && request.auth.uid in resource.data.playerIds;
+    }
+
+    // Rules for card images, accessible by any authenticated user (admin panel is protected)
+    match /card-images/{cardId} {
+        allow read, write: if isSignedIn();
     }
   }
 }
