@@ -37,7 +37,10 @@ export default function GameCard({
   // Slot vacío (por ejemplo casillero sin carta)
   if (!card) {
     return (
-      <div className="w-full h-full rounded-lg bg-black/20 border-2 border-dashed border-slate-700 aspect-square" />
+      <div className={cn(
+        "w-full h-full rounded-lg bg-black/20 border-2 border-dashed border-slate-700 aspect-square transition-colors",
+        isSelectable && !isDimmed && "border-amber-400/50 bg-amber-400/10 cursor-pointer"
+      )} />
     );
   }
 
@@ -56,10 +59,11 @@ export default function GameCard({
   return (
     <motion.div
       className={cn(
-        'w-full h-full relative aspect-square',
-        isSelectable && 'cursor-pointer',
+        'w-full h-full relative aspect-square transition-all',
+        isSelectable && !isDimmed && 'cursor-pointer',
         isSelected && !isMobile && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
-        isSelected && isMobile && 'ring-2 ring-amber-300',
+        isSelected && isMobile && 'ring-2 ring-amber-300 rounded-2xl',
+        isSelectable && !isDimmed && !card.isFaceUp && "ring-2 ring-amber-400/80 ring-inset"
       )}
       onClick={onClick}
       whileHover={isSelectable && !isMobile ? { scale: 1.05, y: -4 } : {}}
