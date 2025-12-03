@@ -69,10 +69,26 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({
   const [lobbyUrl, setLobbyUrl] = useState<string | null>(null);
   const [battleUrl, setBattleUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Refs para los elementos <audio>
   const lobbyAudioRef = useRef<HTMLAudioElement>(null);
   const battleAudioRef = useRef<HTMLAudioElement>(null);
+  
+  // Unlock audio on first user interaction
+  useEffect(() => {
+    const unlockAudio = () => {
+      setHasInteracted(true);
+      // Clean up the event listener after the first interaction
+      document.removeEventListener("pointerdown", unlockAudio);
+    };
+    
+    document.addEventListener("pointerdown", unlockAudio);
+    
+    return () => {
+      document.removeEventListener("pointerdown", unlockAudio);
+    };
+  }, []);
 
   // Efecto para obtener las URLs de la música desde Firebase
   useEffect(() => {
@@ -117,18 +133,18 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({
 
   // Funciones de control de música
   const playLobbyMusic = useCallback(() => {
-    if (isLoading || !lobbyAudioRef.current) return;
+    if (isLoading || !lobbyAudioRef.current || !hasInteracted) return;
     setVolume();
     battleAudioRef.current?.pause();
     lobbyAudioRef.current?.play().catch(console.error);
-  }, [isLoading]);
+  }, [isLoading, hasInteracted]);
 
   const playBattleMusic = useCallback(() => {
-    if (isLoading || !battleAudioRef.current) return;
+    if (isLoading || !battleAudioRef.current || !hasInteracted) return;
     setVolume();
     lobbyAudioRef.current?.pause();
     battleAudioRef.current?.play().catch(console.error);
-  }, [isLoading]);
+  }, [isLoading, hasInteracted]);
 
   const stopAllMusic = useCallback(() => {
     lobbyAudioRef.current?.pause();
