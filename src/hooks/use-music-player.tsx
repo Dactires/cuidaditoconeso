@@ -8,24 +8,61 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  ReactNode,
 } from "react";
 import { useStorage } from "@/firebase";
 import { ref, getDownloadURL } from "firebase/storage";
-import useSound from "use-sound";
-import type { PlayFunction, StopFunction, Sound } from "use-sound/dist/types";
 
+// Define el tipo para el contexto de la música
 interface MusicContextType {
   playLobbyMusic: () => void;
   playBattleMusic: () => void;
   stopAllMusic: () => void;
-  isLobbyPlaying: boolean;
-  isBattlePlaying: boolean;
   isLoading: boolean;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
 
-export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
+// --- Componente de Audio Oculto ---
+// Este componente manejará los elementos <audio> nativos
+const AudioPlayer = ({
+  lobbyUrl,
+  battleUrl,
+  lobbyRef,
+  battleRef,
+}: {
+  lobbyUrl: string | null;
+  battleUrl: string | null;
+  lobbyRef: React.RefObject<HTMLAudioElement>;
+  battleRef: React.RefObject<HTMLAudioElement>;
+}) => {
+  return (
+    <>
+      {lobbyUrl && (
+        <audio
+          ref={lobbyRef}
+          src={lobbyUrl}
+          loop
+          preload="auto"
+          className="hidden"
+        />
+      )}
+      {battleUrl && (
+        <audio
+          ref={battleRef}
+          src={battleUrl}
+          loop
+          preload="auto"
+          className="hidden"
+        />
+      )}
+    </>
+  );
+};
+
+
+// --- Proveedor de Música ---
+export const MusicProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const storage = useStorage();
@@ -33,121 +70,102 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
   const [battleUrl, setBattleUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Refs to store the playback functions and sound instances
-  const lobbySoundRef = useRef<{ play: PlayFunction; stop: StopFunction; sound: Sound | null; isPlaying: boolean; } | null>(null);
-  const battleSoundRef = useRef<{ play: PlayFunction; stop: StopFunction; sound: Sound | null; isPlaying: boolean; } | null>(null);
+  // Refs para los elementos <audio>
+  const lobbyAudioRef = useRef<HTMLAudioElement>(null);
+  const battleAudioRef = useRef<HTMLAudioElement>(null);
 
-  // This state is just to trigger re-renders when playback status changes
-  const [playbackState, setPlaybackState] = useState({ lobby: false, battle: false });
-
-  // Fetch URLs from Firebase Storage
+  // Efecto para obtener las URLs de la música desde Firebase
   useEffect(() => {
     const fetchMusicUrls = async () => {
-      if (!storage) return;
+      if (!storage) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
-      
-      const lobbyRef = ref(storage, "music/lobby.mp3");
-      const battleRef = ref(storage, "music/battle.mp3");
+      try {
+        const lobbyRef = ref(storage, "music/lobby.mp3");
+        const battleRef = ref(storage, "music/battle.mp3");
 
-      try {
-        const lobbyDownloadUrl = await getDownloadURL(lobbyRef);
+        const [lobbyDownloadUrl, battleDownloadUrl] = await Promise.all([
+          getDownloadURL(lobbyRef).catch(e => {
+            if ((e as any).code !== 'storage/object-not-found') console.error("Error fetching lobby music:", e);
+            return null;
+          }),
+          getDownloadURL(battleRef).catch(e => {
+            if ((e as any).code !== 'storage/object-not-found') console.error("Error fetching battle music:", e);
+            return null;
+          }),
+        ]);
+        
         setLobbyUrl(lobbyDownloadUrl);
-      } catch (error) {
-        if ((error as any).code !== 'storage/object-not-found') {
-          console.error("Error fetching lobby music:", error);
-        }
-      }
-      
-      try {
-        const battleDownloadUrl = await getDownloadURL(battleRef);
         setBattleUrl(battleDownloadUrl);
+
       } catch (error) {
-         if ((error as any).code !== 'storage/object-not-found') {
-          console.error("Error fetching battle music:", error);
-        }
+        console.error("An unexpected error occurred while fetching music URLs:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     fetchMusicUrls();
   }, [storage]);
   
-  // Custom hook to manage sound loading and playback
-  const useMusicTrack = (url: string | null) => {
-    const [play, { stop, sound, isPlaying }] = useSound(url, {
-        volume: 0.25,
-        loop: true, // Use the library's loop for simplicity now
-        // onend will be ignored if loop is true, but good practice
-        onplay: () => setPlaybackState(s => ({...s, [sound?.src === lobbyUrl ? 'lobby' : 'battle']: true})),
-        onstop: () => setPlaybackState(s => ({...s, [sound?.src === lobbyUrl ? 'lobby' : 'battle']: false})),
-        onend: () => setPlaybackState(s => ({...s, [sound?.src === lobbyUrl ? 'lobby' : 'battle']: false})),
-    });
-    return { play, stop, sound, isPlaying };
-  };
+  const setVolume = () => {
+    if (lobbyAudioRef.current) lobbyAudioRef.current.volume = 0.25;
+    if (battleAudioRef.current) battleAudioRef.current.volume = 0.25;
+  }
 
-  const lobbyAudio = useMusicTrack(lobbyUrl);
-  const battleAudio = useMusicTrack(battleUrl);
-
-  useEffect(() => {
-    lobbySoundRef.current = lobbyAudio;
-    battleSoundRef.current = battleAudio;
-  }, [lobbyAudio, battleAudio]);
-
-  const stopAllMusic = useCallback(() => {
-    lobbySoundRef.current?.stop();
-    battleSoundRef.current?.stop();
-  }, []);
-  
+  // Funciones de control de música
   const playLobbyMusic = useCallback(() => {
-    if (isLoading || !lobbyUrl) return;
-    stopAllMusic();
-    lobbySoundRef.current?.play();
-  }, [isLoading, lobbyUrl, stopAllMusic]);
+    if (isLoading || !lobbyAudioRef.current) return;
+    setVolume();
+    battleAudioRef.current?.pause();
+    lobbyAudioRef.current?.play().catch(console.error);
+  }, [isLoading]);
 
   const playBattleMusic = useCallback(() => {
-    if (isLoading || !battleUrl) return;
-    stopAllMusic();
-    battleSoundRef.current?.play();
-  }, [isLoading, battleUrl, stopAllMusic]);
+    if (isLoading || !battleAudioRef.current) return;
+    setVolume();
+    lobbyAudioRef.current?.pause();
+    battleAudioRef.current?.play().catch(console.error);
+  }, [isLoading]);
 
-  // Handle browser tab visibility changes
+  const stopAllMusic = useCallback(() => {
+    lobbyAudioRef.current?.pause();
+    battleAudioRef.current?.pause();
+  }, []);
+  
+    // Pausa la música si la pestaña no está visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        lobbySoundRef.current?.sound?.pause();
-        battleSoundRef.current?.sound?.pause();
-      } else {
-        if (lobbySoundRef.current?.isPlaying) lobbySoundRef.current?.sound?.play();
-        if (battleSoundRef.current?.isPlaying) battleSoundRef.current?.sound?.play();
+        stopAllMusic();
       }
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      // Ensure music stops completely on component unmount
-      lobbySoundRef.current?.sound?.unload();
-      battleSoundRef.current?.sound?.unload();
     };
-  }, []);
+  }, [stopAllMusic]);
+
 
   return (
     <MusicContext.Provider
-      value={{
-        playLobbyMusic,
-        playBattleMusic,
-        stopAllMusic,
-        isLobbyPlaying: playbackState.lobby,
-        isBattlePlaying: playbackState.battle,
-        isLoading,
-      }}
+      value={{ playLobbyMusic, playBattleMusic, stopAllMusic, isLoading }}
     >
+      <AudioPlayer
+        lobbyUrl={lobbyUrl}
+        battleUrl={battleUrl}
+        lobbyRef={lobbyAudioRef}
+        battleRef={battleAudioRef}
+      />
       {children}
     </MusicContext.Provider>
   );
 };
 
+
+// --- Hook para usar el reproductor ---
 export const useMusicPlayer = () => {
   const context = useContext(MusicContext);
   if (context === undefined) {
