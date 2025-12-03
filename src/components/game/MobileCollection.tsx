@@ -48,7 +48,7 @@ export default function MobileCollection() {
       </section>
 
       {/* COLECCIÓN */}
-      <section className="px-3 pb-24 mt-2 flex-1 overflow-y-auto">
+      <section className="px-3 pb-24 mt-2 flex-1 overflow-y-auto no-scrollbar">
         <h3 className="comic-title text-white text-base tracking-[0.2em] mb-2">
           Colección
         </h3>
