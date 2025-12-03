@@ -1,3 +1,4 @@
+
 import { GameState, Player, Card } from './types';
 import {
   CARDS_PER_VALUE_COLOR,
@@ -33,6 +34,7 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
 
     for (const def of characterDefs) {
         const level = characterLevels[def.color] || 1; // Default to level 1 if not specified
+        // All character cards of a color will have the same level for now.
         for (let i = 0; i < (CARDS_PER_VALUE_COLOR * 5); i++) {
              deck.push({
                 uid: generateCardId(),
@@ -183,9 +185,15 @@ const triggerAbilities = (
         if (neighbor) {
           currentPlayer.discardPile.push({ ...neighbor, isFaceUp: true });
           currentPlayer.board[targetR][targetC] = null;
+          
+          // Refill the slot
+          if (ensurePlayerDeckHasCards(currentPlayer, 1)) {
+              const newCard = currentPlayer.deck.pop()!;
+              draft.refillingSlots.push({ playerId: currentPlayer.id, r: targetR, c: targetC, card: newCard });
+          }
         }
       }
-      draft.gameMessage = `¡${playedCard.ability.name}! Descartaste la carta de la derecha.`;
+      draft.gameMessage = `¡${playedCard.ability.name}! Descartaste una carta y se repone tu tablero.`;
       break;
     }
 
@@ -318,44 +326,46 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
 }
 
 const checkEndGame = (draft: GameState) => {
-  let gameShouldEnd = false;
-  
-  // 1. Check for full board of face-up cards (your old logic)
-  for (const player of draft.players) {
-    if (player.board.flat().every(card => card === null || card.isFaceUp)) {
-      gameShouldEnd = true;
-      break;
+    // 1) NUEVA REGLA: tablero lleno de personajes boca arriba
+    let gameShouldEnd = false;
+
+    for (const player of draft.players) {
+        const board = player.board.flat();
+        if (board.every(card => card !== null && card.isFaceUp)) {
+            gameShouldEnd = true;
+            break;
+        }
     }
-  }
-  
-  if (gameShouldEnd && draft.finalTurnCounter === -1) {
-    draft.finalTurnCounter = draft.players.length;
-    draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
-  }
-  
-  // 2. Check if final turn counter is done
-  if (draft.finalTurnCounter === 0 && !draft.gameOver) {
-      draft.gameOver = true;
-      draft.turnPhase = 'GAME_OVER';
 
-      draft.players.forEach(p => {
-        p.score = getBoardScore(p.board);
-      });
-      draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
+    if (gameShouldEnd && draft.finalTurnCounter === -1) {
+        draft.finalTurnCounter = draft.players.length;
+        draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
+    }
 
-      const scores = draft.players.map(p => p.score);
-      const maxScore = Math.max(...scores);
-      const winners = draft.players.filter(p => p.score === maxScore);
+    // 2) Lógica de ronda final
+    if (draft.finalTurnCounter === 0 && !draft.gameOver) {
+        draft.gameOver = true;
+        draft.turnPhase = 'GAME_OVER';
 
-      if (winners.length > 1) {
-          draft.winner = null;
-          draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
-      } else {
-          draft.winner = winners[0];
-          draft.gameMessage = `¡Fin del juego! ¡El Jugador ${winners[0].id + 1} gana!`;
-      }
-  }
-}
+        draft.players.forEach(p => {
+            p.score = getBoardScore(p.board);
+        });
+        draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
+
+        const scores = draft.players.map(p => p.score);
+        const maxScore = Math.max(...scores);
+        const winners = draft.players.filter(p => p.score === maxScore);
+
+        if (winners.length > 1) {
+            draft.winner = null;
+            draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
+        } else {
+            draft.winner = winners[0];
+            const winnerName = winners[0].id === 0 ? "Jugador 1" : `Rival (IA)`;
+            draft.gameMessage = `¡Fin del juego! ¡${winnerName} gana con ${maxScore} puntos!`;
+        }
+    }
+};
 
 function nextTurn(state: GameState): GameState {
   if (state.gameOver) return state;
