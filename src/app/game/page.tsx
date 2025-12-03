@@ -467,7 +467,7 @@ export default function GamePage() {
   );
 
   const renderMobileView = () => (
-    <div className="h-full w-full flex flex-col p-2 gap-2 relative">
+    <div className="h-full w-full flex flex-col p-2 gap-4 relative">
       {/* Rival Area */}
       <div className='flex flex-col items-center gap-2'>
         <div className="flex items-center justify-between w-full px-2">
@@ -497,14 +497,19 @@ export default function GamePage() {
         />
       </div>
 
-      <div className="flex-grow flex items-center justify-center relative">
-        <Swords className="h-6 w-6 text-slate-700" />
-      </div>
+      <div className="flex-grow flex items-center justify-center relative" />
 
       {/* Player Area */}
       <div className='flex flex-col items-center gap-2'>
+        <GameBoard
+            board={humanPlayer.board}
+            onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+            isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+            explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+            isMobile
+        />
         <div className="flex items-center justify-between w-full px-2">
-            <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-sky-500 border-2 border-black flex items-center justify-center">
                     <User className="h-5 w-5 text-slate-900" />
                 </div>
@@ -524,54 +529,38 @@ export default function GamePage() {
                 </Button>
             )}
         </div>
-        <GameBoard
-            board={humanPlayer.board}
-            onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-            isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-            explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
-            isMobile
-        />
       </div>
       
       {/* Player Hand */}
-      <div className="w-full h-28 flex justify-center items-end pb-2">
-        <div className="relative w-full max-w-xs h-28 flex justify-center">
+      <div className="w-full h-32 flex justify-center items-center pb-2">
+        <div className="relative w-full max-w-sm h-full flex justify-center items-end card-hand-fan">
             {humanPlayer.hand.map((card, index) => {
                 const totalCards = humanPlayer.hand.length;
-                const cardOffset = 30; // degrees
-                const fanAngle = totalCards * cardOffset;
-                const startAngle = -fanAngle / 2 + cardOffset/2;
-                const rotation = startAngle + index * cardOffset;
+                const fanAngle = Math.min(totalCards * 20, 90);
+                const rotation = (index / (totalCards - 1)) * fanAngle - fanAngle / 2;
 
                 return (
                     <motion.div
                       key={card.uid}
-                      className="absolute bottom-0 w-24 h-32 origin-bottom"
-                      initial={{ opacity: 0, y: 50, rotate: 0 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
+                      className={cn(
+                        'absolute origin-bottom fan-card',
+                        selectedHandCard?.card.uid === card.uid && 'selected-fan-card'
+                      )}
+                      animate={{ 
                         rotate: rotation,
-                        transition: { type: 'spring', stiffness: 400, damping: 25, delay: index * 0.05 },
+                        y: selectedHandCard?.card.uid === card.uid ? -40 : 0
                       }}
-                      whileHover={{ 
-                        y: -30, 
-                        zIndex: 50,
-                        rotate: rotation,
-                        scale: 1.1,
-                      }}
-                      exit={{ opacity: 0, y: 40, transition: { duration: 0.2 } }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                       onClick={() => handleHandCardClick(card, index)}
-                      style={{
-                          zIndex: index,
-                      }}
                     >
+                      <div className="w-24 aspect-[2.5/3.5]">
                         <GameCard
                             card={card}
                             onClick={() => {}}
                             isSelected={selectedHandCard?.card.uid === card.uid}
                             isSelectable={isHandCardSelectable(card)}
                         />
+                      </div>
                     </motion.div>
                 );
             })}
@@ -619,7 +608,7 @@ export default function GamePage() {
             {/* Turn indicator */}
             {showDrawAnimation === humanPlayerId && (
                  <motion.div
-                    className="absolute"
+                    className="absolute z-10"
                     initial={{ scale: 0.5, opacity: 0}}
                     animate={{ scale: 1, opacity: 1, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
                     exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
@@ -671,5 +660,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

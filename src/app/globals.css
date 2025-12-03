@@ -492,15 +492,21 @@ html, body, button, input, select, textarea {
   font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
-.card-hand-fan > * {
+.card-hand-fan {
+  perspective: 1000px;
+}
+
+.fan-card {
   transition: transform 0.3s ease-out;
+  transform-style: preserve-3d;
 }
 
-.card-hand-fan:hover .fan-card:not(:hover) {
-  transform: translateY(-20px);
+.card-hand-fan:has(.fan-card:hover) .fan-card:not(:hover) {
+  transform: translateY(0);
 }
 
-.card-hand-fan .fan-card:hover {
+.fan-card.selected-fan-card,
+.fan-card:hover {
   transform: translateY(-40px) !important;
   z-index: 20;
 }
