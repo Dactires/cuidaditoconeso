@@ -24,10 +24,11 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 let cardUid = 0;
-const generateCardId = () => `card-${Date.now()}-${cardUid++}`;
+const generateCardId = () => `card-${cardUid++}`;
 
 
 function createDeck(): Card[] {
+  cardUid = 0; // Reset UID counter for deterministic generation
   const deck: Card[] = [];
   for (const color of COLORS) {
     for (const value of CHARACTER_VALUES) {
