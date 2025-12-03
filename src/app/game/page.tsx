@@ -707,6 +707,7 @@ export default function GamePage() {
           </motion.div>
         ))}
       </div>
+      <div className="h-4 shrink-0" />
 
       <div className="absolute top-2 right-2 z-20">
          <AlertDialog>
