@@ -32,5 +32,4 @@ export interface GameState {
   lastDrawnCardId: string | null;
   lastRevealedBomb: { playerId: number; r: number; c: number; cardUid: string; } | null;
   showDrawAnimation: boolean;
-  cardsToRefill: { playerId: number; r: number; c: number }[];
 }

@@ -147,7 +147,6 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     lastDrawnCardId: null,
     lastRevealedBomb: null,
     showDrawAnimation: false,
-    cardsToRefill: [],
   };
 }
 
@@ -226,7 +225,7 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   } else {
     draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;
   }
-  draft.isForcedToPlay = player.hand.length >= MAX_HAND_SIZE;
+  draft.isForcedToPlay = player.hand.length > MAX_HAND_SIZE;
   draft.turnPhase = 'REVEAL_CARD';
 });
 
@@ -265,22 +264,26 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
     // Set the card to be animated
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
     draft.lastRevealedBomb = null; // Clear the bomb trigger
+    
+    player.board[r][c] = null;
+    if(explodingCard) draft.discardPile.push({...explodingCard, isFaceUp: true});
 
     const coordsToDestroy = new Set<string>();
-    coordsToDestroy.add(`${r},${c}`);
-
+    
+    // Always destroy adjacent
     const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
     for (const [ar, ac] of coordsToCheck) {
         if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
             const adjCard = player.board[ar][ac];
-            if (adjCard && adjCard.isFaceUp) {
+            // Destroy adjacent regardless of face up or not
+            if(adjCard) {
                 coordsToDestroy.add(`${ar},${ac}`);
             }
         }
     }
     
     // Check if we have enough cards to refill, shuffling if necessary
-    ensureDeckHasCards(draft, coordsToDestroy.size);
+    ensureDeckHasCards(draft, coordsToDestroy.size + 1); // +1 for the bomb's own spot
 
     coordsToDestroy.forEach(coord => {
         const [row, col] = coord.split(',').map(Number);
@@ -288,38 +291,26 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
         if (oldCard) {
             draft.discardPile.push({ ...oldCard, isFaceUp: true });
         }
-        // Refill from deck
-        if (draft.deck.length > 0) {
-            const newCard = draft.deck.pop()!;
-            player.board[row][col] = { ...newCard, isFaceUp: false };
-        } else {
-            player.board[row][col] = null;
-        }
+        player.board[row][col] = null;
     });
     
-    // Clear the exploding card visuals from the board state itself
-    player.board[r][c] = null;
+    // Refill the bomb's original spot
+    if (ensureDeckHasCards(draft, 1)) {
+        player.board[r][c] = {...draft.deck.pop()!, isFaceUp: false};
+    }
+
+    // Refill adjacent destroyed spots
+    coordsToDestroy.forEach(coord => {
+      const [row, col] = coord.split(',').map(Number);
+       if (ensureDeckHasCards(draft, 1)) {
+          player.board[row][col] = {...draft.deck.pop()!, isFaceUp: false};
+      }
+    });
+    
 
     player.score = getBoardScore(player.board);
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
-});
-
-
-export const refillBoardSlot = produce((draft: GameState, playerId: number, r: number, c: number) => {
-  const player = draft.players[playerId];
-  
-  if (ensureDeckHasCards(draft, 1)) {
-    const newCard = draft.deck.pop()!;
-    player.board[r][c] = { ...newCard, isFaceUp: false };
-  } else {
-    player.board[r][c] = null;
-  }
-
-  // Remove the refilled slot from the list
-  draft.cardsToRefill = draft.cardsToRefill.filter(
-    slot => !(slot.playerId === playerId && slot.r === r && slot.c === c)
-  );
 });
 
 export const playCardOwnBoard = produce((draft: GameState, playerId: number, cardInHand: Card, r: number, c: number) => {
@@ -391,7 +382,7 @@ export const swapCard = produce((draft: GameState, playerId: number, r: number, 
 export const passTurn = produce((draft: GameState, playerId: number) => {
     if (draft.turnPhase !== 'ACTION' || draft.currentPlayerIndex !== playerId) return;
     const player = draft.players[playerId];
-    if (player.hand.length >= MAX_HAND_SIZE) {
+    if (player.hand.length > MAX_HAND_SIZE) {
         draft.gameMessage = "¡Tienes demasiadas cartas! Debes jugar o intercambiar una.";
         return;
     }
@@ -399,19 +390,7 @@ export const passTurn = produce((draft: GameState, playerId: number) => {
 });
 
 export const clearExplosion = produce((draft: GameState) => {
-  if (draft.explodingCard) {
-    const { playerId, r, c } = draft.explodingCard;
-    const player = draft.players[playerId];
-
-    // Ensure the slot is filled after explosion animation is cleared
-    if (!player.board[r][c]) {
-        if (ensureDeckHasCards(draft, 1)) {
-            const newCard = draft.deck.pop()!;
-            player.board[r][c] = { ...newCard, isFaceUp: false };
-        }
-    }
-    draft.explodingCard = null;
-  }
+  draft.explodingCard = null;
 });
 
 export const clearRivalMove = produce((draft: GameState) => {
