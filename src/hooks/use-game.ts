@@ -69,7 +69,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         // This needs to be handled in the component to re-fetch definitions
       return state; 
     case 'CLEAR_EXPLOSION':
-      return Game.clearExplosion(state);
+      if (!state.explodingCard) return state;
+      const { playerId, r, c } = state.explodingCard;
+      return Game.resolveExplosion(state, playerId, r, c);
     case 'CLEAR_RIVAL_MOVE':
       return Game.clearRivalMove(state);
     case 'CLEAR_DRAWN_CARD':

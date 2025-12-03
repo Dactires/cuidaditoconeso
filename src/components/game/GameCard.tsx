@@ -79,14 +79,16 @@ export default function GameCard({
 }: GameCardProps) {
 
   const [showTimer, setShowTimer] = React.useState(false);
-  const cardIsBomb = card?.type === 'Bomba' || (explodingCardInfo && explodingCardInfo.card.type === 'Bomba');
-  const cardToRender = isExploding ? explodingCardInfo?.card : card;
+  const cardToRender = isExploding && explodingCardInfo ? explodingCardInfo.card : card;
+  const cardIsBomb = cardToRender?.type === 'Bomba';
+  const showFace = cardToRender?.isFaceUp ?? false;
+
 
   React.useEffect(() => {
     let timerTimeout: NodeJS.Timeout | null = null;
     let clearTimerTimeout: NodeJS.Timeout | null = null;
     
-    if (card?.isFaceUp && cardIsBomb) {
+    if (showFace && cardIsBomb) {
       // Short delay to show the bomb image first
       timerTimeout = setTimeout(() => {
         setShowTimer(true);
@@ -103,7 +105,7 @@ export default function GameCard({
       if (timerTimeout) clearTimeout(timerTimeout);
       if (clearTimerTimeout) clearTimeout(clearTimerTimeout);
     };
-  }, [card?.isFaceUp, cardIsBomb]);
+  }, [showFace, cardIsBomb]);
 
 
   if (!cardToRender) {
@@ -115,7 +117,7 @@ export default function GameCard({
     );
   }
 
-  const finalCard = cardToRender!;
+  const finalCard = cardToRender;
   const animationClass = isRivalMove ? 'animate-rival-play' : isExploding ? 'animate-explode' : '';
   const glowClass = finalCard.isFaceUp && finalCard.type === 'Personaje' ? getGlowColor(finalCard.color) : '';
 
@@ -187,7 +189,7 @@ export default function GameCard({
 
   return (
     <motion.div
-      layoutId={`card-${finalCard.uid}`}
+      layoutId={!isExploding ? `card-${finalCard.uid}`: undefined}
       variants={cardVariants}
       initial="idle"
       animate={
@@ -208,8 +210,7 @@ export default function GameCard({
     >
         <motion.div 
             className="w-full h-full absolute card-face"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(0deg)' }}
-            animate={{ rotateY: finalCard.isFaceUp ? 180 : 0 }}
+            style={{ backfaceVisibility: 'hidden', transform: showFace ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
         >
             <div className={cn(
@@ -224,8 +225,7 @@ export default function GameCard({
                 "w-full h-full absolute card-face",
                 glowClass
             )}
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-            animate={{ rotateY: finalCard.isFaceUp ? 0 : -180 }}
+            style={{ backfaceVisibility: 'hidden', transform: showFace ? 'rotateY(0deg)' : 'rotateY(-180deg)' }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
         >
             <div className={cn(
