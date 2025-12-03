@@ -135,7 +135,6 @@ export default function GamePage() {
   const [showDeckAnimation, setShowDeckAnimation] = useState(false);
 
   // Stable state for animations to prevent race conditions
-  const [stableRefillingSlots, setStableRefillingSlots] = useState<typeof gameState.refillingSlots>([]);
   const { playBattleMusic, stopAllMusic } = useMusicPlayer();
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
@@ -187,7 +186,6 @@ export default function GamePage() {
   useEffect(() => {
     if (refillingSlots && refillingSlots.length > 0) {
       setShowDeckAnimation(true);
-      setStableRefillingSlots(refillingSlots); // Capture stable list for animation
       const totalAnimationTime = (refillingSlots.length * 100) + 500; // 0.1s stagger + 0.5s duration
       const timer = setTimeout(() => {
         setShowDeckAnimation(false);
@@ -369,8 +367,6 @@ export default function GamePage() {
           type: 'FINISH_REFILL_ANIMATION',
           payload: { playerId, r, c, card },
       });
-      // Clear the stable list once all animations are done
-      setStableRefillingSlots(prev => prev.filter(slot => slot.card.uid !== card.uid));
   };
   
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
@@ -538,8 +534,6 @@ export default function GamePage() {
                 isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
                 cardBackImageUrl={cardBackImageUrl}
-                refillingSlots={stableRefillingSlots}
-                onRefillAnimationComplete={handleRefillAnimationComplete}
               />
             </div>
             
@@ -565,8 +559,6 @@ export default function GamePage() {
                 isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
                 lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
                 cardBackImageUrl={cardBackImageUrl}
-                refillingSlots={stableRefillingSlots}
-                onRefillAnimationComplete={handleRefillAnimationComplete}
               />
             </div>
           </div>
@@ -697,8 +689,6 @@ export default function GamePage() {
               isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               cardBackImageUrl={cardBackImageUrl}
-              refillingSlots={stableRefillingSlots}
-              onRefillAnimationComplete={handleRefillAnimationComplete}
           />
         </div>
       </div>
@@ -741,8 +731,6 @@ export default function GamePage() {
               isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
               cardBackImageUrl={cardBackImageUrl}
-              refillingSlots={stableRefillingSlots}
-              onRefillAnimationComplete={handleRefillAnimationComplete}
           />
         </div>
          <div className="flex items-center justify-between w-full px-2 h-8">
