@@ -261,43 +261,36 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
 
     if (!explodingCard || explodingCard.type !== 'Bomba') return;
     
+    // Set the card to be animated
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
     draft.lastRevealedBomb = null;
     
+    // Remove the bomb itself
     player.board[r][c] = null;
     if(explodingCard) draft.discardPile.push({...explodingCard, isFaceUp: true});
-
-    const coordsToDestroy = new Set<string>();
-    const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
     
+    // Coordinates to check orthogonally
+    const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+    const positionsToRefill: {r: number, c: number}[] = [{r, c}];
+    
+    // Find adjacent FACE-UP cards to destroy
     for (const [ar, ac] of coordsToCheck) {
         if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
             const adjCard = player.board[ar][ac];
-            if(adjCard) {
-                coordsToDestroy.add(`${ar},${ac}`);
+            // ONLY destroy if the card exists and is face up
+            if(adjCard && adjCard.isFaceUp) {
+                draft.discardPile.push({ ...adjCard, isFaceUp: true });
+                player.board[ar][ac] = null;
+                positionsToRefill.push({r: ar, c: ac});
             }
         }
     }
     
-    ensureDeckHasCards(draft, coordsToDestroy.size + 1);
-
-    coordsToDestroy.forEach(coord => {
-        const [row, col] = coord.split(',').map(Number);
-        const oldCard = player.board[row][col];
-        if (oldCard) {
-            draft.discardPile.push({ ...oldCard, isFaceUp: true });
-        }
-        player.board[row][col] = null;
-    });
-    
-    if (ensureDeckHasCards(draft, 1)) {
-        player.board[r][c] = {...draft.deck.pop()!, isFaceUp: false};
-    }
-
-    coordsToDestroy.forEach(coord => {
-      const [row, col] = coord.split(',').map(Number);
-       if (ensureDeckHasCards(draft, 1)) {
-          player.board[row][col] = {...draft.deck.pop()!, isFaceUp: false};
+    // Refill all cleared positions
+    ensureDeckHasCards(draft, positionsToRefill.length);
+    positionsToRefill.forEach(pos => {
+      if (draft.deck.length > 0) {
+        player.board[pos.r][pos.c] = {...draft.deck.pop()!, isFaceUp: false}; // ALWAYS FACE DOWN
       }
     });
 
