@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Gem, Coins, Users, Store, Sword, Star, Grid2X2, Gift, Hammer } from 'lucide-react';
+import MobileCollection from './MobileCollection';
 
 type TabId = 'battle' | 'collection' | 'shop' | 'club' | 'events';
 
@@ -62,14 +63,145 @@ export default function MobileLobby({
 
   const expPercent = Math.min(100, Math.round((exp / Math.max(1, expMax)) * 100));
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'battle':
+        return (
+          <motion.div
+            key="battle"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-3"
+          >
+            <motion.section
+              layout
+              className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-2 pt-2 pb-3"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex flex-col">
+                  <span className="comic-section-title !text-[9px]">Modo principal</span>
+                  <h2 className="comic-title text-lg text-white drop-shadow-[0_2px_0_#020617]">
+                    Tablero de Explosiones
+                  </h2>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 text-amber-300 drop-shadow-[0_1px_0_#020617]" />
+                  <span className="text-xs text-slate-100 font-semibold">Liga 1</span>
+                </div>
+              </div>
+              <motion.div
+                className="mt-1 relative w-full aspect-[16/11] rounded-2xl border-[3px] border-black bg-sky-500/30 overflow-hidden shadow-[0_6px_0_#020617]"
+                animate={{ y: [0, -2, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-display text-white text-lg tracking-[0.2em] uppercase drop-shadow-[0_3px_0_#020617] text-center px-4">
+                    Mapa / Vista del Tablero
+                  </span>
+                </div>
+              </motion.div>
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-slate-100">
+                  <span className="comic-section-title !text-[9px]">
+                    Progreso de temporada
+                  </span>
+                  <span className="font-mono text-[11px] text-amber-200">
+                    14 / 30 Trofeos
+                  </span>
+                </div>
+                <div className="h-3 rounded-full bg-slate-900 border-[2px] border-black overflow-hidden shadow-[0_2px_0_#020617]">
+                  <div className="h-full bg-amber-400 w-1/3" />
+                </div>
+                <div className="flex justify-between mt-1">
+                  {['common', 'common', 'rare', 'epic'].map((rarity, i) => (
+                    <motion.div
+                      key={i}
+                      whileHover={{ y: -3, scale: 1.05 }}
+                      className="w-10 h-10 rounded-xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_3px_0_#020617]"
+                    >
+                      <ChestIcon rarity={rarity as any} />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-3 flex justify-center">
+                <motion.button
+                  whileTap={{ scale: 0.96, y: 2 }}
+                  animate={{ scale: [1, 1.03, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                  onClick={onPlay}
+                  className="comic-btn comic-btn-primary !px-10 !py-3 text-base tracking-[0.25em]"
+                >
+                  ¡Batalla!
+                </motion.button>
+              </div>
+            </motion.section>
+            <LobbyInfoCard
+              title="Misión diaria"
+              subtitle="Ganás un cofre especial al conseguir 3 victorias hoy."
+              icon={<Sword className="w-5 h-5 text-amber-300" />}
+            />
+          </motion.div>
+        );
+      case 'collection':
+        return (
+          <motion.div
+            key="collection"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="h-full -mx-3"
+          >
+           <MobileCollection />
+          </motion.div>
+        );
+      default:
+        return (
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-3"
+          >
+            <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-3 py-6 flex flex-col items-center justify-center text-center gap-3">
+              <motion.div
+                animate={{ rotate: [-6, 4, -4, 6, -2, 0] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="w-12 h-12 rounded-2xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_5px_0_#020617]"
+              >
+                <Hammer className="w-7 h-7 text-amber-300" />
+              </motion.div>
+              <h2 className="comic-title text-xl text-white">
+                {TAB_META[activeTab].label} en construcción
+              </h2>
+              <p className="text-[12px] text-slate-100 max-w-xs">
+                {TAB_META[activeTab].desc}
+              </p>
+              <span className="mt-1 inline-flex items-center px-3 py-1 rounded-full bg-amber-300 border-[3px] border-black text-[10px] font-display tracking-[0.18em] uppercase text-slate-900 shadow-[0_3px_0_#020617]">
+                Próximamente
+              </span>
+            </section>
+
+            <LobbyInfoCard
+              title="Seguí jugando en Batalla"
+              subtitle="Mientras terminamos esta sección, podés seguir sumando trofeos."
+              icon={<Star className="w-5 h-5 text-sky-300" />}
+            />
+          </motion.div>
+        );
+    }
+  };
+
   return (
     <div className="relative h-screen w-full max-w-md mx-auto bg-[radial-gradient(circle_at_1px_1px,#0b1120_1px,transparent_0)] bg-[length:22px_22px] overflow-hidden">
-      {/* CONTENEDOR PRINCIPAL SCROLLABLE */}
       <div className="flex flex-col h-full pb-20">
-        {/* HEADER SUPERIOR */}
         <header className="px-3 pt-2 pb-1 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            {/* Nivel + barra exp */}
             <div className="flex items-center gap-2">
               <div className="flex flex-col items-center">
                 <motion.div
@@ -104,7 +236,6 @@ export default function MobileLobby({
               </div>
             </div>
 
-            {/* Recursos */}
             <div className="flex items-center gap-1">
               <ResourceChip icon={<Coins className="w-3.5 h-3.5" />} value={coins} />
               <ResourceChip icon={<Gem className="w-3.5 h-3.5" />} value={gems} tone="pink" />
@@ -119,138 +250,13 @@ export default function MobileLobby({
           </div>
         </header>
 
-        {/* CONTENIDO SCROLLABLE CON ANIMACIÓN POR SECCIÓN */}
         <main className="flex-1 overflow-y-auto px-3 pb-2">
           <AnimatePresence mode="wait">
-            {activeTab === 'battle' ? (
-              <motion.div
-                key="battle"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-3"
-              >
-                {/* PANEL PRINCIPAL BATALLA */}
-                <motion.section
-                  layout
-                  className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-2 pt-2 pb-3"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex flex-col">
-                      <span className="comic-section-title !text-[9px]">Modo principal</span>
-                      <h2 className="comic-title text-lg text-white drop-shadow-[0_2px_0_#020617]">
-                        Tablero de Explosiones
-                      </h2>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-amber-300 drop-shadow-[0_1px_0_#020617]" />
-                      <span className="text-xs text-slate-100 font-semibold">Liga 1</span>
-                    </div>
-                  </div>
-
-                  {/* Mapa / preview */}
-                  <motion.div
-                    className="mt-1 relative w-full aspect-[16/11] rounded-2xl border-[3px] border-black bg-sky-500/30 overflow-hidden shadow-[0_6px_0_#020617]"
-                    animate={{ y: [0, -2, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-display text-white text-lg tracking-[0.2em] uppercase drop-shadow-[0_3px_0_#020617] text-center px-4">
-                        Mapa / Vista del Tablero
-                      </span>
-                    </div>
-                  </motion.div>
-
-                  {/* Progreso temporada */}
-                  <div className="mt-3 flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-xs text-slate-100">
-                      <span className="comic-section-title !text-[9px]">
-                        Progreso de temporada
-                      </span>
-                      <span className="font-mono text-[11px] text-amber-200">
-                        14 / 30 Trofeos
-                      </span>
-                    </div>
-                    <div className="h-3 rounded-full bg-slate-900 border-[2px] border-black overflow-hidden shadow-[0_2px_0_#020617]">
-                      <div className="h-full bg-amber-400 w-1/3" />
-                    </div>
-                    {/* Cofres */}
-                    <div className="flex justify-between mt-1">
-                      {['common', 'common', 'rare', 'epic'].map((rarity, i) => (
-                        <motion.div
-                          key={i}
-                          whileHover={{ y: -3, scale: 1.05 }}
-                          className="w-10 h-10 rounded-xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_3px_0_#020617]"
-                        >
-                          <ChestIcon rarity={rarity as any} />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* BOTÓN BATALLA */}
-                  <div className="mt-3 flex justify-center">
-                    <motion.button
-                      whileTap={{ scale: 0.96, y: 2 }}
-                      animate={{ scale: [1, 1.03, 1] }}
-                      transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                      onClick={onPlay}
-                      className="comic-btn comic-btn-primary !px-10 !py-3 text-base tracking-[0.25em]"
-                    >
-                      ¡Batalla!
-                    </motion.button>
-                  </div>
-                </motion.section>
-
-                {/* Info extra batalla */}
-                <LobbyInfoCard
-                  title="Misión diaria"
-                  subtitle="Ganás un cofre especial al conseguir 3 victorias hoy."
-                  icon={<Sword className="w-5 h-5 text-amber-300" />}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-3"
-              >
-                {/* PANEL EN CONSTRUCCIÓN */}
-                <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-3 py-6 flex flex-col items-center justify-center text-center gap-3">
-                  <motion.div
-                    animate={{ rotate: [-6, 4, -4, 6, -2, 0] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-12 h-12 rounded-2xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_5px_0_#020617]"
-                  >
-                    <Hammer className="w-7 h-7 text-amber-300" />
-                  </motion.div>
-                  <h2 className="comic-title text-xl text-white">
-                    {TAB_META[activeTab].label} en construcción
-                  </h2>
-                  <p className="text-[12px] text-slate-100 max-w-xs">
-                    {TAB_META[activeTab].desc}
-                  </p>
-                  <span className="mt-1 inline-flex items-center px-3 py-1 rounded-full bg-amber-300 border-[3px] border-black text-[10px] font-display tracking-[0.18em] uppercase text-slate-900 shadow-[0_3px_0_#020617]">
-                    Próximamente
-                  </span>
-                </section>
-
-                <LobbyInfoCard
-                  title="Seguí jugando en Batalla"
-                  subtitle="Mientras terminamos esta sección, podés seguir sumando trofeos."
-                  icon={<Star className="w-5 h-5 text-sky-300" />}
-                />
-              </motion.div>
-            )}
+            {renderContent()}
           </AnimatePresence>
         </main>
       </div>
 
-      {/* BOTTOM NAV: TIENDA / CARTAS / BATALLA / CLUB / EVENTOS */}
       <nav className="absolute inset-x-0 bottom-0 h-16 bg-slate-950/95 border-t-[3px] border-slate-900 shadow-[0_-6px_0_#020617] flex items-center justify-between px-3 gap-1">
         <BottomNavButton
           icon={<Store className="w-5 h-5" />}
@@ -287,8 +293,6 @@ export default function MobileLobby({
     </div>
   );
 }
-
-/* ---------- SUBCOMPONENTES ---------- */
 
 function ResourceChip({
   icon,
