@@ -191,7 +191,7 @@ export default function GamePage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground font-body p-4 overflow-hidden">
+    <div className="flex flex-col h-full bg-background text-foreground font-body p-4 lg:p-6 overflow-hidden">
       <GameOverModal
         isOpen={gameOver && !!winner}
         winner={winner}
@@ -199,8 +199,7 @@ export default function GamePage() {
         onClose={() => dispatch({ type: 'RESET_GAME' })}
       />
       
-      {/* Rival Player Area */}
-      <div className="flex-shrink-0">
+      <div className="flex-1 min-h-0">
         <PlayerArea
           player={rivalPlayer}
           isRival={true}
@@ -209,8 +208,7 @@ export default function GamePage() {
         />
       </div>
 
-      {/* Game Status */}
-      <div className="flex-shrink-0 my-4">
+      <div className="flex-shrink-0 my-2 lg:my-4">
         <GameStatus
           deckSize={gameState.deck.length}
           discardSize={gameState.discardPile.length}
@@ -218,8 +216,7 @@ export default function GamePage() {
         />
       </div>
       
-      {/* Current Player Area */}
-      <div className="flex-shrink-0">
+      <div className="flex-1 min-h-0">
         <PlayerArea
           player={currentPlayer}
           isCurrentPlayer={true}
@@ -228,14 +225,10 @@ export default function GamePage() {
         />
       </div>
 
-      {/* Spacer */}
-      <div className="flex-grow" />
-
-      {/* Controls Panel */}
-      <div className="flex-shrink-0 mt-4 bg-card/80 backdrop-blur-sm p-4 rounded-lg border shadow-lg">
+      <div className="flex-shrink-0 mt-2 lg:mt-4 bg-card/80 backdrop-blur-sm p-2 lg:p-4 rounded-lg border shadow-lg">
         <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="w-full md:w-1/2">
-                <h3 className="font-headline text-lg mb-2 text-center">Your Hand</h3>
+                <h3 className="font-headline text-base lg:text-lg mb-2 text-center">Your Hand</h3>
                 <PlayerHand
                     hand={currentPlayer.hand}
                     onCardClick={handleHandCardClick}
@@ -244,7 +237,7 @@ export default function GamePage() {
                 />
             </div>
             <div className="w-full md:w-1/2">
-                <h3 className="font-headline text-lg mb-2 text-center">Actions</h3>
+                <h3 className="font-headline text-base lg:text-lg mb-2 text-center">Actions</h3>
                 <ActionControls
                     turnPhase={turnPhase}
                     onAction={handleAction}

@@ -12,10 +12,10 @@ interface GameBoardProps {
 
 export default function GameBoard({ board, onCardClick, isCardSelectable, isRival = false }: GameBoardProps) {
   return (
-    <div className={`grid grid-cols-3 gap-2 md:gap-4 p-2 md:p-4 rounded-lg bg-secondary/50 border-2 border-dashed border-secondary ${isRival ? 'rotate-180' : ''}`}>
+    <div className={`grid grid-cols-3 gap-1 md:gap-2 p-1 md:p-2 rounded-lg bg-secondary/50 border-2 border-dashed border-secondary h-full ${isRival ? 'rotate-180' : ''}`}>
       {board.map((row, r) =>
         row.map((card, c) => (
-          <div key={`${r}-${c}`} className={isRival ? 'rotate-180' : ''}>
+          <div key={`${r}-${c}`} className={`relative ${isRival ? 'rotate-180' : ''}`}>
             <GameCard
               card={card}
               onClick={() => onCardClick(r, c)}

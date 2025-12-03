@@ -12,12 +12,12 @@ interface PlayerHandProps {
 
 export default function PlayerHand({ hand, onCardClick, selectedCardId, isCardSelectable }: PlayerHandProps) {
   return (
-    <div className="flex justify-center items-center gap-2 p-2 min-h-[120px]">
+    <div className="flex justify-center items-center gap-2 p-2 min-h-[90px] lg:min-h-[120px]">
       {hand.length === 0 ? (
         <p className="text-muted-foreground">Your hand is empty.</p>
       ) : (
         hand.map((card, index) => (
-          <div key={card.uid} className="w-1/4 max-w-[90px]">
+          <div key={card.uid} className="w-1/4 max-w-[70px] lg:max-w-[90px] aspect-[2.5/3.5] relative">
             <GameCard
               card={card}
               onClick={() => onCardClick(card, index)}

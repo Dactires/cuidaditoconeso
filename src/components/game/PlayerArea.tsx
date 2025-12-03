@@ -30,24 +30,26 @@ export default function PlayerArea({ player, isCurrentPlayer = false, isRival = 
   const turnPhase = 'ACTION'; // Example value, as it's not passed down.
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center px-4">
-        <h2 className={cn('font-headline text-xl', isCurrentPlayer ? 'text-primary' : 'text-muted-foreground')}>
+    <div className="flex flex-col h-full space-y-2">
+      <div className="flex justify-between items-center px-2 lg:px-4 flex-shrink-0">
+        <h2 className={cn('font-headline text-lg lg:text-xl', isCurrentPlayer ? 'text-primary' : 'text-muted-foreground')}>
           Player {player.id + 1} {isRival && '(Rival)'} {isCurrentPlayer && '(You)'}
         </h2>
         <div className="flex items-center gap-2">
-          <Badge variant={isCurrentPlayer ? 'default' : 'secondary'} className="text-lg">
+          <Badge variant={isCurrentPlayer ? 'default' : 'secondary'} className="text-base lg:text-lg">
             Score: {score}
           </Badge>
           {isCurrentPlayer && turnPhase !== 'START_TURN' && <Badge variant="destructive">Your Turn</Badge>}
         </div>
       </div>
-      <GameBoard 
-        board={player.board} 
-        onCardClick={onCardClick}
-        isCardSelectable={isCardSelectable}
-        isRival={isRival}
-      />
+      <div className="flex-grow min-h-0">
+        <GameBoard 
+          board={player.board} 
+          onCardClick={onCardClick}
+          isCardSelectable={isCardSelectable}
+          isRival={isRival}
+        />
+      </div>
     </div>
   );
 }

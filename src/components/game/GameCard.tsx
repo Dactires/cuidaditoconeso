@@ -36,11 +36,11 @@ export default function GameCard({ card, onClick, isSelected = false, isSelectab
           )}
         >
           <CardHeader className="p-0">
-            <CardTitle className="text-4xl md:text-5xl font-bold">
-              {card.type === 'Bomba' ? <BombIcon className="w-12 h-12" /> : card.value}
+            <CardTitle className="text-3xl md:text-5xl font-bold">
+              {card.type === 'Bomba' ? <BombIcon className="w-8 h-8 md:w-12 md:h-12" /> : card.value}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2">
+          <CardContent className="p-1 md:p-2">
             <p className="text-xs font-semibold uppercase">{card.type}</p>
           </CardContent>
         </UICard>
@@ -51,14 +51,14 @@ export default function GameCard({ card, onClick, isSelected = false, isSelectab
   );
 
   return (
-    <div className="aspect-[2.5/3.5] [perspective:1000px]" onClick={onClick}>
+    <div className="absolute inset-0 [perspective:1000px]" onClick={onClick}>
       <div
         className={cn(
           'relative w-full h-full cursor-pointer rounded-lg shadow-md transition-transform duration-700 [transform-style:preserve-3d]',
           card?.isFaceUp && '[transform:rotateY(180deg)]',
-          isSelected && 'ring-4 ring-accent ring-offset-2 scale-105',
+          isSelected && 'ring-4 ring-accent ring-offset-2 scale-105 z-10',
           isSelectable && 'animate-pulse ring-2 ring-accent',
-          !card && 'cursor-not-allowed'
+          !card && 'cursor-default'
         )}
       >
         {cardBack}
