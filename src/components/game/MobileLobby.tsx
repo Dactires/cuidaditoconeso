@@ -1,9 +1,19 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Gem, Coins, Users, Store, Sword, Star, Grid2X2, Gift, Hammer } from 'lucide-react';
+import {
+  Gem,
+  Coins,
+  Users,
+  Store,
+  Sword,
+  Star,
+  Grid2X2,
+  Gift,
+  Hammer,
+} from 'lucide-react';
 import MobileCollection from './MobileCollection';
 
 type TabId = 'battle' | 'collection' | 'shop' | 'club' | 'events';
@@ -43,34 +53,61 @@ const TAB_META: Record<TabId, { label: string; desc: string }> = {
   },
 };
 
-const renderContent = (activeTab: TabId, onPlay?: () => void) => {
-  switch (activeTab) {
-    case 'battle':
+export default function MobileLobby({
+  playerName,
+  level,
+  exp,
+  expMax,
+  coins,
+  gems,
+  tickets = 0,
+  onTabChange,
+  onPlay,
+}: MobileLobbyProps) {
+  const [activeTab, setActiveTab] = React.useState<TabId>('battle');
+  const mainRef = React.useRef<HTMLDivElement | null>(null);
+
+  const handleTabClick = (tab: TabId) => {
+    setActiveTab(tab);
+    onTabChange?.(tab);
+    // MUY IMPORTANTE: resetea el scroll del contenido central
+    if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  };
+
+  const expPercent = Math.min(
+    100,
+    Math.round((exp / Math.max(1, expMax)) * 100)
+  );
+
+  const renderContent = () => {
+    if (activeTab === 'battle') {
       return (
         <motion.div
-          key="battle"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.25 }}
           className="space-y-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <motion.section
-            layout
-            className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-2 pt-2 pb-3"
-          >
+          <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-2 pt-2 pb-3">
             <div className="flex items-center justify-between mb-1">
               <div className="flex flex-col">
-                <span className="comic-section-title !text-[9px]">Modo principal</span>
+                <span className="comic-section-title !text-[9px]">
+                  Modo principal
+                </span>
                 <h2 className="comic-title text-lg text-white drop-shadow-[0_2px_0_#020617]">
                   Tablero de Explosiones
                 </h2>
               </div>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-amber-300 drop-shadow-[0_1px_0_#020617]" />
-                <span className="text-xs text-slate-100 font-semibold">Liga 1</span>
+                <span className="text-xs text-slate-100 font-semibold">
+                  Liga 1
+                </span>
               </div>
             </div>
+
             <motion.div
               className="mt-1 relative w-full aspect-[16/11] rounded-2xl border-[3px] border-black bg-sky-500/30 overflow-hidden shadow-[0_6px_0_#020617]"
               animate={{ y: [0, -2, 0] }}
@@ -82,6 +119,7 @@ const renderContent = (activeTab: TabId, onPlay?: () => void) => {
                 </span>
               </div>
             </motion.div>
+
             <div className="mt-3 flex flex-col gap-2">
               <div className="flex items-center justify-between text-xs text-slate-100">
                 <span className="comic-section-title !text-[9px]">
@@ -96,16 +134,16 @@ const renderContent = (activeTab: TabId, onPlay?: () => void) => {
               </div>
               <div className="flex justify-between mt-1">
                 {['common', 'common', 'rare', 'epic'].map((rarity, i) => (
-                  <motion.div
+                  <div
                     key={i}
-                    whileHover={{ y: -3, scale: 1.05 }}
                     className="w-10 h-10 rounded-xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_3px_0_#020617]"
                   >
                     <ChestIcon rarity={rarity as any} />
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
+
             <div className="mt-3 flex justify-center">
               <motion.button
                 whileTap={{ scale: 0.96, y: 2 }}
@@ -117,7 +155,8 @@ const renderContent = (activeTab: TabId, onPlay?: () => void) => {
                 ¡Batalla!
               </motion.button>
             </div>
-          </motion.section>
+          </section>
+
           <LobbyInfoCard
             title="Misión diaria"
             subtitle="Ganás un cofre especial al conseguir 3 victorias hoy."
@@ -125,82 +164,61 @@ const renderContent = (activeTab: TabId, onPlay?: () => void) => {
           />
         </motion.div>
       );
-    case 'collection':
+    }
+
+    if (activeTab === 'collection') {
+      // sin AnimatePresence, sin motion envolviendo todo
       return (
-        <motion.div
-          key="collection"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-          className="h-full -mx-3"
-        >
-         <MobileCollection />
-        </motion.div>
+        <div className="h-full -mx-3">
+          <MobileCollection />
+        </div>
       );
-    default:
-      return (
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.98 }}
-          transition={{ duration: 0.25 }}
-          className="space-y-3"
-        >
-          <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-3 py-6 flex flex-col items-center justify-center text-center gap-3">
-            <motion.div
-              animate={{ rotate: [-6, 4, -4, 6, -2, 0] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-12 h-12 rounded-2xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_5px_0_#020617]"
-            >
-              <Hammer className="w-7 h-7 text-amber-300" />
-            </motion.div>
-            <h2 className="comic-title text-xl text-white">
-              {TAB_META[activeTab].label} en construcción
-            </h2>
-            <p className="text-[12px] text-slate-100 max-w-xs">
-              {TAB_META[activeTab].desc}
-            </p>
-            <span className="mt-1 inline-flex items-center px-3 py-1 rounded-full bg-amber-300 border-[3px] border-black text-[10px] font-display tracking-[0.18em] uppercase text-slate-900 shadow-[0_3px_0_#020617]">
-              Próximamente
-            </span>
-          </section>
+    }
 
-          <LobbyInfoCard
-            title="Seguí jugando en Batalla"
-            subtitle="Mientras terminamos esta sección, podés seguir sumando trofeos."
-            icon={<Star className="w-5 h-5 text-sky-300" />}
-          />
-        </motion.div>
-      );
-  }
-};
+    // resto de pestañas en construcción
+    return (
+      <motion.div
+        className="space-y-3"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <section className="comic-card bg-[#0d4b63] border-[3px] border-slate-900 shadow-[0_10px_0_#020617] px-3 py-6 flex flex-col items-center justify-center text-center gap-3">
+          <motion.div
+            animate={{ rotate: [-6, 4, -4, 6, -2, 0] }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="w-12 h-12 rounded-2xl bg-slate-900 border-[3px] border-black flex items-center justify-center shadow-[0_5px_0_#020617]"
+          >
+            <Hammer className="w-7 h-7 text-amber-300" />
+          </motion.div>
+          <h2 className="comic-title text-xl text-white">
+            {TAB_META[activeTab].label} en construcción
+          </h2>
+          <p className="text-[12px] text-slate-100 max-w-xs">
+            {TAB_META[activeTab].desc}
+          </p>
+          <span className="mt-1 inline-flex items-center px-3 py-1 rounded-full bg-amber-300 border-[3px] border-black text-[10px] font-display tracking-[0.18em] uppercase text-slate-900 shadow-[0_3px_0_#020617]">
+            Próximamente
+          </span>
+        </section>
 
-
-export default function MobileLobby({
-  playerName,
-  level,
-  exp,
-  expMax,
-  coins,
-  gems,
-  tickets = 0,
-  onTabChange,
-  onPlay,
-}: MobileLobbyProps) {
-  const [activeTab, setActiveTab] = React.useState<TabId>('battle');
-
-  const handleTabClick = (tab: TabId) => {
-    setActiveTab(tab);
-    onTabChange?.(tab);
+        <LobbyInfoCard
+          title="Seguí jugando en Batalla"
+          subtitle="Mientras terminamos esta sección, podés seguir sumando trofeos."
+          icon={<Star className="w-5 h-5 text-sky-300" />}
+        />
+      </motion.div>
+    );
   };
-
-  const expPercent = Math.min(100, Math.round((exp / Math.max(1, expMax)) * 100));
 
   return (
     <div className="relative h-screen w-full max-w-md mx-auto bg-[radial-gradient(circle_at_1px_1px,#0b1120_1px,transparent_0)] bg-[length:22px_22px] overflow-hidden">
       <div className="flex flex-col h-full pb-20">
+        {/* HEADER */}
         <header className="px-3 pt-2 pb-1 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -238,8 +256,15 @@ export default function MobileLobby({
             </div>
 
             <div className="flex items-center gap-1">
-              <ResourceChip icon={<Coins className="w-3.5 h-3.5" />} value={coins} />
-              <ResourceChip icon={<Gem className="w-3.5 h-3.5" />} value={gems} tone="pink" />
+              <ResourceChip
+                icon={<Coins className="w-3.5 h-3.5" />}
+                value={coins}
+              />
+              <ResourceChip
+                icon={<Gem className="w-3.5 h-3.5" />}
+                value={gems}
+                tone="pink"
+              />
               {tickets > 0 && (
                 <ResourceChip
                   icon={<Gift className="w-3.5 h-3.5" />}
@@ -251,13 +276,16 @@ export default function MobileLobby({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-3 pb-2">
-          <AnimatePresence>
-            {renderContent(activeTab, onPlay)}
-          </AnimatePresence>
+        {/* CONTENIDO CENTRAL */}
+        <main
+          ref={mainRef}
+          className="flex-1 overflow-y-auto px-3 pb-2 no-scrollbar"
+        >
+          {renderContent()}
         </main>
       </div>
 
+      {/* NAV INFERIOR */}
       <nav className="absolute inset-x-0 bottom-0 h-16 bg-slate-950/95 border-t-[3px] border-slate-900 shadow-[0_-6px_0_#020617] flex items-center justify-between px-3 gap-1">
         <BottomNavButton
           icon={<Store className="w-5 h-5" />}
@@ -294,6 +322,8 @@ export default function MobileLobby({
     </div>
   );
 }
+
+/* ---------- Helpers ---------- */
 
 function ResourceChip({
   icon,
@@ -402,7 +432,9 @@ function LobbyInfoCard({
         {icon}
       </div>
       <div className="flex-1">
-        <h3 className="comic-title text-sm text-white leading-tight">{title}</h3>
+        <h3 className="comic-title text-sm text-white leading-tight">
+          {title}
+        </h3>
         <p className="text-[11px] text-slate-200 mt-0.5">{subtitle}</p>
       </div>
     </div>
