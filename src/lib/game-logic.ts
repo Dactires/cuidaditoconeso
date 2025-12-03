@@ -37,21 +37,22 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
 
     // Create character cards
     for (const color of COLORS) {
-        const defId = `color-${color.toLowerCase()}`;
-        const def = cardDefMap.get(defId);
-        if (def) {
-            for (const value of CHARACTER_VALUES) {
-                for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-                    // Create a NEW object for each card
-                    deck.push({
-                      uid: generateCardId(),
-                      type: 'Personaje',
-                      color,
-                      value,
-                      isFaceUp: false,
-                      imageUrl: def.imageUrl, // Assign correct image URL
-                    });
-                }
+        for (const value of CHARACTER_VALUES) {
+            const defId = `color-${color.toLowerCase()}`;
+            const valueDefId = `color-${color.toLowerCase()}-${value}`;
+            const valueDef = cardDefMap.get(valueDefId);
+            const baseDef = cardDefMap.get(defId);
+            
+            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                // Create a NEW object for each card
+                deck.push({
+                  uid: generateCardId(),
+                  type: 'Personaje',
+                  color,
+                  value,
+                  isFaceUp: false,
+                  imageUrl: valueDef?.imageUrl || baseDef?.imageUrl, // Use specific image, fallback to base
+                });
             }
         }
     }
@@ -91,6 +92,7 @@ function ensureDeckHasCards(draft: GameState, count: number): boolean {
         }
         draft.deck.push(...shuffle(draft.discardPile.map(c => ({...c, isFaceUp: false}))));
         draft.discardPile = [];
+        draft.gameMessage = "¡Mazo vacío! Barajando el descarte..."
     }
     return true;
 }
@@ -108,27 +110,32 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
   }));
 
   // Deal initial hands
-  for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
-    for (const player of players) {
-      const card = deck.pop();
-      if(card) {
-        // Cards in hand are always face up for the player
-        player.hand.push({ ...card, isFaceUp: true });
-      }
-    }
-  }
-
-  // Fill boards
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    for (let c = 0; c < BOARD_SIZE; c++) {
+  if (ensureDeckHasCards({ deck, discardPile: [], players } as GameState, INITIAL_HAND_SIZE * numPlayers)) {
+    for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
       for (const player of players) {
         const card = deck.pop();
-        if (card) {
-            player.board[r][c] = { ...card, isFaceUp: false };
+        if(card) {
+          player.hand.push({ ...card, isFaceUp: true });
         }
       }
     }
   }
+
+
+  // Fill boards
+  if (ensureDeckHasCards({ deck, discardPile: [], players } as GameState, BOARD_SIZE * BOARD_SIZE * numPlayers)) {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        for (const player of players) {
+          const card = deck.pop();
+          if (card) {
+              player.board[r][c] = { ...card, isFaceUp: false };
+          }
+        }
+      }
+    }
+  }
+
 
   return {
     players,
@@ -161,50 +168,51 @@ const checkEndGame = (draft: GameState) => {
     }
   }
 
-  if (gameShouldEnd && !draft.gameOver) {
-    draft.gameOver = true;
-    draft.turnPhase = 'GAME_OVER';
+  if (gameShouldEnd && draft.finalTurnCounter === -1) {
+    draft.finalTurnCounter = draft.players.length; // Set final turn countdown
+    draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
+  }
 
-    // Calculate final scores
-    draft.players.forEach(p => {
-      p.score = getBoardScore(p.board);
-    });
-    draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
+  if (draft.finalTurnCounter === 0 && !draft.gameOver) {
+      draft.gameOver = true;
+      draft.turnPhase = 'GAME_OVER';
 
-    // Determine winner
-    const scores = draft.players.map(p => p.score);
-    const maxScore = Math.max(...scores);
-    const winners = draft.players.filter(p => p.score === maxScore);
+      // Calculate final scores
+      draft.players.forEach(p => {
+        p.score = getBoardScore(p.board);
+      });
+      draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
 
-    if (winners.length > 1) {
-        draft.winner = null; // It's a tie
-        draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
-    } else {
-        draft.winner = winners[0];
-        draft.gameMessage = `¡Fin del juego! ¡El Jugador ${winners[0].id + 1} gana con ${maxScore} puntos!`;
-    }
+      // Determine winner
+      const scores = draft.players.map(p => p.score);
+      const maxScore = Math.max(...scores);
+      const winners = draft.players.filter(p => p.score === maxScore);
+
+      if (winners.length > 1) {
+          draft.winner = null; // It's a tie
+          draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
+      } else {
+          draft.winner = winners[0];
+          draft.gameMessage = `¡Fin del juego! ¡El Jugador ${winners[0].id + 1} gana!`;
+      }
   }
 }
 
 function nextTurn(state: GameState): GameState {
   if (state.gameOver) return state;
 
-  if (state.finalTurnCounter > 0) {
-    state.finalTurnCounter--;
-    if (state.finalTurnCounter === 0) {
-        checkEndGame(state);
-        return state;
-    }
-  }
-  
   state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
   state.turnPhase = 'START_TURN';
   state.isForcedToPlay = false;
   state.gameMessage = `Turno del Jugador ${state.currentPlayerIndex + 1}.`;
 
+  if (state.finalTurnCounter > 0) {
+    state.finalTurnCounter--;
+  }
+  
   if (state.deck.length === 0 && state.finalTurnCounter === -1) {
     state.finalTurnCounter = state.players.length;
-    state.gameMessage = `¡El mazo está vacío! Comienza la ronda final. Turno del Jugador ${state.currentPlayerIndex + 1}.`;
+    state.gameMessage = `¡El mazo está vacío! Comienza la ronda final.`;
   }
   
   checkEndGame(state);
@@ -226,6 +234,7 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
     draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;
+    checkEndGame(draft); // check if game ends now
   }
   draft.isForcedToPlay = player.hand.length > MAX_HAND_SIZE;
   draft.turnPhase = 'REVEAL_CARD';
@@ -305,6 +314,7 @@ export const resolveExplosion = produce((draft: GameState, playerId: number, r: 
   positionsToRefill.forEach(pos => {
     if (draft.deck.length > 0) {
       const newCard = draft.deck.pop()!;
+      // This card will be animated, it is placed on board in finishRefillAnimation
       draft.refillingSlots.push({ playerId: playerId, r: pos.r, c: pos.c, card: newCard });
     }
   });
@@ -323,7 +333,7 @@ export const finishRefillAnimation = produce((draft: GameState, payload: { playe
     player.board[r][c] = { ...card, isFaceUp: false };
 
     // Remove it from the refilling list
-    const slotIndex = draft.refillingSlots.findIndex(slot => slot.r === r && slot.c === c && slot.playerId === playerId);
+    const slotIndex = draft.refillingSlots.findIndex(slot => slot.card.uid === card.uid);
     if (slotIndex > -1) {
         draft.refillingSlots.splice(slotIndex, 1);
     }
@@ -404,6 +414,7 @@ export const passTurn = produce((draft: GameState, playerId: number) => {
     if (draft.turnPhase !== 'ACTION' || draft.currentPlayerIndex !== playerId) return;
     const player = draft.players[playerId];
     if (player.hand.length > MAX_HAND_SIZE) {
+        draft.isForcedToPlay = true;
         draft.gameMessage = "¡Tienes demasiadas cartas! Debes jugar o intercambiar una.";
         return;
     }
@@ -424,3 +435,5 @@ export const clearDrawnCard = produce((draft: GameState) => {
   draft.lastDrawnCardId = null;
   draft.showDrawAnimation = false;
 });
+
+    
