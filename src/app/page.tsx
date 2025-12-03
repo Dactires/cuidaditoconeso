@@ -304,13 +304,6 @@ export default function GamePage() {
 
         {/* COLUMNA CENTRAL - TABLEROS */}
         <div className="flex flex-col items-center gap-8">
-            {/* Game Status */}
-            {gameMessage && (
-                <div className="text-primary-foreground text-center text-lg font-semibold px-4 py-2 bg-black/40 rounded-lg shadow-inner flex items-center gap-2 h-12">
-                    <Info className="w-5 h-5 flex-shrink-0" />
-                    <span>{gameMessage}</span>
-                </div>
-            )}
             
           {/* Rival Board */}
           <div className="flex flex-col items-center gap-2">
@@ -365,26 +358,33 @@ export default function GamePage() {
             </div>
             <div className="flex flex-col items-center gap-2">
                 <div className="flex gap-4 items-center">
-                {/* Mazo */}
-                <div className="flex flex-col items-center">
-                    <div className="w-24 aspect-square relative">
-                        <GameCard card={deck.length > 0 ? { ...deck[deck.length-1], isFaceUp: false } : null} onClick={() => {}} />
-                    </div>
-                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Layers className="w-4 h-4"/> Mazo: {deck.length}</div>
-                </div>
+                  {/* Mazo */}
+                  <div className="flex flex-col items-center">
+                      <div className="w-24 aspect-square relative">
+                          <GameCard card={deck.length > 0 ? { ...deck[deck.length-1], isFaceUp: false } : null} onClick={() => {}} />
+                      </div>
+                      <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Layers className="w-4 h-4"/> Mazo: {deck.length}</div>
+                  </div>
 
-                {/* Descarte */}
-                <div className="flex flex-col items-center">
-                    <div className="w-24 aspect-square relative">
-                    {discardPile.length > 0 ? (
-                        <GameCard card={{...discardPile[discardPile.length - 1], isFaceUp: true}} onClick={() => {}} />
-                    ) : (
-                        <div className="w-full h-full rounded-md bg-black/20 border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-white/70">Vacío</div>
-                    )}
+                  {/* Descarte */}
+                  <div className="flex flex-col items-center">
+                      <div className="w-24 aspect-square relative">
+                      {discardPile.length > 0 ? (
+                          <GameCard card={{...discardPile[discardPile.length - 1], isFaceUp: true}} onClick={() => {}} />
+                      ) : (
+                          <div className="w-full h-full rounded-md bg-black/20 border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-white/70">Vacío</div>
+                      )}
+                      </div>
+                      <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Archive className="w-4 h-4" />Descarte: {discardPile.length}</div>
+                  </div>
+                </div>
+                 {/* Game Status */}
+                {gameMessage && (
+                    <div className="text-primary-foreground text-center text-sm font-semibold px-2 py-1 mt-4 bg-black/40 rounded-lg shadow-inner flex items-center gap-2 max-w-[200px]">
+                        <Info className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-center">{gameMessage}</span>
                     </div>
-                    <div className="text-white/80 text-sm mt-1 flex items-center gap-1"><Archive className="w-4 h-4" />Descarte: {discardPile.length}</div>
-                </div>
-                </div>
+                )}
             </div>
         </div>
       </div>
