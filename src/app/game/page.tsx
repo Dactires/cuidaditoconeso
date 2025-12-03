@@ -13,7 +13,7 @@ import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import { Button } from '@/components/ui/button';
-import { User, Bot, Swords } from 'lucide-react';
+import { User, Bot, Swords, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -262,8 +262,16 @@ export default function GamePage() {
         onRestart={() => dispatch({ type: 'RESET_GAME' })}
         onExit={() => router.push('/lobby')}
       />
-  
+
       <div className="comic-arena">
+        {/* Botón de salida */}
+        <button 
+            onClick={() => router.push('/lobby')}
+            className="absolute top-4 left-4 z-20 comic-btn comic-btn-secondary !rounded-full !p-2 h-10 w-10"
+        >
+            <LogOut className="h-5 w-5" />
+        </button>
+
         {/* indicador de turno arriba, centrado */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
           <span className="comic-turn-chip">
@@ -334,7 +342,7 @@ export default function GamePage() {
           </div>
   
           {/* COLUMNA CENTRAL: arena de tableros */}
-          <div className="flex flex-col items-center gap-4 h-full">
+          <div className="flex flex-col items-center gap-6">
             {/* Tablero rival */}
             <div className="flex flex-col items-center gap-2">
               <div className="comic-nameplate bg-red-400 shadow-[0_6px_0_#7f1d1d]">

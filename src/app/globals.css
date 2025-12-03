@@ -412,17 +412,17 @@ main {
 @layer components {
   /* Contenedor general tipo "arena" (sala de partida) */
   .comic-arena {
-    @apply w-full max-w-6xl h-[88vh] mx-auto
+    @apply w-full max-w-6xl min-h-[80vh] mx-auto
       bg-slate-950/80
       rounded-[32px]
       border-[3px] border-slate-800
       shadow-[0_18px_0_#020617,0_0_40px_rgba(0,0,0,0.6)]
-      relative overflow-hidden;
+      relative overflow-visible;
   }
 
   .comic-arena-inner {
-    @apply h-full grid grid-cols-[260px_minmax(0,1.4fr)_260px]
-      gap-6 px-8 py-6 items-center;
+    @apply grid grid-cols-[260px_minmax(0,1.4fr)_260px]
+      gap-6 px-8 py-8 items-start;
   }
 
   /* Panel típico azul de tu login / sala */
@@ -443,7 +443,7 @@ main {
 
   /* Cuadrado donde va cada carta (misma medida en mano, mazo y tablero) */
   .comic-card-slot {
-    @apply w-[92px] h-[92px] md:w-[104px] md:h-[104px];
+    @apply w-[96px] md:w-[110px] aspect-square;
   }
 
   /* Etiquetas de jugador / turno */

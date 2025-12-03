@@ -37,7 +37,7 @@ export default function GameCard({
     );
   }
 
-  const style =
+  const cardStyling =
     card.type === 'Personaje' && card.color ? colorMap[card.color] : bombColor;
 
   const baseAnimation = isExploding
@@ -52,7 +52,7 @@ export default function GameCard({
   return (
     <motion.div
       className={cn(
-        'w-full h-full rounded-lg cursor-pointer relative',
+        'w-full h-full cursor-pointer relative',
         isSelected && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
       )}
       onClick={onClick}
@@ -61,55 +61,38 @@ export default function GameCard({
       animate={baseAnimation}
     >
       {!card.isFaceUp ? (
-        <div className="w-full h-full rounded-2xl border-4 border-white shadow-[0_6px_0_rgba(0,0,0,0.7),0_0_0_4px_#000] overflow-hidden">
-          <div className="w-full h-full bg-sky-400 relative">
-            {/* Rayos simulados con gradientes diagonales simples */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.3),_transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgba(0,0,0,0.25)_1px,_transparent_0)] bg-[length:14px_14px]" />
-            <div className="relative w-full h-full flex items-center justify-center">
-              <span className="text-slate-900 font-display font-extrabold text-xl -rotate-12 drop-shadow-[3px_3px_0_rgba(255,255,255,0.9)] select-none">
-                BOMBERS
-              </span>
-            </div>
+        <div className="w-full h-full rounded-2xl bg-[#0b1120] flex items-center justify-center p-2 border-[3px] border-black shadow-[0_8px_0_#020617]">
+          <div className="w-full h-full rounded-xl border-[3px] border-dashed border-sky-400/80 bg-[radial-gradient(circle_at_1px_1px,#1e293b_1px,transparent_0)] bg-[length:8px_8px] flex items-center justify-center">
+            <span className="text-sky-300 font-display font-black text-xl -rotate-8 tracking-[0.3em] select-none drop-shadow-[0_3px_0_#020617]">
+              BOMBERS
+            </span>
           </div>
         </div>
       ) : (
-        // Si está boca arriba → frente estilo cómic
         <UICard
           className={cn(
-            'w-full h-full flex flex-col items-center justify-center text-white relative',
-            'rounded-2xl bg-gradient-to-br from-slate-900/80 to-slate-950/90',
-            'border-4 border-white',
-            'shadow-[0_6px_0_rgba(0,0,0,0.7),0_0_0_4px_#000]',
-            style.bg,
-            isSelectable && style.glow,
+            'w-full h-full flex flex-col items-center justify-center relative',
+            'rounded-2xl border-[3px] border-black bg-sky-400',
+            'shadow-[0_8px_0_#020617]',
+            isSelected && 'ring-4 ring-amber-300 ring-offset-4 ring-offset-slate-900',
+            cardStyling?.bg
           )}
         >
-          {/* Esquina superior con valor o BOMBA */}
-          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-black/40">
-            <p
-              className={cn(
-                'text-xs font-bold font-display tracking-widest',
-                style.text,
-              )}
-            >
-              {card.type === 'Bomba' ? 'BOMBA' : card.value}
+          <div className="absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white shadow-[0_4px_0_#020617]">
+            <p className="text-xs font-display tracking-[0.2em] uppercase">
+              {card?.type === 'Bomba' ? 'Bomba' : card?.value}
             </p>
           </div>
 
-          {/* Valor central o icono de bomba */}
-          <CardTitle className="font-display text-5xl md:text-6xl font-extrabold drop-shadow-[3px_3px_0_rgba(0,0,0,0.9)]">
-            {card.type === 'Bomba' ? (
-              <BombIcon className="w-12 h-12 md:w-14 md:h-14" />
-            ) : (
-              card.value
-            )}
+          <CardTitle className="font-display text-6xl md:text-7xl font-black drop-shadow-[0_4px_0_#020617]">
+            {card?.type === 'Bomba'
+              ? <BombIcon className="w-16 h-16" />
+              : card?.value}
           </CardTitle>
 
-          {/* Tipo de carta abajo */}
-          <CardContent className="p-1 absolute bottom-1">
-            <p className="text-[10px] font-display tracking-wider font-semibold uppercase opacity-70">
-              {card.type}
+          <CardContent className="px-2 py-0.5 absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 rounded-full border-[2px] border-white">
+            <p className="text-[10px] font-display tracking-[0.25em] uppercase text-amber-300">
+              {card?.type}
             </p>
           </CardContent>
         </UICard>
