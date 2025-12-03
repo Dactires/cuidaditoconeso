@@ -87,7 +87,7 @@ function getBoardScore(board: (Card | null)[][]): number {
 function ensureDeckHasCards(draft: GameState, count: number): boolean {
     if (draft.deck.length < count) {
         if (draft.discardPile.length > 0) {
-            draft.deck.push(...shuffle(draft.discardPile));
+            draft.deck.push(...shuffle(draft.discardPile.map(c => ({...c, isFaceUp: false}))));
             draft.discardPile = [];
         }
     }
@@ -260,30 +260,26 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
     const explodingCard = player.board[r][c];
 
     if (!explodingCard || explodingCard.type !== 'Bomba') return;
-
-    // Set the card to be animated
+    
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
-    draft.lastRevealedBomb = null; // Clear the bomb trigger
+    draft.lastRevealedBomb = null;
     
     player.board[r][c] = null;
     if(explodingCard) draft.discardPile.push({...explodingCard, isFaceUp: true});
 
     const coordsToDestroy = new Set<string>();
-    
-    // Always destroy adjacent
     const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+    
     for (const [ar, ac] of coordsToCheck) {
         if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
             const adjCard = player.board[ar][ac];
-            // Destroy adjacent regardless of face up or not
             if(adjCard) {
                 coordsToDestroy.add(`${ar},${ac}`);
             }
         }
     }
     
-    // Check if we have enough cards to refill, shuffling if necessary
-    ensureDeckHasCards(draft, coordsToDestroy.size + 1); // +1 for the bomb's own spot
+    ensureDeckHasCards(draft, coordsToDestroy.size + 1);
 
     coordsToDestroy.forEach(coord => {
         const [row, col] = coord.split(',').map(Number);
@@ -294,19 +290,16 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
         player.board[row][col] = null;
     });
     
-    // Refill the bomb's original spot
     if (ensureDeckHasCards(draft, 1)) {
         player.board[r][c] = {...draft.deck.pop()!, isFaceUp: false};
     }
 
-    // Refill adjacent destroyed spots
     coordsToDestroy.forEach(coord => {
       const [row, col] = coord.split(',').map(Number);
        if (ensureDeckHasCards(draft, 1)) {
           player.board[row][col] = {...draft.deck.pop()!, isFaceUp: false};
       }
     });
-    
 
     player.score = getBoardScore(player.board);
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
