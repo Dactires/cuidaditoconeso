@@ -12,6 +12,7 @@ import React, {
 import { useStorage } from "@/firebase";
 import { ref, getDownloadURL } from "firebase/storage";
 import useSound from "use-sound";
+import type { PlayFunction, StopFunction, Sound } from "use-sound/dist/types";
 
 interface MusicContextType {
   playLobbyMusic: () => void;
@@ -32,10 +33,14 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
   const [battleUrl, setBattleUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Refs to track active playback intention
-  const isPlayingLobbyRef = useRef(false);
-  const isPlayingBattleRef = useRef(false);
+  // Refs to store the playback functions and sound instances
+  const lobbySoundRef = useRef<{ play: PlayFunction; stop: StopFunction; sound: Sound | null; isPlaying: boolean; } | null>(null);
+  const battleSoundRef = useRef<{ play: PlayFunction; stop: StopFunction; sound: Sound | null; isPlaying: boolean; } | null>(null);
 
+  // This state is just to trigger re-renders when playback status changes
+  const [playbackState, setPlaybackState] = useState({ lobby: false, battle: false });
+
+  // Fetch URLs from Firebase Storage
   useEffect(() => {
     const fetchMusicUrls = async () => {
       if (!storage) return;
@@ -67,55 +72,53 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchMusicUrls();
   }, [storage]);
   
-  const [playLobby, { stop: stopLobby, isPlaying: isLobbyAudioPlaying, sound: lobbySound }] =
-    useSound(lobbyUrl, {
-      volume: 0.2,
-      onend: () => {
-        if (isPlayingLobbyRef.current) {
-          playLobby();
-        }
-      },
+  // Custom hook to manage sound loading and playback
+  const useMusicTrack = (url: string | null) => {
+    const [play, { stop, sound, isPlaying }] = useSound(url, {
+        volume: 0.25,
+        loop: true, // Use the library's loop for simplicity now
+        // onend will be ignored if loop is true, but good practice
+        onplay: () => setPlaybackState(s => ({...s, [sound?.src === lobbyUrl ? 'lobby' : 'battle']: true})),
+        onstop: () => setPlaybackState(s => ({...s, [sound?.src === lobbyUrl ? 'lobby' : 'battle']: false})),
+        onend: () => setPlaybackState(s => ({...s, [sound?.src === lobbyUrl ? 'lobby' : 'battle']: false})),
     });
+    return { play, stop, sound, isPlaying };
+  };
 
-  const [playBattle, { stop: stopBattle, isPlaying: isBattleAudioPlaying, sound: battleSound }] =
-    useSound(battleUrl, {
-      volume: 0.25,
-      onend: () => {
-        if (isPlayingBattleRef.current) {
-          playBattle();
-        }
-      },
-    });
+  const lobbyAudio = useMusicTrack(lobbyUrl);
+  const battleAudio = useMusicTrack(battleUrl);
+
+  useEffect(() => {
+    lobbySoundRef.current = lobbyAudio;
+    battleSoundRef.current = battleAudio;
+  }, [lobbyAudio, battleAudio]);
 
   const stopAllMusic = useCallback(() => {
-    isPlayingLobbyRef.current = false;
-    isPlayingBattleRef.current = false;
-    if (isLobbyAudioPlaying) stopLobby();
-    if (isBattleAudioPlaying) stopBattle();
-  }, [isLobbyAudioPlaying, stopLobby, isBattleAudioPlaying, stopBattle]);
+    lobbySoundRef.current?.stop();
+    battleSoundRef.current?.stop();
+  }, []);
   
   const playLobbyMusic = useCallback(() => {
     if (isLoading || !lobbyUrl) return;
     stopAllMusic();
-    isPlayingLobbyRef.current = true;
-    playLobby();
-  }, [isLoading, lobbyUrl, playLobby, stopAllMusic]);
+    lobbySoundRef.current?.play();
+  }, [isLoading, lobbyUrl, stopAllMusic]);
 
   const playBattleMusic = useCallback(() => {
     if (isLoading || !battleUrl) return;
     stopAllMusic();
-    isPlayingBattleRef.current = true;
-    playBattle();
-  }, [isLoading, battleUrl, playBattle, stopAllMusic]);
+    battleSoundRef.current?.play();
+  }, [isLoading, battleUrl, stopAllMusic]);
 
+  // Handle browser tab visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        lobbySound?.pause();
-        battleSound?.pause();
+        lobbySoundRef.current?.sound?.pause();
+        battleSoundRef.current?.sound?.pause();
       } else {
-        if (isPlayingLobbyRef.current) lobbySound?.play();
-        if (isPlayingBattleRef.current) battleSound?.play();
+        if (lobbySoundRef.current?.isPlaying) lobbySoundRef.current?.sound?.play();
+        if (battleSoundRef.current?.isPlaying) battleSoundRef.current?.sound?.play();
       }
     };
 
@@ -124,10 +127,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       // Ensure music stops completely on component unmount
-      if(lobbySound) lobbySound.stop();
-      if(battleSound) battleSound.stop();
+      lobbySoundRef.current?.sound?.unload();
+      battleSoundRef.current?.sound?.unload();
     };
-  }, [lobbySound, battleSound]);
+  }, []);
 
   return (
     <MusicContext.Provider
@@ -135,8 +138,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
         playLobbyMusic,
         playBattleMusic,
         stopAllMusic,
-        isLobbyPlaying: isLobbyAudioPlaying,
-        isBattlePlaying: isBattleAudioPlaying,
+        isLobbyPlaying: playbackState.lobby,
+        isBattlePlaying: playbackState.battle,
         isLoading,
       }}
     >
