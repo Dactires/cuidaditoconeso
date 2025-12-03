@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader } from 'lucide-react';
 import GameCard from './GameCard';
-import { CARD_DEFINITIONS } from '@/lib/card-definitions';
+import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
 import { Progress } from '@/components/ui/progress';
 
 const TIPS = [
@@ -19,38 +20,36 @@ const TIPS = [
 
 const cardSamples = CARD_DEFINITIONS.filter(c => c.kind === 'character' || c.kind === 'bomb').slice(0, 5);
 
-const FloatingCard = ({ card, index, cardBackImageUrl }: { card: any, index: number, cardBackImageUrl?: string }) => {
-  const cardForDisplay = {
-    ...card,
-    uid: `loading-${card.id}-${index}`,
-    type: card.kind === 'bomb' ? 'Bomba' : 'Personaje',
-    value: card.kind === 'character' ? Math.floor(Math.random() * 5) + 1 : null,
-    isFaceUp: Math.random() > 0.5,
+type FloatingCardInfo = {
+  card: any;
+  initialStyle: {
+    top: string;
+    left: string;
+    scale: number;
+    opacity: number;
   };
+  animation: {
+    x: number[];
+    y: number[];
+    rotate: number[];
+  };
+  duration: number;
+};
 
-  const duration = 15 + index * 2;
 
+const FloatingCard = ({ cardInfo, cardBackImageUrl }: { cardInfo: FloatingCardInfo, cardBackImageUrl?: string }) => {
   return (
     <motion.div
       className="absolute"
-      initial={{ 
-        top: `${Math.random() * 80}%`,
-        left: `${Math.random() * 80}%`,
-        scale: 0.7,
-        opacity: 0.6
-      }}
-      animate={{
-        x: [0, 40, -30, 20, 0],
-        y: [0, -25, 30, -10, 0],
-        rotate: [0, 5, -8, 3, 0],
-      }}
+      initial={cardInfo.initialStyle}
+      animate={cardInfo.animation}
       transition={{
-        duration: duration,
+        duration: cardInfo.duration,
         repeat: Infinity,
         ease: 'easeInOut'
       }}
     >
-      <GameCard card={cardForDisplay} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} isMobile={false} />
+      <GameCard card={cardInfo.card} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} isMobile={false} />
     </motion.div>
   );
 };
@@ -59,8 +58,39 @@ const FloatingCard = ({ card, index, cardBackImageUrl }: { card: any, index: num
 export default function GameLoadingScreen({ cardBackImageUrl }: { cardBackImageUrl?: string }) {
   const [progress, setProgress] = useState(10);
   const [currentTip, setCurrentTip] = useState('');
+  const [floatingCards, setFloatingCards] = useState<FloatingCardInfo[]>([]);
 
   useEffect(() => {
+    // This logic now runs only on the client, after hydration
+    const generateFloatingCards = () => {
+      return cardSamples.map((card, index) => {
+        const cardForDisplay = {
+          ...card,
+          uid: `loading-${card.id}-${index}`,
+          type: card.kind === 'bomb' ? 'Bomba' : 'Personaje',
+          value: card.kind === 'character' ? Math.floor(Math.random() * 5) + 1 : null,
+          isFaceUp: Math.random() > 0.5,
+        };
+
+        return {
+          card: cardForDisplay,
+          initialStyle: {
+            top: `${Math.random() * 80}%`,
+            left: `${Math.random() * 80}%`,
+            scale: 0.7,
+            opacity: 0.6
+          },
+          animation: {
+            x: [0, 40, -30, 20, 0],
+            y: [0, -25, 30, -10, 0],
+            rotate: [0, 5, -8, 3, 0],
+          },
+          duration: 15 + index * 2
+        };
+      });
+    };
+
+    setFloatingCards(generateFloatingCards());
     setCurrentTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
 
     const timer = setInterval(() => {
@@ -79,9 +109,9 @@ export default function GameLoadingScreen({ cardBackImageUrl }: { cardBackImageU
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center p-4 comic-arena">
        <div className="absolute inset-0 overflow-hidden opacity-30">
-          {cardSamples.map((card, index) => (
+          {floatingCards.map((cardInfo, index) => (
              <div key={index} className="w-28 h-40">
-                <FloatingCard card={card} index={index} cardBackImageUrl={cardBackImageUrl} />
+                <FloatingCard cardInfo={cardInfo} cardBackImageUrl={cardBackImageUrl} />
              </div>
           ))}
        </div>
