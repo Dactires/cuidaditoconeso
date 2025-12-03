@@ -13,7 +13,7 @@ import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import { Button } from '@/components/ui/button';
-import { User, Bot, Layers, Archive, Info, Swords, LogOut } from 'lucide-react';
+import { User, Bot, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -254,7 +254,7 @@ export default function GamePage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 font-body overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 py-6 font-body">
       <GameOverModal
         isOpen={gameOver}
         winner={winner}
@@ -262,221 +262,184 @@ export default function GamePage() {
         onRestart={() => dispatch({ type: 'RESET_GAME' })}
         onExit={() => router.push('/lobby')}
       />
-
-       {/* Botón de Salir */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 left-4 z-30 text-slate-400 hover:text-white hover:bg-slate-800/50"
-              onClick={() => router.push('/lobby')}
-            >
-              <LogOut className="h-6 w-6" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>Abandonar Partida</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {/* Indicador de turno arriba */}
-      <AnimatePresence>
-        <motion.div
-          key={currentPlayerIndex}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.3 }}
-          className="absolute top-2 z-20"
-        >
-          <div className="px-4 py-1 rounded-full bg-slate-900/80 border border-slate-700 backdrop-blur-sm shadow-md">
-            <p
-              className="text-center font-display text-sm tracking-wider"
-              style={{
-                color:
-                  currentPlayerIndex === humanPlayerId
-                    ? 'hsl(var(--primary))'
-                    : 'hsl(var(--destructive))',
-              }}
-            >
-              {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno del Rival'}
-            </p>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* LAYOUT PRINCIPAL: 3 COLUMNAS */}
-      <div className="w-full max-w-7xl flex-1 flex flex-row items-center justify-center gap-8 pt-10 pb-4">
-
-        {/* COLUMNA IZQUIERDA: JUGADOR + MANO */}
-        <div className="flex flex-col items-center gap-6 w-64">
-          <PlayerInfo player={humanPlayer} score={humanPlayerScore} isAI={false} />
-
-          {/* Mano del jugador */}
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] text-slate-400 font-display tracking-widest uppercase">
-              Tu mano
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {humanPlayer.hand.map((card, index) => (
-                <div key={card.uid} className="relative w-24 aspect-square md:w-28">
-                  <GameCard
-                    card={card}
-                    onClick={() => handleHandCardClick(card, index)}
-                    isSelected={selectedHandCard?.card.uid === card.uid}
-                    isSelectable={isHandCardSelectable(card)}
-                  />
-                </div>
-              ))}
-              {Array.from({ length: 4 - humanPlayer.hand.length }).map((_, index) => (
-                <div
-                  key={`placeholder-${index}`}
-                  className="relative w-24 aspect-square md:w-28 rounded-lg bg-black/20 border-2 border-dashed border-slate-700"
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Pasar turno */}
-          {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="font-display tracking-wider"
-                disabled={gameState.isForcedToPlay}
-                onClick={handlePassTurn}
-              >
-                Pasar Turno
-              </Button>
-            </motion.div>
-          )}
-          {turnPhase === 'ACTION' &&
-            gameState.isForcedToPlay &&
-            currentPlayerIndex === humanPlayerId && (
-              <p className="text-xs text-red-400 font-semibold text-center w-full">
-                Debes jugar o intercambiar una carta.
-              </p>
-            )}
+  
+      <div className="comic-arena">
+        {/* indicador de turno arriba, centrado */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+          <span className="comic-turn-chip">
+            {currentPlayerIndex === humanPlayerId ? 'Tu turno' : 'Turno del rival'}
+          </span>
         </div>
-
-        {/* COLUMNA CENTRAL: TABLEROS */}
-        <div className="flex flex-col items-center gap-4 flex-none max-h-[calc(100vh-180px)] justify-center">
-          {/* Tablero rival */}
-          <GameBoard
-            board={rivalPlayer.board}
-            onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-            isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-            explodingCard={
-              explodingCard && explodingCard.playerId === rivalPlayer.id
-                ? { r: explodingCard.r, c: explodingCard.c }
-                : undefined
-            }
-          />
-          <Swords className="h-8 w-8 text-slate-600" />
-          {/* Tu tablero */}
-          <GameBoard
-            board={humanPlayer.board}
-            onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-            isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-            explodingCard={
-              explodingCard && explodingCard.playerId === humanPlayer.id
-                ? { r: explodingCard.r, c: explodingCard.c }
-                : undefined
-            }
-          />
-        </div>
-
-        {/* COLUMNA DERECHA: RIVAL + MAZO/DESCARTE + MENSAJE */}
-        <div className="flex flex-col items-center gap-6 w-64">
-          <PlayerInfo player={rivalPlayer} score={rivalPlayerScore} isAI={true} />
-
-          {/* Mazo y descarte */}
-          <div className="flex items-end gap-4">
-            <div className="flex flex-col items-center">
-              <div className="relative w-24 aspect-square md:w-28">
-                <GameCard
-                  card={
-                    deck.length > 0
-                      ? { ...deck[deck.length - 1], isFaceUp: false }
-                      : null
-                  }
-                  onClick={() => {}}
-                />
+  
+        <div className="comic-arena-inner">
+          {/* COLUMNA IZQUIERDA: jugador + mano */}
+          <div className="flex flex-col gap-4 h-full">
+            {/* Panel jugador */}
+            <div className="comic-panel px-4 py-3 flex items-center gap-3">
+              <div className="h-11 w-11 rounded-full bg-sky-500 border-[3px] border-black flex items-center justify-center">
+                <User className="h-6 w-6 text-slate-900" />
               </div>
-              <div className="text-slate-400 text-sm mt-2 flex items-center gap-1.5 font-display">
-                <Layers className="w-4 h-4" /> Mazo: {deck.length}
+              <div className="flex flex-col">
+                <span className="font-display tracking-[0.25em] text-[11px] uppercase text-slate-200/80">
+                  Jugador 1 (Tú)
+                </span>
+                <span className="text-xs text-slate-200/70">
+                  Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span>
+                </span>
               </div>
             </div>
-            <div className="flex flex-col items-center">
-              <div className="relative w-24 aspect-square md:w-28">
-                {discardPile.length > 0 ? (
-                  <GameCard
-                    card={{
-                      ...discardPile[discardPile.length - 1],
-                      isFaceUp: true,
-                    }}
-                    onClick={() => {}}
-                  />
-                ) : (
-                  <div className="relative w-24 aspect-square md:w-28 rounded-lg bg-black/20 border-2 border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-500">
-                    Vacío
+  
+            {/* Panel mano */}
+            <div className="comic-panel px-4 py-3 flex flex-col gap-3">
+              <span className="comic-section-title">Tu mano</span>
+              <div className="grid grid-cols-2 gap-3">
+                {humanPlayer.hand.map((card, index) => (
+                  <div key={card.uid} className="comic-card-slot">
+                    <GameCard
+                      card={card}
+                      onClick={() => handleHandCardClick(card, index)}
+                      isSelected={selectedHandCard?.card.uid === card.uid}
+                      isSelectable={isHandCardSelectable(card)}
+                    />
                   </div>
+                ))}
+                {Array.from({ length: Math.max(0, 4 - humanPlayer.hand.length) }).map((_, index) => (
+                  <div
+                    key={`placeholder-${index}`}
+                    className="comic-card-slot rounded-xl border-2 border-dashed border-slate-700/70 bg-slate-900/40"
+                  />
+                ))}
+              </div>
+  
+              {/* Botón pasar turno */}
+              <div className="mt-2">
+                {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full font-display tracking-[0.25em] uppercase text-xs"
+                    disabled={gameState.isForcedToPlay}
+                    onClick={handlePassTurn}
+                  >
+                    Pasar turno
+                  </Button>
+                )}
+                {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
+                  <p className="mt-1 text-[11px] text-amber-300 text-center">
+                    Debes jugar o intercambiar una carta.
+                  </p>
                 )}
               </div>
-              <div className="text-slate-400 text-sm mt-2 flex items-center gap-1.5 font-display">
-                <Archive className="w-4 h-4" />
-                Descarte: {discardPile.length}
-              </div>
             </div>
           </div>
-
-          {/* Mensaje de juego */}
-          <div className="mt-2 w-full">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={gameMessage}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="text-slate-300 text-sm text-center min-h-[1.5rem]"
-              >
+  
+          {/* COLUMNA CENTRAL: arena de tableros */}
+          <div className="flex flex-col items-center gap-4 h-full">
+            {/* Tablero rival */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="comic-nameplate bg-red-400 shadow-[0_6px_0_#7f1d1d]">
+                <Bot className="h-4 w-4" />
+                <span>Rival (IA)</span>
+              </div>
+              <GameBoard
+                board={rivalPlayer.board}
+                onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+                isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+                explodingCard={
+                  explodingCard && explodingCard.playerId === rivalPlayer.id
+                    ? { r: explodingCard.r, c: explodingCard.c }
+                    : undefined
+                }
+              />
+            </div>
+  
+            {/* VS */}
+            <Swords className="h-8 w-8 text-slate-400" />
+  
+            {/* Tablero jugador */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="comic-nameplate bg-emerald-400 shadow-[0_6px_0_#065f46]">
+                <User className="h-4 w-4" />
+                <span>Jugador 1 (Tú)</span>
+              </div>
+              <GameBoard
+                board={humanPlayer.board}
+                onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+                isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+                explodingCard={
+                  explodingCard && explodingCard.playerId === humanPlayer.id
+                    ? { r: explodingCard.r, c: explodingCard.c }
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+  
+          {/* COLUMNA DERECHA: rival + mazo + descarte + mensaje */}
+          <div className="flex flex-col gap-4 h-full">
+            {/* Panel rival (info rápida) */}
+            <div className="comic-panel px-4 py-3 flex items-center gap-3">
+              <div className="h-11 w-11 rounded-full bg-red-500 border-[3px] border-black flex items-center justify-center">
+                <Bot className="h-6 w-6 text-slate-900" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-display tracking-[0.25em] text-[11px] uppercase text-slate-200/80">
+                  Rival (IA)
+                </span>
+                <span className="text-xs text-slate-200/70">
+                  Puntaje: <span className="font-semibold text-white">{rivalPlayerScore}</span>
+                </span>
+              </div>
+            </div>
+  
+            {/* Mazo + Descarte */}
+            <div className="comic-panel px-4 py-3 flex flex-col gap-3">
+              <div className="flex justify-between items-start gap-3">
+                {/* Mazo */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="comic-section-title">Mazo</span>
+                  <div className="comic-card-slot">
+                    <GameCard
+                      card={deck.length > 0 ? { ...deck[deck.length - 1], isFaceUp: false } : null}
+                      onClick={() => {}}
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-200/70 font-mono">
+                    {deck.length} cartas
+                  </span>
+                </div>
+  
+                {/* Descarte */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="comic-section-title">Descarte</span>
+                  <div className="comic-card-slot">
+                    {discardPile.length > 0 ? (
+                      <GameCard
+                        card={{ ...discardPile[discardPile.length - 1], isFaceUp: true }}
+                        onClick={() => {}}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-xl border-2 border-dashed border-slate-700/70 bg-slate-900/40 flex items-center justify-center">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-[0.2em]">
+                          Vacío
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-200/70 font-mono">
+                    {discardPile.length} cartas
+                  </span>
+                </div>
+              </div>
+  
+              {/* Mensaje de juego */}
+              <div className="mt-2 text-[11px] text-slate-200/80 leading-snug min-h-[3rem]">
                 {gameMessage}
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-const PlayerInfo = ({player, score, isAI}: {player: Player, score: number, isAI: boolean}) => {
-    return (
-      <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-red-500/90 text-black shadow-[0_5px_0_rgba(0,0,0,0.7)] border-4 border-white relative">
-        <div className="absolute inset-0 rounded-full border-4 border-black pointer-events-none" />
-        <div
-          className={cn(
-            'h-10 w-10 rounded-full flex items-center justify-center border-4 border-black bg-white',
-            isAI ? 'bg-red-600' : 'bg-sky-500',
-          )}
-        >
-          {isAI ? (
-            <Bot className="h-6 w-6 text-black" />
-          ) : (
-            <User className="h-6 w-6 text-black" />
-          )}
-        </div>
-        <div className="flex flex-col items-start pl-1">
-          <span className="font-display tracking-wider text-sm uppercase drop-shadow-[2px_2px_0_rgba(255,255,255,0.7)]">
-            {isAI ? 'Rival (IA)' : 'Jugador 1 (Tú)'}
-          </span>
-          <span className="text-xs font-semibold">Puntaje: {score}</span>
-        </div>
-      </div>
-    );
 }

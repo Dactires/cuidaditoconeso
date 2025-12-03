@@ -17,26 +17,19 @@ export default function GameBoard({
   explodingCard,
 }: GameBoardProps) {
   return (
-    <div className="comic-panel p-5">
-      <div className="grid grid-cols-3 gap-4">
-        {board.map((row, r) =>
-          row.map((card, c) => (
-            <div
-              key={`${r}-${c}`}
-              className="relative w-24 aspect-square md:w-28"
-            >
-              <GameCard
-                card={card}
-                onClick={() => onCardClick(r, c)}
-                isSelectable={isCardSelectable(r, c)}
-                isExploding={
-                  explodingCard?.r === r && explodingCard?.c === c
-                }
-              />
-            </div>
-          )),
-        )}
-      </div>
+    <div className="comic-panel comic-grid">
+      {board.map((row, r) =>
+        row.map((card, c) => (
+          <div key={`${r}-${c}`} className="comic-card-slot relative">
+            <GameCard
+              card={card}
+              onClick={() => onCardClick(r, c)}
+              isSelectable={isCardSelectable(r, c)}
+              isExploding={explodingCard?.r === r && explodingCard?.c === c}
+            />
+          </div>
+        ))
+      )}
     </div>
   );
 }

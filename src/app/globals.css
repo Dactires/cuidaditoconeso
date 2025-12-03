@@ -408,3 +408,72 @@ main {
   font-size: 13px;
   color: #fbbf24;
 }
+
+@layer components {
+  /* Contenedor general tipo "arena" (sala de partida) */
+  .comic-arena {
+    @apply w-full max-w-6xl h-[88vh] mx-auto
+      bg-slate-950/80
+      rounded-[32px]
+      border-[3px] border-slate-800
+      shadow-[0_18px_0_#020617,0_0_40px_rgba(0,0,0,0.6)]
+      relative overflow-hidden;
+  }
+
+  .comic-arena-inner {
+    @apply h-full grid grid-cols-[260px_minmax(0,1.4fr)_260px]
+      gap-6 px-8 py-6 items-center;
+  }
+
+  /* Panel típico azul de tu login / sala */
+  .comic-panel {
+    @apply bg-[#0d4b63]
+      rounded-[24px]
+      border-[3px] border-slate-900
+      shadow-[0_10px_0_#020617]
+      relative;
+  }
+
+  /* Grid del tablero (9 cartas) */
+  .comic-grid {
+    @apply grid grid-cols-3 gap-3 md:gap-4
+      p-4 md:p-5
+      place-items-center;
+  }
+
+  /* Cuadrado donde va cada carta (misma medida en mano, mazo y tablero) */
+  .comic-card-slot {
+    @apply w-[92px] h-[92px] md:w-[104px] md:h-[104px];
+  }
+
+  /* Etiquetas de jugador / turno */
+  .comic-nameplate {
+    @apply px-5 py-2
+      rounded-full
+      bg-[#f97373]
+      border-[3px] border-black
+      shadow-[0_6px_0_#991b1b]
+      text-slate-900
+      font-display text-xs md:text-sm
+      tracking-[0.25em] uppercase
+      flex items-center gap-2;
+  }
+
+  /* Chip azul para "Tu turno / Turno rival" */
+  .comic-turn-chip {
+    @apply px-6 py-2
+      rounded-full
+      bg-sky-500
+      border-[3px] border-black
+      shadow-[0_6px_0_#0f172a]
+      text-slate-900
+      font-display text-xs md:text-sm
+      tracking-[0.25em] uppercase;
+  }
+
+  /* Texto de secciones ("Tu mano", "Mazo", etc) */
+  .comic-section-title {
+    @apply font-display uppercase tracking-[0.25em]
+      text-[10px] md:text-xs text-slate-200/80;
+  }
+}
