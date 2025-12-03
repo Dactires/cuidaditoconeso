@@ -512,25 +512,28 @@ export default function GamePage() {
             isMobile
         />
         <div className="flex items-center justify-between w-full px-2">
-             <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-sky-500 border-2 border-black flex items-center justify-center">
-                    <User className="h-5 w-5 text-slate-900" />
-                </div>
-                <div className="flex flex-col">
+            <div className='w-1/3' />
+            <div className='w-1/3 flex justify-center'>
+             {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
+                    <Button
+                        size="sm"
+                        className="comic-btn comic-btn-secondary !py-1 !px-3 !text-xs"
+                        disabled={gameState.isForcedToPlay}
+                        onClick={handlePassTurn}
+                    >
+                        Pasar
+                    </Button>
+                )}
+            </div>
+            <div className="w-1/3 flex items-center justify-end gap-2">
+                <div className="flex flex-col text-right">
                     <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">{user.displayName || 'Jugador'}</span>
                     <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span></span>
                 </div>
+                <div className="h-8 w-8 rounded-full bg-sky-500 border-2 border-black flex items-center justify-center">
+                    <User className="h-5 w-5 text-slate-900" />
+                </div>
             </div>
-            {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
-                <Button
-                    size="sm"
-                    className="comic-btn comic-btn-secondary !py-1 !px-3 !text-xs"
-                    disabled={gameState.isForcedToPlay}
-                    onClick={handlePassTurn}
-                >
-                    Pasar
-                </Button>
-            )}
         </div>
       </div>
       
@@ -611,7 +614,7 @@ export default function GamePage() {
             {/* Turn indicator */}
             {showDrawAnimation === humanPlayerId && (
                  <motion.div
-                    className="absolute z-10"
+                    className="absolute z-20"
                     initial={{ scale: 0.5, opacity: 0}}
                     animate={{ scale: 1, opacity: 1, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
                     exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
@@ -624,7 +627,7 @@ export default function GamePage() {
            
             {/* Deck */}
             <motion.div
-                className="w-32 h-44 absolute"
+                className="w-32 h-44 absolute z-10"
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1, transition: {delay: 0.3} }}
                 exit={{ opacity: 0, scale: 0.7 }}
@@ -637,8 +640,8 @@ export default function GamePage() {
               className="absolute w-24 aspect-square"
               initial={{ y: 0, scale: 0.8 }}
               animate={ showDrawAnimation === humanPlayerId ?
-                { y: '200%', x: 0, scale: 0.8, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } } :
-                { y: '-200%', x: '50%', scale: 0.5, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } }
+                { y: '200%', x: 0, scale: 0.8, zIndex: 15, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } } :
+                { y: '-200%', x: '50%', scale: 0.5, zIndex: 15, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } }
               }
             >
               <GameCard card={deck[deck.length-1] || null} onClick={()=>{}} isMobile />
