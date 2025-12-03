@@ -5,7 +5,6 @@ import { useGame, GameAction } from '@/hooks/use-game';
 import type { Card as CardType, Player } from '@/lib/types';
 import { getScoreChangeExplanation } from '@/app/actions/game';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
@@ -36,15 +35,16 @@ function getBoardScore(board: (CardType | null)[][]): number {
 
 
 export default function GamePage() {
-  const { gameState, dispatch } = useGame(2);
+  const { gameState, dispatch, initialized } = useGame(2);
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile } = gameState;
+  const currentPlayer = players?.[currentPlayerIndex];
 
   useEffect(() => {
-    if (targetBoardPos && selectedHandCard) {
+    if (targetBoardPos && selectedHandCard && currentPlayer) {
       const actionType =
         targetBoardPos.playerId === currentPlayer.id
           ? 'PLAY_CARD_OWN'
@@ -61,10 +61,10 @@ export default function GamePage() {
       setSelectedHandCard(null);
       setTargetBoardPos(null);
     }
-  }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer?.id]);
+  }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer]);
 
   useEffect(() => {
-    if (gameState.lastRevealedCard?.type === 'Personaje' && gameState.lastRevealedCard.isFaceUp) {
+    if (gameState.lastRevealedCard?.type === 'Personaje' && gameState.lastRevealedCard.isFaceUp && currentPlayer) {
       const boardState = players[currentPlayerIndex].board.map(row => 
         row.map(card => card ? {
           type: card.type,
@@ -87,17 +87,17 @@ export default function GamePage() {
         .catch(console.error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.lastRevealedCard]);
+  }, [gameState.lastRevealedCard, toast, currentPlayer, players]);
 
-  if (!players || players.length === 0 || !players[0].hand) {
+  if (!initialized || !currentPlayer || !players || players.length === 0 || !players[0].hand) {
     return (
-        <div className="flex items-center justify-center h-full bg-green-900">
-            <p className="text-white text-2xl">Loading Game...</p>
+        <div className="flex items-center justify-center h-full bg-background">
+            <p className="text-foreground text-2xl">Loading Game...</p>
         </div>
     );
   }
 
-  const currentPlayer = players[currentPlayerIndex];
+  
   const rivalPlayer = players[(currentPlayerIndex + 1) % players.length];
   const currentPlayerScore = getBoardScore(currentPlayer.board);
   const rivalPlayerScore = getBoardScore(rivalPlayer.board);
@@ -191,7 +191,7 @@ export default function GamePage() {
   };
   
   return (
-    <div className="min-h-screen w-full bg-green-800/50 bg-[url('/felt-pattern.png')] bg-repeat flex items-center justify-center p-4 font-sans">
+    <div className="min-h-screen w-full bg-[url('/felt-pattern.png')] bg-repeat flex items-center justify-center p-4 font-sans">
       <GameOverModal
         isOpen={gameOver && !!winner}
         winner={winner}
@@ -203,10 +203,10 @@ export default function GamePage() {
         {/* COLUMNA IZQUIERDA - JUGADOR */}
         <div className="flex flex-col items-center justify-center gap-4 h-full">
           <div className="flex flex-col items-center gap-2">
-            <div className="h-20 w-20 rounded-full bg-orange-400 flex items-center justify-center border-4 border-white/80 shadow-lg">
-              <User className="h-12 w-12 text-white" />
+            <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center border-4 border-white/80 shadow-lg">
+              <User className="h-12 w-12 text-primary-foreground" />
             </div>
-            <span className="text-white font-bold text-lg">Player 1 (You)</span>
+            <span className="text-primary-foreground font-bold text-lg">Player 1 (You)</span>
             <span className="text-white/80 text-base font-semibold">Score: {currentPlayerScore}</span>
           </div>
 
@@ -231,7 +231,7 @@ export default function GamePage() {
         <div className="flex flex-col items-center gap-4">
             {/* Game Status */}
             {gameMessage && (
-                <div className="text-white text-center text-lg font-semibold px-4 py-2 bg-black/40 rounded-lg shadow-inner flex items-center gap-2">
+                <div className="text-primary-foreground text-center text-lg font-semibold px-4 py-2 bg-black/40 rounded-lg shadow-inner flex items-center gap-2">
                     <Info className="w-5 h-5 flex-shrink-0" />
                     <span>{gameMessage}</span>
                 </div>
@@ -239,7 +239,7 @@ export default function GamePage() {
             
           {/* Rival Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-white font-bold text-base">Player 2 (Rival) - Score: {rivalPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-base">Player 2 (Rival) - Score: {rivalPlayerScore}</span>
             <GameBoard 
               board={rivalPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
@@ -250,7 +250,7 @@ export default function GamePage() {
 
           {/* Player Board */}
           <div className="flex flex-col items-center gap-2">
-            <span className="text-white font-bold text-base">Player 1 (You) - Score: {currentPlayerScore}</span>
+            <span className="text-primary-foreground font-bold text-base">Player 1 (You) - Score: {currentPlayerScore}</span>
             <GameBoard 
               board={currentPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(currentPlayer.id, r, c)}
@@ -261,15 +261,15 @@ export default function GamePage() {
           {/* Acciones */}
           <div className="flex flex-wrap justify-center items-center gap-2 text-xs h-10">
             {turnPhase === 'START_TURN' && (
-                <Button size="sm" onClick={() => handleAction('START_TURN')} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+                <Button size="sm" onClick={() => handleAction('START_TURN')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
                     Draw Card
                 </Button>
             )}
             {turnPhase === 'REVEAL_CARD' && (
-                <p className="text-center font-semibold text-amber-300">Reveal a card on your board.</p>
+                <p className="text-center font-semibold text-accent">Reveal a card on your board.</p>
             )}
             {turnPhase === 'ACTION' && (
-                <Button size="sm" variant="outline" className="bg-transparent text-white hover:bg-white/10" disabled={gameState.isForcedToPlay} onClick={() => handleAction('PASS_TURN')}>
+                <Button size="sm" variant="outline" className="bg-transparent text-primary-foreground hover:bg-white/10" disabled={gameState.isForcedToPlay} onClick={() => handleAction('PASS_TURN')}>
                     Pass Turn
                 </Button>
             )}
@@ -277,7 +277,7 @@ export default function GamePage() {
                 <p className="text-xs text-red-400 font-semibold text-center w-full">You have too many cards and must play or swap.</p>
             )}
             {turnPhase === 'GAME_OVER' && (
-                <p className="text-center font-bold text-2xl text-amber-400">Game Over!</p>
+                <p className="text-center font-bold text-2xl text-accent">Game Over!</p>
             )}
           </div>
         </div>
@@ -285,10 +285,10 @@ export default function GamePage() {
         {/* COLUMNA DERECHA - MAZO Y DESCARTE */}
         <div className="flex flex-col items-center justify-center gap-4 h-full">
             <div className="flex flex-col items-center gap-2">
-                <div className="h-20 w-20 rounded-full bg-purple-600 flex items-center justify-center border-4 border-white/80 shadow-lg">
-                    <Bot className="h-12 w-12 text-white" />
+                <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center border-4 border-white/80 shadow-lg">
+                    <Bot className="h-12 w-12 text-secondary-foreground" />
                 </div>
-                <span className="text-white font-bold text-lg">Player 2 (Rival)</span>
+                <span className="text-primary-foreground font-bold text-lg">Player 2 (Rival)</span>
                 <span className="text-white/80 text-base font-semibold">Score: {rivalPlayerScore}</span>
             </div>
             <div className="flex flex-col items-center gap-2">
@@ -319,3 +319,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    

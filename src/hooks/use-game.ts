@@ -69,12 +69,14 @@ export function useGame(numPlayers: number) {
     const [initialized, setInitialized] = useState(false);
   
     useEffect(() => {
-      if (!initialized) {
+      // Initialize game only on the client side to avoid hydration issues
+      if (typeof window !== 'undefined' && !initialized) {
         dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers } });
         setInitialized(true);
       }
     }, [initialized, numPlayers]);
   
-    return { gameState, dispatch };
+    return { gameState, dispatch, initialized };
   }
   
+    
