@@ -20,8 +20,10 @@ export default function MobileCollection() {
   const [selected, setSelected] = useState<SelectedCard>(null);
 
   const deck = CARD_DEFINITIONS.filter(def => def.kind === 'character' || def.kind === 'bomb' || def.kind === 'hero' || def.kind === 'power');
-  const collectionUnlocked = CARD_DEFINITIONS.filter(c => c.kind === "character");
-  const collectionLocked = LOCKED_PLACEHOLDERS;
+  const collectionUnlocked = CARD_DEFINITIONS; // For now, show all cards as available
+  const collectionLocked = [
+    // Future locked cards can be added here
+  ];
 
   return (
     <div className="flex flex-col h-full bg-transparent relative no-scrollbar">
@@ -29,7 +31,7 @@ export default function MobileCollection() {
       <section className="px-3 pt-1 pb-2">
         <div className="flex items-baseline justify-between mb-1">
           <h2 className="comic-title text-white text-sm tracking-[0.22em]">
-            MAZO ({deck.length} / {deck.length})
+            MAZO ({deck.length} / 7)
           </h2>
           <span className="text-[10px] text-slate-300 font-mono">
             Toque una carta para ver detalles
