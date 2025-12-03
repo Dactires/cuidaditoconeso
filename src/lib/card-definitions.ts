@@ -10,7 +10,7 @@ export type GameCardDef = {
   colorClass: string;
   ribbonClass: string;
   textColor?: string;
-  value: number;
+  value: number; // For characters, this is a base value or can be ignored if values are 1-5
   description: string;
   imageUrl?: string;
 };
@@ -21,27 +21,6 @@ const characterDescriptions = {
   verde: "Los personajes verdes se centran en el crecimiento y la defensa, acumulando poder de forma sostenida.",
   amarillo: "Los personajes amarillos son versátiles y traen un elemento de sorpresa e ingenio al juego.",
 };
-
-const createCharacterCards = (color: string, colorClass: string, ribbonClass: string, textColor?: string): GameCardDef[] => {
-    const cards: GameCardDef[] = [];
-    for (let i = 1; i <= 5; i++) {
-        cards.push({
-            id: `character-${color.toLowerCase()}-${i}`,
-            kind: 'character',
-            label: `Personaje ${color} ${i}`,
-            shortLabel: `${color}`,
-            color: color,
-            colorClass,
-            ribbonClass,
-            textColor,
-            value: i,
-            description: characterDescriptions[color.toLowerCase() as keyof typeof characterDescriptions],
-            imageUrl: undefined, // Se cargará desde la DB
-        });
-    }
-    return cards;
-};
-
 
 export const CARD_DEFINITIONS: GameCardDef[] = [
   // --- REVERSO ---
@@ -57,11 +36,52 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     description: "Esta es la imagen que se mostrará en el dorso de todas las cartas del juego cuando estén boca abajo.",
   },
   
-  // --- PERSONAJES ---
-  ...createCharacterCards('Rojo', 'bg-red-500', 'bg-red-700'),
-  ...createCharacterCards('Azul', 'bg-sky-500', 'bg-sky-700'),
-  ...createCharacterCards('Verde', 'bg-emerald-500', 'bg-emerald-700'),
-  ...createCharacterCards('Amarillo', 'bg-yellow-400', 'bg-yellow-500', 'text-slate-900'),
+  // --- PERSONAJES (UNA DEFINICIÓN POR COLOR) ---
+  {
+    id: 'character-rojo',
+    kind: 'character',
+    label: 'Personaje Rojo',
+    shortLabel: 'Rojo',
+    color: 'Rojo',
+    colorClass: 'bg-red-500',
+    ribbonClass: 'bg-red-700',
+    value: 0, // valor base, no se usa directamente
+    description: characterDescriptions.rojo,
+  },
+  {
+    id: 'character-azul',
+    kind: 'character',
+    label: 'Personaje Azul',
+    shortLabel: 'Azul',
+    color: 'Azul',
+    colorClass: 'bg-sky-500',
+    ribbonClass: 'bg-sky-700',
+    value: 0,
+    description: characterDescriptions.azul,
+  },
+  {
+    id: 'character-verde',
+    kind: 'character',
+    label: 'Personaje Verde',
+    shortLabel: 'Verde',
+    color: 'Verde',
+    colorClass: 'bg-emerald-500',
+    ribbonClass: 'bg-emerald-700',
+    value: 0,
+    description: characterDescriptions.verde,
+  },
+  {
+    id: 'character-amarillo',
+    kind: 'character',
+    label: 'Personaje Amarillo',
+    shortLabel: 'Amarillo',
+    color: 'Amarillo',
+    colorClass: 'bg-yellow-400',
+    ribbonClass: 'bg-yellow-500',
+    textColor: 'text-slate-900',
+    value: 0,
+    description: characterDescriptions.amarillo,
+  },
 
   // --- BOMBAS Y PODERES ---
   {
