@@ -193,10 +193,30 @@ function CardDetailModal({
   card: GameCardDef;
   onClose: () => void;
 }) {
-  // Por ahora todo nivel 1, progreso 1/5 si es color
   const currentLevel = card.kind === "color" ? 1 : 1;
   const maxLevel = card.kind === "color" ? 5 : 1;
   const hasLevels = card.kind === "color";
+
+  const value =
+    card.kind === "color"
+      ? 1
+      : card.kind === "bomb"
+      ? 5
+      : card.kind === "hero"
+      ? 6
+      : "P";
+
+  const ribbonText =
+    card.kind === "color"
+      ? card.shortLabel
+      : card.kind === "bomb"
+      ? "BOMBA"
+      : card.kind === "hero"
+      ? "HÉROE"
+      : "PODER";
+
+  const baseTextColor =
+    card.textColor ?? (card.kind === "hero" ? "text-slate-900" : "text-white");
 
   return (
     <motion.div
@@ -205,7 +225,7 @@ function CardDetailModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* FONDO OSCURO */}
+      {/* Fondo oscuro */}
       <motion.div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
@@ -214,16 +234,16 @@ function CardDetailModal({
         exit={{ opacity: 0 }}
       />
 
-      {/* CONTENEDOR */}
+      {/* Contenedor */}
       <motion.div
         initial={{ scale: 0.8, y: 20, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.85, y: 10, opacity: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 18 }}
-        className="relative z-50 w-full max-w-sm"
+        className="relative z-50 w-full max-w-md"
       >
-        <div className="comic-card bg-[#0b3b4e] border-[4px] border-slate-900 shadow-[0_10px_0_#020617] px-4 pt-3 pb-4">
-          {/* BOTÓN CERRAR */}
+        <div className="comic-card bg-[#0b3b4e] border-[4px] border-slate-900 shadow-[0_10px_0_#020617] px-4 pt-4 pb-5">
+          {/* Botón cerrar */}
           <button
             onClick={onClose}
             className="absolute -top-3 -right-3 rounded-full bg-slate-900 border-[3px] border-black w-8 h-8 flex items-center justify-center shadow-[0_4px_0_#020617] text-slate-200 hover:bg-slate-800"
@@ -231,26 +251,69 @@ function CardDetailModal({
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex gap-3">
-            {/* Carta grande */}
-            <div className="w-24 shrink-0">
-              <DeckCard card={card} smallStatic />
-            </div>
+          {/* CARTA PROTAGONISTA */}
+          <div className="flex flex-col items-center gap-3">
+            <motion.div
+              initial={{ scale: 0.9, y: 5 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="relative w-36 sm:w-40 md:w-44"
+            >
+              {/* Glow alrededor */}
+              <div className="absolute inset-0 rounded-[26px] bg-amber-300/20 blur-xl pointer-events-none" />
+              <div className="relative w-full aspect-[4/5] rounded-[26px] border-[4px] border-black shadow-[0_10px_0_#020617] overflow-hidden bg-slate-900">
+                <div
+                  className={cn(
+                    "absolute inset-[6px] rounded-[20px] border-[3px] border-black flex flex-col items-center justify-between py-3",
+                    card.colorClass
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-4xl font-display drop-shadow-[0_3px_0_#020617] leading-none",
+                      baseTextColor
+                    )}
+                  >
+                    {value}
+                  </span>
 
-            <div className="flex-1 flex flex-col gap-1">
-              <div className="flex items-center gap-1">
+                  {/* Acá después podés meter la ilustración grande */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <span className="text-[11px] text-white/80 px-3 text-center opacity-80">
+                      Ilustración de carta
+                    </span>
+                  </div>
+
+                  <div
+                    className={cn(
+                      "px-3 py-1 rounded-full border-[3px] border-black shadow-[0_3px_0_#020617] text-[10px] font-display tracking-[0.22em] uppercase",
+                      card.ribbonClass,
+                      baseTextColor
+                    )}
+                  >
+                    {ribbonText}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* TÍTULO + TEXTO */}
+            <div className="w-full text-center mt-1">
+              <div className="flex items-center justify-center gap-2 mb-1">
                 <Info className="w-4 h-4 text-amber-300" />
-                <h2 className="comic-title text-sm text-white">
+                <h2 className="comic-title text-sm sm:text-base text-white">
                   {card.label}
                 </h2>
               </div>
-              <p className="text-[11px] text-slate-100 leading-snug mt-1">
+              <p className="text-[11px] sm:text-[12px] text-slate-100 leading-snug max-w-sm mx-auto">
                 {card.description}
               </p>
+            </div>
 
-              {/* NIVEL / PROGRESO */}
-              {hasLevels && (
-                <div className="mt-2">
+            {/* NIVEL / PROGRESO */}
+            <div className="w-full mt-2">
+              {hasLevels ? (
+                <>
                   <div className="flex items-center justify-between mb-1">
                     <span className="comic-title text-[10px] text-amber-300">
                       NIVEL {currentLevel}
@@ -265,37 +328,34 @@ function CardDetailModal({
                   <span className="block mt-1 text-[10px] text-slate-300">
                     Próximamente vas a poder subirla hasta el número {maxLevel}.
                   </span>
-                </div>
-              )}
-
-              {!hasLevels && (
-                <span className="mt-2 text-[10px] text-slate-200">
+                </>
+              ) : (
+                <span className="text-[10px] text-slate-200">
                   Esta carta todavía no tiene sistema de niveles, pero ya forma
                   parte del mazo base.
                 </span>
               )}
             </div>
-          </div>
 
-          {/* BOTÓN SUBIR DE NIVEL */}
-          <div className="mt-3 flex flex-col gap-1">
-            <button
-              disabled
-              className="comic-btn comic-btn-primary !w-full !justify-center !py-2 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              Subir de nivel
-            </button>
-            <span className="text-[10px] text-center text-slate-300">
-              Función en construcción. Más adelante vas a poder gastar recursos
-              para mejorar esta carta.
-            </span>
+            {/* BOTÓN SUBIR DE NIVEL */}
+            <div className="w-full mt-3 flex flex-col gap-1">
+              <button
+                disabled
+                className="comic-btn comic-btn-primary !w-full !justify-center !py-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                SUBIR DE NIVEL
+              </button>
+              <span className="text-[10px] text-center text-slate-300">
+                Función en construcción. Más adelante vas a poder gastar recursos
+                para mejorar esta carta.
+              </span>
+            </div>
           </div>
         </div>
       </motion.div>
     </motion.div>
   );
 }
-
 /* ─────────────────────
    CARTAS
    ───────────────────── */
