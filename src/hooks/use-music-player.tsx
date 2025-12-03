@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, {
@@ -6,11 +7,11 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useStorage } from "@/firebase";
 import { ref, getDownloadURL } from "firebase/storage";
 import useSound from "use-sound";
-import { SoundSprite } from "use-sound/dist/types";
 
 interface MusicContextType {
   playLobbyMusic: () => void;
@@ -23,10 +24,6 @@ interface MusicContextType {
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
 
-const sprite = {
-  loop: [0, 60000, true] as [number, number, boolean], // Loop a 60-second segment
-};
-
 export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -34,6 +31,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
   const [lobbyUrl, setLobbyUrl] = useState<string | null>(null);
   const [battleUrl, setBattleUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Refs to track active playback intention
+  const isPlayingLobbyRef = useRef(false);
+  const isPlayingBattleRef = useRef(false);
 
   useEffect(() => {
     const fetchMusicUrls = async () => {
@@ -44,64 +45,75 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
         const battleRef = ref(storage, "music/battle.mp3");
 
         const lobbyDownloadUrl = await getDownloadURL(lobbyRef);
-        const battleDownloadUrl = await getDownloadURL(battleRef);
-
         setLobbyUrl(lobbyDownloadUrl);
+      } catch (error) {
+        if ((error as any).code !== 'storage/object-not-found') {
+          console.error("Error fetching lobby music:", error);
+        }
+      }
+      try {
+        const battleDownloadUrl = await getDownloadURL(battleRef);
         setBattleUrl(battleDownloadUrl);
       } catch (error) {
-        console.error("Error fetching music URLs:", error);
-        // It's okay if they don't exist, the player just won't play them.
-      } finally {
-        setIsLoading(false);
+         if ((error as any).code !== 'storage/object-not-found') {
+          console.error("Error fetching battle music:", error);
+        }
       }
+      setIsLoading(false);
     };
 
     fetchMusicUrls();
   }, [storage]);
+  
+  const [playLobby, { stop: stopLobby, isPlaying: isLobbyAudioPlaying, sound: lobbySound }] =
+    useSound(lobbyUrl, {
+      volume: 0.2,
+      onend: () => {
+        if (isPlayingLobbyRef.current) {
+          playLobby();
+        }
+      },
+    });
 
-  const [
-    playLobby,
-    { stop: stopLobby, isPlaying: isLobbyPlaying, sound: lobbySound },
-  ] = useSound(lobbyUrl || "", {
-    volume: 0.2,
-    loop: true,
-  });
-  const [
-    playBattle,
-    { stop: stopBattle, isPlaying: isBattlePlaying, sound: battleSound },
-  ] = useSound(battleUrl || "", {
-    volume: 0.25,
-    loop: true,
-  });
-
-  const playLobbyMusic = useCallback(() => {
-    if (lobbyUrl && !isLobbyPlaying) {
-      stopBattle();
-      playLobby();
-    }
-  }, [lobbyUrl, isLobbyPlaying, stopBattle, playLobby]);
-
-  const playBattleMusic = useCallback(() => {
-    if (battleUrl && !isBattlePlaying) {
-      stopLobby();
-      playBattle();
-    }
-  }, [battleUrl, isBattlePlaying, stopLobby, playBattle]);
+  const [playBattle, { stop: stopBattle, isPlaying: isBattleAudioPlaying, sound: battleSound }] =
+    useSound(battleUrl, {
+      volume: 0.25,
+      onend: () => {
+        if (isPlayingBattleRef.current) {
+          playBattle();
+        }
+      },
+    });
 
   const stopAllMusic = useCallback(() => {
-    if (isLobbyPlaying) stopLobby();
-    if (isBattlePlaying) stopBattle();
-  }, [isLobbyPlaying, stopLobby, isBattlePlaying, stopBattle]);
+    isPlayingLobbyRef.current = false;
+    isPlayingBattleRef.current = false;
+    if (isLobbyAudioPlaying) stopLobby();
+    if (isBattleAudioPlaying) stopBattle();
+  }, [isLobbyAudioPlaying, stopLobby, isBattleAudioPlaying, stopBattle]);
+  
+  const playLobbyMusic = useCallback(() => {
+    if (isLoading || !lobbyUrl) return;
+    stopAllMusic();
+    isPlayingLobbyRef.current = true;
+    playLobby();
+  }, [isLoading, lobbyUrl, playLobby, stopAllMusic]);
 
-  // Ensure sounds are stopped on unmount or page visibility change
+  const playBattleMusic = useCallback(() => {
+    if (isLoading || !battleUrl) return;
+    stopAllMusic();
+    isPlayingBattleRef.current = true;
+    playBattle();
+  }, [isLoading, battleUrl, playBattle, stopAllMusic]);
+
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         lobbySound?.pause();
         battleSound?.pause();
       } else {
-        if (isLobbyPlaying) lobbySound?.play();
-        if (isBattlePlaying) battleSound?.play();
+        if (isPlayingLobbyRef.current) lobbySound?.play();
+        if (isPlayingBattleRef.current) battleSound?.play();
       }
     };
 
@@ -109,10 +121,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      stopAllMusic();
+      // Ensure music stops completely on component unmount
+      if(lobbySound) lobbySound.stop();
+      if(battleSound) battleSound.stop();
     };
-  }, [stopAllMusic, lobbySound, battleSound, isLobbyPlaying, isBattlePlaying]);
-
+  }, [lobbySound, battleSound]);
 
   return (
     <MusicContext.Provider
@@ -120,8 +133,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
         playLobbyMusic,
         playBattleMusic,
         stopAllMusic,
-        isLobbyPlaying,
-        isBattlePlaying,
+        isLobbyPlaying: isLobbyAudioPlaying,
+        isBattlePlaying: isBattleAudioPlaying,
         isLoading,
       }}
     >

@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Save, Music, X } from 'lucide-react';
-import { useFirebase } from '@/firebase';
+import { useStorage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL, getMetadata } from 'firebase/storage';
 import { Progress } from '@/components/ui/progress';
 
 function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
-  const { storage } = useFirebase();
+  const storage = useStorage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -21,7 +21,7 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
   const [currentMusicName, setCurrentMusicName] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // Although uploadBytes doesn't give progress, we can simulate it
+  const [uploadProgress, setUploadProgress] = useState(0); 
 
   const musicTitle = musicType === 'lobby' ? 'Música del Lobby' : 'Música de Batalla';
   const musicFileName = musicType === 'lobby' ? 'lobby.mp3' : 'battle.mp3';
@@ -36,7 +36,6 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
         getMetadata(musicRef).then(meta => setCurrentMusicName(meta.name));
       })
       .catch((error) => {
-        // It's normal for the file not to exist initially
         if (error.code !== 'storage/object-not-found') {
           console.error(`Error fetching ${musicType} music:`, error);
         }
@@ -56,7 +55,7 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
     if (!storage || !selectedFile) return;
 
     setIsUploading(true);
-    setUploadProgress(50); // Simulate progress
+    setUploadProgress(50); 
 
     const musicRef = ref(storage, `music/${musicFileName}`);
 
@@ -121,7 +120,7 @@ function MusicUploader({ musicType }: { musicType: 'lobby' | 'battle' }) {
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
              >
-                <Upload className="mr-2" /> Seleccionar archivo...
+                <Upload className="mr-2 h-4 w-4" /> Seleccionar archivo...
              </Button>
             <Input
                 id={`music-upload-${musicType}`}
