@@ -56,6 +56,7 @@ export default function GameCard({
       className={cn(
         'w-full h-full cursor-pointer relative',
         isSelected && !isMobile && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
+        isSelected && isMobile && 'ring-2 ring-amber-300',
       )}
       onClick={onClick}
       whileHover={isSelectable && !isMobile ? { scale: 1.05, y: -4 } : {}}
@@ -80,7 +81,6 @@ export default function GameCard({
             'w-full h-full flex flex-col items-center justify-center relative aspect-square',
             'rounded-2xl border-[3px] border-black bg-sky-400',
             'shadow-[0_8px_0_#020617]',
-            isSelected && 'ring-4 ring-amber-300 ring-offset-4 ring-offset-slate-900',
             cardStyling?.bg
           )}
         >

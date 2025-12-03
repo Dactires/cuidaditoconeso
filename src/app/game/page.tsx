@@ -237,6 +237,7 @@ export default function GamePage() {
 
   const handlePassTurn = () => {
     if (gameOver || currentPlayerIndex !== humanPlayerId || turnPhase !== 'ACTION') return;
+    if (gameState.isForcedToPlay) return;
     dispatch({ type: 'PASS_TURN', payload: { player_id: humanPlayer.id } });
     setSelectedHandCard(null);
     setTargetBoardPos(null);
@@ -342,7 +343,14 @@ export default function GamePage() {
                 ))}
               </div>
   
-              <div className="mt-2">
+              <div className="mt-2 flex items-center justify-center gap-2">
+                 <button 
+                  onClick={handlePassTurn} 
+                  className="comic-btn comic-btn-secondary !px-4 !py-1 !text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={gameState.isForcedToPlay || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId}
+                >
+                  Pasar
+                </button>
                 {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
                   <p className="mt-1 text-[11px] text-amber-300 text-center">
                     Debes jugar o intercambiar una carta.
@@ -482,7 +490,17 @@ export default function GamePage() {
             isMobile
         />
         <div className="flex items-center justify-between w-full px-2">
-            <div className='w-1/3' />
+            <div className='w-1/3 flex justify-start'>
+               {turnPhase === 'ACTION' && (
+                  <button 
+                    onClick={handlePassTurn} 
+                    className="comic-btn comic-btn-secondary !px-3 !py-1 !text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={gameState.isForcedToPlay}
+                  >
+                    Pasar
+                  </button>
+               )}
+            </div>
             <div className='w-1/3 flex justify-center'>
              {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
                 <p className="mt-1 text-[11px] text-amber-300 text-center">
@@ -503,40 +521,28 @@ export default function GamePage() {
       </div>
       
       {/* Player Hand */}
-      <div className="w-full h-32 flex justify-center items-center pb-2">
-        <div className="relative w-full max-w-sm h-full flex justify-center items-end card-hand-fan">
-            {humanPlayer.hand.map((card, index) => {
-                const totalCards = humanPlayer.hand.length;
-                const fanAngle = Math.min(totalCards * 15, 60);
-                const rotation = (index - (totalCards - 1) / 2) * (fanAngle / Math.max(1, totalCards-1));
-                
-                return (
-                    <motion.div
-                      key={card.uid}
-                      className={cn(
-                        'absolute origin-bottom fan-card',
-                      )}
-                      animate={{ 
-                        rotate: rotation,
-                        y: selectedHandCard?.card.uid === card.uid ? -40 : 0,
-                        zIndex: selectedHandCard?.card.uid === card.uid ? 10 : index,
-                      }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                      onClick={() => handleHandCardClick(card, index)}
-                    >
-                      <div className="w-24 aspect-square">
-                        <GameCard
-                            card={card}
-                            onClick={() => {}}
-                            isSelectable={isHandCardSelectable(card)}
-                            isMobile
-                        />
-                      </div>
-                    </motion.div>
-                );
-            })}
-        </div>
+      <div className="w-full flex justify-center items-center gap-1 px-1 h-28 shrink-0">
+        {humanPlayer.hand.map((card, index) => (
+          <motion.div
+            key={card.uid}
+            className="w-1/4 max-w-[80px]"
+            animate={{
+              y: selectedHandCard?.card.uid === card.uid ? -20 : 0,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            onClick={() => handleHandCardClick(card, index)}
+          >
+            <GameCard
+              card={card}
+              onClick={() => {}}
+              isSelected={selectedHandCard?.card.uid === card.uid}
+              isSelectable={isHandCardSelectable(card)}
+              isMobile
+            />
+          </motion.div>
+        ))}
       </div>
+
 
       <div className="absolute top-2 right-2 z-20">
          <AlertDialog>
