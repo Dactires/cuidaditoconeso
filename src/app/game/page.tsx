@@ -7,13 +7,14 @@ import type { Card as CardType, Player } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useGameSounds } from '@/hooks/use-game-sounds';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
 import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import GameLoadingScreen from '@/components/game/GameLoadingScreen';
+import MatchupScreen from '@/components/game/MatchupScreen'; // Importar el nuevo componente
 import { User, Bot, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -133,9 +134,10 @@ export default function GamePage() {
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
   const isMobile = useIsMobile();
   const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
-  const [showDeckAnimation, setShowDeckAnimation] = useState(false);
 
-  // Stable state for animations to prevent race conditions
+  // Nuevo estado para controlar las fases de la pantalla
+  const [gamePhase, setGamePhase] = useState<'loading' | 'matchup' | 'playing'>('loading');
+
   const { playBattleMusic, stopAllMusic } = useMusicPlayer();
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
@@ -150,7 +152,7 @@ export default function GamePage() {
       router.push('/login');
       return;
     }
-     if (!isUserAuthLoading && user && initialized) {
+     if (!isUserAuthLoading && user && initialized && gamePhase === 'playing') {
       stopAllMusic();
       playBattleMusic();
     }
@@ -160,7 +162,17 @@ export default function GamePage() {
         stopAllMusic();
       }
     };
-  }, [user, isUserAuthLoading, router, playBattleMusic, stopAllMusic, initialized]);
+  }, [user, isUserAuthLoading, router, playBattleMusic, stopAllMusic, initialized, gamePhase]);
+
+  // Control del flujo de fases (loading -> matchup -> playing)
+  useEffect(() => {
+    if (initialized) {
+      const timer = setTimeout(() => {
+        setGamePhase('matchup');
+      }, 3000); // Duración de la pantalla de carga
+      return () => clearTimeout(timer);
+    }
+  }, [initialized]);
 
 
   // Sound effects trigger for any revealed card
@@ -179,14 +191,14 @@ export default function GamePage() {
       playBomb(); // Play bomb sound with the explosion
       const timer = setTimeout(() => {
           dispatch({ type: 'CLEAR_EXPLOSION' });
-      }, 650); // Delay to show the bomb card art before it resolves
+      }, 1200); // Aumentar duración para entender la animación
       return () => clearTimeout(timer);
-  }, [explodingCard, dispatch, playBomb, playFlip]);
+  }, [explodingCard, dispatch, playBomb]);
 
 
   // AI Logic Trigger
   useEffect(() => {
-    if (gameOver || !initialized || currentPlayerIndex !== aiPlayerId) return;
+    if (gameOver || !initialized || currentPlayerIndex !== aiPlayerId || gamePhase !== 'playing') return;
   
     const performAiAction = (action: GameAction, delay = 1500) => {
       setTimeout(() => {
@@ -209,11 +221,9 @@ export default function GamePage() {
         const {r, c} = availableCards[Math.floor(Math.random() * availableCards.length)];
         performAiAction({ type: 'REVEAL_CARD', payload: { player_id: aiPlayerId, r, c } });
       } else {
-        // No cards to reveal, must be an end-game scenario
         performAiAction({ type: 'PASS_TURN', payload: { player_id: aiPlayerId } });
       }
     } else if (turnPhase === 'ACTION') {
-      // Prioritize playing bomb on player's board
       const bombCard = rivalPlayer.hand.find(c => c.type === 'Bomba');
       if (bombCard) {
         const playerBoardSpots: {r: number, c: number}[] = [];
@@ -256,18 +266,18 @@ export default function GamePage() {
        }
     }
   
-  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay]);
+  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay, gamePhase]);
 
   // Human player auto-draw
   useEffect(() => {
-    if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN') return;
+    if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN' || gamePhase !== 'playing') return;
 
     const timer = setTimeout(() => {
       dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId]);
+  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, gamePhase]);
   
   // Clear drawn card animation state
   useEffect(() => {
@@ -320,6 +330,21 @@ export default function GamePage() {
     return <GameLoadingScreen cardBackImageUrl={cardBackImageUrl} />;
   }
 
+  if (gamePhase === 'loading') {
+    return <GameLoadingScreen cardBackImageUrl={cardBackImageUrl} />;
+  }
+
+  if (gamePhase === 'matchup') {
+    return (
+      <MatchupScreen
+        player={{ name: user.displayName || 'Tú', deck: humanPlayer.deck }}
+        rival={{ name: 'Rival (IA)', deck: rivalPlayer.deck }}
+        cardDefs={cardDefs!}
+        onAnimationComplete={() => setGamePhase('playing')}
+      />
+    );
+  }
+
   const humanPlayerScore = getBoardScore(humanPlayer.board);
   const rivalPlayerScore = getBoardScore(rivalPlayer.board);
   const isHumanTurn = currentPlayerIndex === humanPlayerId;
@@ -345,13 +370,6 @@ export default function GamePage() {
     );
   };
   
-  const handleRefillAnimationComplete = (playerId: number, r: number, c: number, card: CardType) => {
-      dispatch({
-          type: 'FINISH_REFILL_ANIMATION',
-          payload: { playerId, r, c, card },
-      });
-  };
-  
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
     if (gameOver || !isHumanTurn) return false;
     const player = players.find(p => p.id === playerId);
@@ -364,10 +382,9 @@ export default function GamePage() {
     
     if (turnPhase === 'ACTION') {
       if (selectedHandCard) {
-        // A hand card is selected, check if board spot is a valid target
         return !card || !card.isFaceUp;
       }
-      return false; // No interaction with board if no hand card is selected
+      return false;
     }
 
     return false;

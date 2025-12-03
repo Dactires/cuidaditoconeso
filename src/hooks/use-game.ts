@@ -22,7 +22,6 @@ export type GameAction =
   | { type: 'CLEAR_RIVAL_MOVE' }
   | { type: 'CLEAR_DRAWN_CARD' }
   | { type: 'TRIGGER_EXPLOSION'; payload: { playerId: number; r: number; c: number } }
-  | { type: 'FINISH_REFILL_ANIMATION'; payload: { playerId: number; r: number; c: number; card: Card } }
   | { type: 'HIDE_TEMP_REVEAL'; payload: { playerId: number; r: number; c: number; cardUid: string } };
 
 const getInitialState = (numPlayers: number): GameState => ({
@@ -66,7 +65,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         draft.gameMessage = action.payload;
       });
     case 'RESET_GAME':
-        // This needs to be handled in the component to re-fetch definitions
       return state; 
     case 'CLEAR_EXPLOSION':
       if (!state.explodingCard) return state;
@@ -76,8 +74,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return Game.clearRivalMove(state);
     case 'CLEAR_DRAWN_CARD':
       return Game.clearDrawnCard(state);
-    case 'FINISH_REFILL_ANIMATION':
-        return Game.finishRefillAnimation(state, action.payload);
     case 'HIDE_TEMP_REVEAL':
         return Game.hideTempReveal(state, action.payload);
     default:
@@ -90,37 +86,22 @@ export function useGame(numPlayers: number, cardDefs: GameCardDef[] | null) {
     const [initialized, setInitialized] = useState(false);
   
     useEffect(() => {
-      if (cardDefs) {
-        // Delay initialization to allow loading screen to show
-        const timer = setTimeout(() => {
-            dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers, cardDefs } });
-            setInitialized(true);
-        }, 3000); // 3-second loading screen
-        
-        return () => clearTimeout(timer);
+      if (cardDefs && !initialized) {
+        dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers, cardDefs } });
+        setInitialized(true);
       }
-    }, [numPlayers, cardDefs]);
+    }, [numPlayers, cardDefs, initialized]);
   
     const resetGame = () => {
         if (cardDefs) {
-            setInitialized(false); // This will trigger the re-initialization effect
+            setInitialized(false);
+            const timer = setTimeout(() => {
+                dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers, cardDefs } });
+                setInitialized(true);
+            }, 100);
+            return () => clearTimeout(timer);
         }
     }
-
-    // This effect ensures isForcedToPlay is updated correctly
-    useEffect(() => {
-        const player = gameState.players[gameState.currentPlayerIndex];
-        if (player && player.hand.length > MAX_HAND_SIZE) {
-            if (!gameState.isForcedToPlay) {
-                const newState = produce(gameState, draft => {
-                    draft.isForcedToPlay = true;
-                });
-                // This seems wrong, we shouldn't dispatch from a reducer-like calculation.
-                // The logic should be in the reducer itself.
-                // Let's move this to the drawCard action in game-logic.
-            }
-        }
-    }, [gameState.players, gameState.currentPlayerIndex, gameState.isForcedToPlay]);
 
     // Effect for handling temporary reveals (Blue card ability)
     useEffect(() => {

@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader } from 'lucide-react';
 import GameCard from './GameCard';
-import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
+import { CARD_DEFINITIONS } from '@/lib/card-definitions';
 import { Progress } from '@/components/ui/progress';
 
 const TIPS = [
@@ -95,11 +95,12 @@ export default function GameLoadingScreen({ cardBackImageUrl }: { cardBackImageU
 
     const timer = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 95) {
+        const nextProgress = prev + Math.floor(Math.random() * 5) + 2;
+        if (nextProgress >= 100) {
           clearInterval(timer);
           return 100;
         }
-        return prev + Math.floor(Math.random() * 5) + 2;
+        return nextProgress;
       });
     }, 200);
 
