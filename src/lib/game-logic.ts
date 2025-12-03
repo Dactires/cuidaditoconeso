@@ -113,19 +113,48 @@ export function setupGame(numPlayers: number): GameState {
   };
 }
 
+const checkEndGame = (draft: GameState) => {
+  let gameShouldEnd = false;
+  for (const player of draft.players) {
+    if (player.board.flat().every(card => card === null || card.isFaceUp)) {
+      gameShouldEnd = true;
+      break;
+    }
+  }
+
+  if (gameShouldEnd) {
+    draft.gameOver = true;
+    draft.turnPhase = 'GAME_OVER';
+
+    // Calculate final scores
+    draft.players.forEach(p => {
+      p.score = getBoardScore(p.board);
+    });
+    draft.finalScores = draft.players.map(p => ({ id: p.id, score: p.score }));
+
+    // Determine winner
+    const scores = draft.players.map(p => p.score);
+    const maxScore = Math.max(...scores);
+    const winners = draft.players.filter(p => p.score === maxScore);
+
+    if (winners.length > 1) {
+        draft.winner = null; // It's a tie
+        draft.gameMessage = `¡Fin del juego! ¡Empate con ${maxScore} puntos!`;
+    } else {
+        draft.winner = winners[0];
+        draft.gameMessage = `¡Fin del juego! ¡El Jugador ${winners[0].id + 1} gana con ${maxScore} puntos!`;
+    }
+  }
+}
+
 function nextTurn(state: GameState): GameState {
+  if (state.gameOver) return state;
+
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
     if (state.finalTurnCounter === 0) {
-      state.turnPhase = 'GAME_OVER';
-      state.gameOver = true;
-      // Calculate final scores
-      state.players.forEach(p => p.score = getBoardScore(p.board));
-      state.finalScores = state.players.map(p => ({id: p.id, score: p.score }));
-      const winner = state.players.reduce((max, p) => p.score > max.score ? p : max, state.players[0]);
-      state.winner = winner;
-      state.gameMessage = `¡Fin del juego! ¡El Jugador ${winner.id + 1} gana!`;
-      return state;
+        checkEndGame(state);
+        return state;
     }
   }
   
@@ -138,6 +167,8 @@ function nextTurn(state: GameState): GameState {
     state.finalTurnCounter = state.players.length;
     state.gameMessage = `¡El mazo está vacío! Comienza la ronda final. Turno del Jugador ${state.currentPlayerIndex + 1}.`;
   }
+  
+  checkEndGame(state);
 
   return state;
 }
@@ -207,6 +238,7 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
     }
 
     draft.turnPhase = 'ACTION';
+    checkEndGame(draft);
 });
 
 export const playCardOwnBoard = produce((draft: GameState, playerId: number, cardInHand: Card, r: number, c: number) => {
@@ -225,7 +257,10 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     player.board[r][c] = playedCard;
     player.score = getBoardScore(player.board);
 
-    return nextTurn(draft);
+    checkEndGame(draft);
+    if (!draft.gameOver) {
+      return nextTurn(draft);
+    }
 });
 
 export const playCardRivalBoard = produce((draft: GameState, playerId: number, cardInHand: Card, r: number, c: number) => {
@@ -263,7 +298,10 @@ export const swapCard = produce((draft: GameState, playerId: number, r: number, 
     player.board[r][c] = playedCard;
     player.score = getBoardScore(player.board);
     
-    return nextTurn(draft);
+    checkEndGame(draft);
+    if (!draft.gameOver) {
+      return nextTurn(draft);
+    }
 });
 
 export const passTurn = produce((draft: GameState, playerId: number) => {

@@ -22,6 +22,16 @@ interface GameOverModalProps {
 export default function GameOverModal({ isOpen, winner, scores, onClose }: GameOverModalProps) {
   if (!isOpen) return null;
 
+  const getWinnerText = () => {
+    if (winner) {
+      const winnerScore = scores.find(s => s.id === winner.id)?.score;
+      const winnerName = winner.id === 0 ? "Jugador 1 (Tú)" : `Jugador ${winner.id + 1}`;
+      return `¡${winnerName} gana con ${winnerScore} puntos!`;
+    }
+    const tieScore = scores[0]?.score;
+    return `¡El juego terminó en un empate a ${tieScore} puntos!`;
+  }
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="bg-gray-800 text-white border-yellow-500">
@@ -31,7 +41,7 @@ export default function GameOverModal({ isOpen, winner, scores, onClose }: GameO
             ¡Fin del Juego!
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-lg text-white/90">
-            {winner ? `¡El Jugador ${winner.id + 1} gana con ${scores.find(s => s.id === winner.id)?.score} puntos!` : '¡El juego terminó en empate!'}
+            {getWinnerText()}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="my-4">
@@ -39,7 +49,7 @@ export default function GameOverModal({ isOpen, winner, scores, onClose }: GameO
           <ul className="space-y-1 text-center">
             {scores.sort((a,b) => b.score - a.score).map(({ id, score }) => (
               <li key={id} className="text-white/80">
-                Jugador {id + 1}: <span className="font-bold text-white">{score} puntos</span>
+                {id === 0 ? "Jugador 1 (Tú)" : `Jugador ${id + 1}`}: <span className="font-bold text-white">{score} puntos</span>
               </li>
             ))}
           </ul>
