@@ -208,7 +208,7 @@ export default function LobbyPage() {
   if (isMobile) {
     return (
       <MobileLobby
-        playerName={user.displayName || "Agustín Quiroga"}
+        playerName={user.displayName || "Jugador"}
         level={13}
         exp={281}
         expMax={300}
