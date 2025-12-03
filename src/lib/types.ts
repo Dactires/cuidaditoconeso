@@ -36,4 +36,11 @@ export interface GameState {
   lastRevealedBomb: { playerId: number; r: number; c: number; cardUid: string; } | null;
   showDrawAnimation: boolean;
   refillingSlots: { playerId: number; r: number; c: number; card: Card }[];
+  tempReveal?: {
+    playerId: number;
+    r: number;
+    c: number;
+    cardUid: string;
+    hideAt: number;
+  } | null;
 }

@@ -22,6 +22,7 @@ export type GameAction =
   | { type: 'CLEAR_RIVAL_MOVE' }
   | { type: 'CLEAR_DRAWN_CARD' }
   | { type: 'TRIGGER_EXPLOSION'; payload: { playerId: number; r: number; c: number } }
+  | { type: 'HIDE_TEMP_REVEAL'; payload: { playerId: number; r: number; c: number; cardUid: string } }
   | { type: 'FINISH_REFILL_ANIMATION'; payload: { playerId: number; r: number; c: number; card: Card }};
 
 const getInitialState = (numPlayers: number): GameState => ({
@@ -80,6 +81,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return Game.clearRivalMove(state);
     case 'CLEAR_DRAWN_CARD':
       return Game.clearDrawnCard(state);
+    case 'HIDE_TEMP_REVEAL':
+        return Game.hideTempReveal(state, action.payload);
     default:
       return state;
   }
@@ -116,6 +119,21 @@ export function useGame(numPlayers: number, cardDefs: GameCardDef[] | null) {
             }
         }
     }, [gameState.players, gameState.currentPlayerIndex, gameState.isForcedToPlay]);
+
+    // Effect for handling temporary reveals (Blue card ability)
+    useEffect(() => {
+        if (gameState.tempReveal) {
+            const { playerId, r, c, cardUid, hideAt } = gameState.tempReveal;
+            const delay = hideAt - Date.now();
+            
+            const timer = setTimeout(() => {
+                dispatch({ type: 'HIDE_TEMP_REVEAL', payload: { playerId, r, c, cardUid } });
+            }, Math.max(0, delay));
+
+            return () => clearTimeout(timer);
+        }
+    }, [gameState.tempReveal]);
+
 
     return { gameState, dispatch, initialized, resetGame };
   }

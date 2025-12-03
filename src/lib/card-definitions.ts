@@ -23,20 +23,10 @@ export type GameCardDef = {
 };
 
 const characterDescriptions = {
-  rojo: "Los personajes rojos son conocidos por su agresividad y poder de ataque directo. Ideales para estrategias ofensivas.",
-  azul: "Los personajes azules son maestros de la estrategia y el control, a menudo manipulando el tablero a su favor.",
-  verde: "Los personajes verdes se centran en el crecimiento y la defensa, acumulando poder de forma sostenida.",
+  rojo: "Al jugar esta carta, descarta la carta a su derecha (si existe) en tu tablero.",
+  azul: "Al jugar esta carta, revela una carta al azar de tu propio tablero durante 1 segundo y luego vuelve a ocultarla (solo información, no cambia puntos).",
+  verde: "Al jugar esta carta, planta una bomba oculta en una posición aleatoria del tablero rival.",
   amarillo: "Al jugar esta carta, mezcla aleatoriamente todas las cartas del tablero del rival, cambiando completamente sus posiciones.",
-};
-
-const defaultYellowAbility: CardAbility = {
-  name: "Caos Cromático",
-  description: "Al jugar un personaje amarillo en tu tablero, se barajan todas las cartas (boca arriba y boca abajo) del tablero del oponente.",
-  json: JSON.stringify({
-    "trigger": "ON_PLAY_OWN_BOARD",
-    "target": "RIVAL_BOARD",
-    "action": "SHUFFLE_ALL_CARDS"
-  }, null, 2)
 };
 
 export const CARD_DEFINITIONS: GameCardDef[] = [
@@ -64,6 +54,18 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     ribbonClass: 'bg-red-700',
     value: 0, // valor base, no se usa directamente
     description: characterDescriptions.rojo,
+    ability: {
+      name: "Descartar Derecha",
+      description: "Al jugar esta carta, descarta la carta a su derecha (si existe) en tu tablero.",
+      json: JSON.stringify({
+        "trigger": "ON_PLAY_OWN_BOARD",
+        "target": "OWN_BOARD",
+        "action": "DISCARD_NEIGHBOR",
+        "params": {
+          "direction": "RIGHT"
+        }
+      }, null, 2)
+    }
   },
   {
     id: 'character-azul',
@@ -75,6 +77,18 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     ribbonClass: 'bg-sky-700',
     value: 0,
     description: characterDescriptions.azul,
+    ability: {
+        name: "Revelar Propia (temporal)",
+        description: "Al jugar esta carta, revela una carta al azar de tu propio tablero durante 1 segundo y luego vuelve a ocultarla.",
+        json: JSON.stringify({
+            "trigger": "ON_PLAY_OWN_BOARD",
+            "target": "OWN_BOARD",
+            "action": "REVEAL_RANDOM_BRIEFLY",
+            "params": {
+                "durationMs": 1000
+            }
+        }, null, 2)
+    }
   },
   {
     id: 'character-verde',
@@ -86,6 +100,18 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     ribbonClass: 'bg-emerald-700',
     value: 0,
     description: characterDescriptions.verde,
+    ability: {
+      name: "Plantar Bomba",
+      description: "Al jugar esta carta, planta una bomba oculta en una posición aleatoria del tablero rival.",
+      json: JSON.stringify({
+          "trigger": "ON_PLAY_OWN_BOARD",
+          "target": "RIVAL_BOARD",
+          "action": "PLANT_BOMB_RANDOM",
+          "params": {
+              "bombSource": "PLAYER_DECK_OR_DISCARD"
+          }
+      }, null, 2)
+    }
   },
   {
     id: 'character-amarillo',
@@ -98,7 +124,15 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     textColor: 'text-slate-900',
     value: 0,
     description: characterDescriptions.amarillo,
-    ability: defaultYellowAbility,
+    ability: {
+      name: "Mezclar Tablero Rival",
+      description: "Al jugar esta carta, mezcla aleatoriamente todas las cartas del tablero del rival.",
+      json: JSON.stringify({
+        "trigger": "ON_PLAY_OWN_BOARD",
+        "target": "RIVAL_BOARD",
+        "action": "SHUFFLE_ALL_CARDS"
+      }, null, 2)
+    },
   },
 
   // --- BOMBAS Y PODERES ---

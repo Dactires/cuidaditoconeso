@@ -31,17 +31,14 @@ function createPlayerDeck(cardDefinitions: GameCardDef[], characterLevels: Recor
     const deck: Card[] = [];
     const characterDefs = cardDefinitions.filter(def => def.kind === 'character');
 
-    // Create character cards with exact level
     for (const def of characterDefs) {
         const level = characterLevels[def.color] || 1; // Default to level 1 if not specified
-        // This creates 5 groups of 4 cards each for a single color, e.g., 4x Rojo-1, 4x Rojo-2...
-        // The user wants all cards to have the SAME level.
         for (let i = 0; i < (CARDS_PER_VALUE_COLOR * 5); i++) {
              deck.push({
                 uid: generateCardId(),
                 type: 'Personaje',
                 color: def.color,
-                value: level, // All cards for this color get the SAME specified level
+                value: level,
                 isFaceUp: false,
                 imageUrl: def.imageUrl,
                 ability: def.ability,
@@ -103,26 +100,157 @@ const shuffleBoard = (board: (Card | null)[][]): (Card | null)[][] => {
 };
 
 // --- ABILITY HANDLING ---
-const triggerAbilities = (draft: GameState, playedCard: Card, trigger: "ON_PLAY_OWN_BOARD") => {
-    if (!playedCard.ability?.json) return;
-
-    let ability;
-    try {
-        ability = JSON.parse(playedCard.ability.json);
-    } catch {
-        return; // Invalid JSON, do nothing
-    }
-
-    if (ability.trigger === trigger) {
-        if (ability.action === "SHUFFLE_ALL_CARDS" && ability.target === "RIVAL_BOARD") {
-            const rivalPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
-            const rivalPlayer = draft.players[rivalPlayerIndex];
-            rivalPlayer.board = shuffleBoard(rivalPlayer.board);
-            draft.gameMessage = `¡${playedCard.ability.name}! El tablero del rival ha sido barajado.`;
-        }
-    }
+type AbilityJson = {
+  trigger: string;
+  target: "OWN_BOARD" | "RIVAL_BOARD";
+  action: string;
+  params?: Record<string, any>;
 };
 
+const findCardPosition = (board: (Card | null)[][], uid: string): { r: number; c: number } | null => {
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      if (board[r][c]?.uid === uid) {
+        return { r, c };
+      }
+    }
+  }
+  return null;
+};
+
+const getRandomHiddenOwnCardPos = (board: (Card | null)[][]) => {
+  const hidden: { r: number; c: number }[] = [];
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      const card = board[r][c];
+      if (card && !card.isFaceUp) hidden.push({ r, c });
+    }
+  }
+  if (!hidden.length) return null;
+  return hidden[Math.floor(Math.random() * hidden.length)];
+};
+
+const getRandomBoardPos = (board: (Card | null)[][]) => {
+  const all: { r: number; c: number }[] = [];
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      all.push({ r, c });
+    }
+  }
+  return all[Math.floor(Math.random() * all.length)];
+};
+
+const triggerAbilities = (
+  draft: GameState,
+  playedCard: Card,
+  trigger: "ON_PLAY_OWN_BOARD"
+) => {
+  if (!playedCard.ability?.json) return;
+
+  let ability: AbilityJson;
+  try {
+    ability = JSON.parse(playedCard.ability.json);
+  } catch {
+    return;
+  }
+
+  if (ability.trigger !== trigger) return;
+
+  const currentPlayer = draft.players[draft.currentPlayerIndex];
+  const rivalPlayer = draft.players[(draft.currentPlayerIndex + 1) % draft.players.length];
+
+  switch (ability.action) {
+    case "SHUFFLE_ALL_CARDS": {
+      if (ability.target === "RIVAL_BOARD") {
+        rivalPlayer.board = shuffleBoard(rivalPlayer.board);
+        draft.gameMessage = `¡${playedCard.ability.name}! El tablero del rival ha sido barajado.`;
+      }
+      break;
+    }
+
+    case "DISCARD_NEIGHBOR": {
+      const pos = findCardPosition(currentPlayer.board, playedCard.uid);
+      if (!pos) break;
+      const dir = ability.params?.direction || "RIGHT";
+      const targetC = dir === "RIGHT" ? pos.c + 1 : pos.c - 1;
+      const targetR = pos.r;
+
+      if (
+        targetR >= 0 && targetR < BOARD_SIZE &&
+        targetC >= 0 && targetC < BOARD_SIZE
+      ) {
+        const neighbor = currentPlayer.board[targetR][targetC];
+        if (neighbor) {
+          currentPlayer.discardPile.push({ ...neighbor, isFaceUp: true });
+          currentPlayer.board[targetR][targetC] = null;
+        }
+      }
+      draft.gameMessage = `¡${playedCard.ability.name}! Descartaste la carta de la derecha.`;
+      break;
+    }
+
+    case "PLANT_BOMB_RANDOM": {
+      // Buscar bomba en deck o descarte del jugador actual
+      let bombIdx = currentPlayer.deck.findIndex(c => c.type === "Bomba");
+      let bombSource: "deck" | "discard" | null = null;
+
+      if (bombIdx !== -1) {
+        bombSource = "deck";
+      } else {
+        bombIdx = currentPlayer.discardPile.findIndex(c => c.type === "Bomba");
+        if (bombIdx !== -1) bombSource = "discard";
+      }
+
+      if (!bombSource) {
+        // no hay bombas disponibles, habilidad no hace nada
+        break;
+      }
+
+      const bombCard =
+        bombSource === "deck"
+          ? currentPlayer.deck.splice(bombIdx, 1)[0]
+          : currentPlayer.discardPile.splice(bombIdx, 1)[0];
+
+      bombCard.isFaceUp = false;
+
+      const pos = getRandomBoardPos(rivalPlayer.board);
+      const existing = rivalPlayer.board[pos.r][pos.c];
+      if (existing) {
+        rivalPlayer.discardPile.push({ ...existing, isFaceUp: true });
+      }
+      rivalPlayer.board[pos.r][pos.c] = { ...bombCard, uid: generateCardId() };
+
+      draft.gameMessage = `¡${playedCard.ability.name}! Plantaste una bomba oculta en el tablero rival.`;
+      break;
+    }
+
+    case "REVEAL_RANDOM_BRIEFLY": {
+      const pos = getRandomHiddenOwnCardPos(currentPlayer.board);
+      if (!pos) break;
+
+      const card = currentPlayer.board[pos.r][pos.c];
+      if (!card) break;
+
+      card.isFaceUp = true;
+
+      // marcamos una revelación temporal
+      draft.tempReveal = {
+        playerId: currentPlayer.id,
+        r: pos.r,
+        c: pos.c,
+        cardUid: card.uid,
+        hideAt: Date.now() + (ability.params?.durationMs ?? 1000),
+      };
+
+      draft.gameMessage = `¡${playedCard.ability.name}! Espiás una carta de tu tablero.`;
+      break;
+    }
+
+    default:
+      // acciones futuras que quieras agregar
+      break;
+  }
+};
 
 // --- CORE GAME LOGIC ---
 
@@ -185,23 +313,27 @@ export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): G
     lastRevealedBomb: null,
     showDrawAnimation: false,
     refillingSlots: [],
+    tempReveal: null,
   };
 }
 
 const checkEndGame = (draft: GameState) => {
   let gameShouldEnd = false;
+  
+  // 1. Check for full board of face-up cards (your old logic)
   for (const player of draft.players) {
     if (player.board.flat().every(card => card === null || card.isFaceUp)) {
       gameShouldEnd = true;
       break;
     }
   }
-
+  
   if (gameShouldEnd && draft.finalTurnCounter === -1) {
     draft.finalTurnCounter = draft.players.length;
     draft.gameMessage = `¡Un jugador completó su tablero! Comienza la ronda final.`;
   }
   
+  // 2. Check if final turn counter is done
   if (draft.finalTurnCounter === 0 && !draft.gameOver) {
       draft.gameOver = true;
       draft.turnPhase = 'GAME_OVER';
@@ -235,24 +367,24 @@ function nextTurn(state: GameState): GameState {
 
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
-  } else if (state.finalTurnCounter === 0) {
-     checkEndGame(state);
-     return state;
   }
+  
+  checkEndGame(state);
+  
+  // checkEndGame might set gameOver, so we check again
+  if (state.gameOver) return state;
 
-  // Check if current player's deck is empty
   const currentPlayer = state.players[state.currentPlayerIndex];
   if (currentPlayer.deck.length === 0 && state.finalTurnCounter === -1) {
     if (ensurePlayerDeckHasCards(currentPlayer, 1)) {
         state.gameMessage = `El mazo del Jugador ${currentPlayer.id + 1} estaba vacío y fue barajado. ¡Tu turno!`;
     } else {
-        // This case should be rare now, but as a safeguard:
-        state.finalTurnCounter = state.players.length;
-        state.gameMessage = `¡El mazo del Jugador ${currentPlayer.id + 1} se agotó! Comienza la ronda final.`;
+        if (state.finalTurnCounter === -1) {
+          state.finalTurnCounter = state.players.length;
+          state.gameMessage = `¡El mazo del Jugador ${currentPlayer.id + 1} se agotó! Comienza la ronda final.`;
+        }
     }
   }
-  
-  checkEndGame(state);
 
   return state;
 }
@@ -270,7 +402,6 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
     draft.gameMessage = `¡No quedan cartas en el mazo! Revela una carta.`;
-    // This will trigger the final turn sequence if not already active
     if (draft.finalTurnCounter === -1) {
       draft.finalTurnCounter = draft.players.length;
     }
@@ -300,7 +431,6 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
         draft.turnPhase = 'ACTION';
     }
 
-    // Check for end game immediately after a card is revealed
     checkEndGame(draft);
 });
 
@@ -463,4 +593,18 @@ export const clearRivalMove = produce((draft: GameState) => {
 export const clearDrawnCard = produce((draft: GameState) => {
   draft.lastDrawnCardId = null;
   draft.showDrawAnimation = false;
+});
+
+export const hideTempReveal = produce((
+  draft: GameState,
+  payload: { playerId: number; r: number; c: number; cardUid: string }
+) => {
+  const { playerId, r, c, cardUid } = payload;
+  const player = draft.players[playerId];
+  const card = player.board[r][c];
+
+  if (card && card.uid === cardUid) {
+    card.isFaceUp = false;
+  }
+  draft.tempReveal = null;
 });
