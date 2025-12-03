@@ -62,8 +62,7 @@ export default function GameBoard({
                    isMobile && '!w-full !h-auto',
                   'focus:outline-none',
                   selectable && 'cursor-pointer',
-                  !selectable && 'cursor-default',
-                  isExploding && 'shockwave'
+                  !selectable && 'cursor-default'
                 )}
                 
               >
