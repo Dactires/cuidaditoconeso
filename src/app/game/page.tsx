@@ -488,7 +488,7 @@ export default function GamePage() {
                 isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
                 explodingCardInfo={
                   explodingCard && explodingCard.playerId === rivalPlayer.id
-                    ? { r: explodingCard.r, c: explodingCard.c }
+                    ? explodingCard
                     : undefined
                 }
                 isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
@@ -512,7 +512,7 @@ export default function GamePage() {
                 isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
                 explodingCardInfo={
                   explodingCard && explodingCard.playerId === humanPlayer.id
-                    ? { r: explodingCard.r, c: explodingCard.c }
+                    ? explodingCard
                     : undefined
                 }
                 isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
@@ -641,7 +641,7 @@ export default function GamePage() {
               board={rivalPlayer.board}
               onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-              explodingCardInfo={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+              explodingCardInfo={explodingCard && explodingCard.playerId === rivalPlayer.id ? explodingCard : undefined}
               isMobile
               isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
@@ -682,7 +682,7 @@ export default function GamePage() {
               board={humanPlayer.board}
               onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
               isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-              explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+              explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? explodingCard : undefined}
               isMobile
               isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
               lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}

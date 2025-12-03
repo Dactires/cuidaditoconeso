@@ -11,7 +11,7 @@ interface GameBoardProps {
   board: (Card | null)[][];
   onCardClick?: (r: number, c: number) => void;
   isCardSelectable?: (r: number, c: number) => boolean;
-  explodingCardInfo?: Pos;
+  explodingCardInfo?: { r: number; c: number; playerId: number; card: Card } | null;
   isMobile?: boolean;
   isDimmed?: boolean;
   lastRivalMove?: Pos;
@@ -51,10 +51,14 @@ export default function GameBoard({
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
             const selectable = isCardSelectable?.(r, c) ?? false;
-            const isExploding =
+            const isExplodingSlot =
               !!explodingCardInfo && explodingCardInfo.r === r && explodingCardInfo.c === c;
             const isRivalMove =
               !!lastRivalMove && lastRivalMove.r === r && lastRivalMove.c === c;
+
+            // If a card is exploding in this slot, we render the exploding card temporarily,
+            // even if the board data for this slot is already null.
+            const cardToRender = isExplodingSlot ? explodingCardInfo.card : card;
 
             return (
               <div
@@ -69,10 +73,10 @@ export default function GameBoard({
                 
               >
                 <GameCard
-                  card={card}
+                  card={cardToRender}
                   onClick={() => selectable && onCardClick?.(r, c)}
                   isSelectable={selectable}
-                  isExploding={isExploding}
+                  isExploding={isExplodingSlot}
                   isRivalMove={isRivalMove}
                   isMobile={isMobile}
                   isDisabled={isDimmed}

@@ -30,7 +30,7 @@ let cardUid = 0;
 const generateCardId = () => `card-${cardUid++}`;
 
 function createDeck(cardDefinitions: GameCardDef[]): Card[] {
-    cardUid = 0; // Reset UID counter for deterministic generation
+    cardUid = 0; // Reset UID counter
     const deck: Card[] = [];
     
     const cardDefMap = new Map(cardDefinitions.map(def => [def.id, def]));
@@ -42,13 +42,14 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
         if (def) {
             for (const value of CHARACTER_VALUES) {
                 for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                    // Create a NEW object for each card
                     deck.push({
                       uid: generateCardId(),
                       type: 'Personaje',
                       color,
                       value,
                       isFaceUp: false,
-                      imageUrl: def.imageUrl,
+                      imageUrl: def.imageUrl, // Assign correct image URL
                     });
                 }
             }
@@ -59,6 +60,7 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     const bombDef = cardDefMap.get('bomb');
     if (bombDef) {
         for (let i = 0; i < BOMB_COUNT; i++) {
+          // Create a NEW object for each card
           deck.push({ 
               uid: generateCardId(), 
               type: 'Bomba', 
@@ -216,33 +218,6 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   draft.turnPhase = 'REVEAL_CARD';
 });
 
-
-const applyExplosion = (draft: GameState, player: Player, r: number, c: number) => {
-    const coordsToReplace = new Set<string>([`${r},${c}`]);
-    const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
-
-    for (const [ar, ac] of coordsToCheck) {
-        if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
-            const adjCard = player.board[ar][ac];
-            if (adjCard && adjCard.isFaceUp) {
-                coordsToReplace.add(`${ar},${ac}`);
-            }
-        }
-    }
-
-    coordsToReplace.forEach(coord => {
-        const [row, col] = coord.split(',').map(Number);
-        const oldCard = player.board[row][col];
-        if (oldCard) draft.discardPile.push({...oldCard});
-        if (draft.deck.length > 0) {
-            const newCard = draft.deck.pop()!;
-            player.board[row][col] = { ...newCard, isFaceUp: false };
-        } else {
-            player.board[row][col] = null;
-        }
-    });
-};
-
 export const revealCard = produce((draft: GameState, playerId: number, r: number, c: number) => {
     if (draft.turnPhase !== 'REVEAL_CARD' || draft.currentPlayerIndex !== playerId) return;
 
@@ -271,12 +246,49 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 
 export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
     const player = draft.players[playerId];
-    applyExplosion(draft, player, r, c);
-    draft.lastRevealedBomb = null; // Clear the bomb trigger
-    draft.explodingCard = { playerId, r, c }; // Set exploding card AFTER applying logic
+    const explodingCard = player.board[r][c];
+
+    if (!explodingCard || explodingCard.type !== 'Bomba') return;
+
+    // Set the exploding card info, including the card data itself
+    draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
+    draft.lastRevealedBomb = null; // Clear the trigger
+
+    const coordsToReplace = new Set<string>();
+
+    // The center card (the bomb) is always replaced
+    coordsToReplace.add(`${r},${c}`);
+
+    // Check adjacent cards
+    const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+    for (const [ar, ac] of coordsToCheck) {
+        if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
+            const adjCard = player.board[ar][ac];
+            if (adjCard && adjCard.isFaceUp) {
+                coordsToReplace.add(`${ar},${ac}`);
+            }
+        }
+    }
+
+    // Replace all affected cards
+    coordsToReplace.forEach(coord => {
+        const [row, col] = coord.split(',').map(Number);
+        const oldCard = player.board[row][col];
+        if (oldCard) {
+            draft.discardPile.push({ ...oldCard });
+        }
+        if (draft.deck.length > 0) {
+            const newCard = draft.deck.pop()!;
+            player.board[row][col] = { ...newCard, isFaceUp: false };
+        } else {
+            player.board[row][col] = null;
+        }
+    });
+
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
 });
+
 
 export const playCardOwnBoard = produce((draft: GameState, playerId: number, cardInHand: Card, r: number, c: number) => {
     if (draft.turnPhase !== 'ACTION' || draft.currentPlayerIndex !== playerId) return;
