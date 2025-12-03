@@ -40,10 +40,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
     const fetchMusicUrls = async () => {
       if (!storage) return;
       setIsLoading(true);
-      try {
-        const lobbyRef = ref(storage, "music/lobby.mp3");
-        const battleRef = ref(storage, "music/battle.mp3");
+      
+      const lobbyRef = ref(storage, "music/lobby.mp3");
+      const battleRef = ref(storage, "music/battle.mp3");
 
+      try {
         const lobbyDownloadUrl = await getDownloadURL(lobbyRef);
         setLobbyUrl(lobbyDownloadUrl);
       } catch (error) {
@@ -51,6 +52,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({
           console.error("Error fetching lobby music:", error);
         }
       }
+      
       try {
         const battleDownloadUrl = await getDownloadURL(battleRef);
         setBattleUrl(battleDownloadUrl);
