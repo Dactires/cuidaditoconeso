@@ -826,21 +826,15 @@ function GamePageContent() {
   });
 
   return (
-    <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
-      <AlertDialog
-        open={gameOver}
-        onOpenChange={(open) => {
-          console.log('%c[ALERT DIALOG] onOpenChange', 'color:#f97316;', { open, gameOver });
-        }}
-      >
-        <AlertDialogContent className="comic-card">
-          <GameOverModal
-            state={gameState}
-            onRestart={resetGame}
-            onExit={() => router.push('/lobby')}
-          />
-        </AlertDialogContent>
-      </AlertDialog>
+    <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto relative">
+      {/* Overlay de fin de partida SIN AlertDialog */}
+      {gameOver && (
+        <GameOverModal
+          state={gameState}
+          onRestart={resetGame}
+          onExit={() => router.push('/lobby')}
+        />
+      )}
 
       {isMobile ? renderMobileView() : renderDesktopView()}
     </div>
@@ -854,3 +848,5 @@ export default function GamePage() {
     </SfxProvider>
   )
 }
+
+    
