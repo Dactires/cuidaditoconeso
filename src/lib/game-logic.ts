@@ -133,14 +133,20 @@ const getRandomHiddenOwnCardPos = (board: (Card | null)[][]) => {
   return hidden[Math.floor(Math.random() * hidden.length)];
 };
 
-const getRandomBoardPos = (board: (Card | null)[][]) => {
-  const all: { r: number; c: number }[] = [];
-  for (let r = 0; r < board.length; r++) {
-    for (let c = 0; c < board[r].length; c++) {
-      all.push({ r, c });
-    }
+const getRandomEmptyOrHiddenRivalPos = (board: (Card | null)[][]): { r: number; c: number } | null => {
+  const validPositions: { r: number; c: number }[] = [];
+  board.forEach((row, r) => {
+    row.forEach((card, c) => {
+      if (!card || !card.isFaceUp) {
+        validPositions.push({ r, c });
+      }
+    });
+  });
+
+  if (validPositions.length === 0) {
+    return null;
   }
-  return all[Math.floor(Math.random() * all.length)];
+  return validPositions[Math.floor(Math.random() * validPositions.length)];
 };
 
 const triggerAbilities = (
@@ -215,7 +221,13 @@ const triggerAbilities = (
         // no hay bombas disponibles, habilidad no hace nada
         break;
       }
-
+      
+      const pos = getRandomEmptyOrHiddenRivalPos(rivalPlayer.board);
+      if (!pos) {
+          // No valid spots to plant the bomb
+          break;
+      }
+      
       const bombCard =
         bombSource === "deck"
           ? currentPlayer.deck.splice(bombIdx, 1)[0]
@@ -223,7 +235,6 @@ const triggerAbilities = (
 
       bombCard.isFaceUp = false;
 
-      const pos = getRandomBoardPos(rivalPlayer.board);
       const existing = rivalPlayer.board[pos.r][pos.c];
       if (existing) {
         rivalPlayer.discardPile.push({ ...existing, isFaceUp: true });
@@ -568,9 +579,6 @@ export const playCardOwnBoard = produce((draft: GameState, playerId: number, car
     
     triggerAbilities(draft, newBoardCard, "ON_PLAY_OWN_BOARD");
 
-    // NO llamar a checkEndGame aquí para la habilidad del azul
-    // checkEndGame(draft);
-
     if (!draft.gameOver) {
       return nextTurn(draft);
     }
@@ -663,6 +671,7 @@ export const hideTempReveal = produce((
   }
   draft.tempReveal = null;
 });
+
 
 
 
