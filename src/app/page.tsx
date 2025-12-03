@@ -183,12 +183,14 @@ export default function GamePage() {
 
   if (!initialized || !humanPlayer || !rivalPlayer || !currentPlayer) {
     return (
-        <div className="flex items-center justify-center h-full bg-background">
-            <p className="text-foreground text-2xl font-display animate-pulse">Cargando Juego...</p>
-        </div>
+      <div className="flex items-center justify-center h-full bg-background">
+        <p className="text-foreground text-2xl font-display animate-pulse">
+          Cargando Juego...
+        </p>
+      </div>
     );
   }
-  
+
   const humanPlayerScore = getBoardScore(humanPlayer.board);
   const rivalPlayerScore = getBoardScore(rivalPlayer.board);
 
@@ -202,7 +204,10 @@ export default function GamePage() {
     } else if (turnPhase === 'ACTION' && !selectedHandCard && playerId === humanPlayer.id) {
       const card = humanPlayer.board[r][c];
       if (card && card.isFaceUp) {
-        dispatch({ type: 'SET_MESSAGE', payload: 'Ahora selecciona una carta de Personaje de tu mano para intercambiar.' });
+        dispatch({
+          type: 'SET_MESSAGE',
+          payload: 'Ahora selecciona una carta de Personaje de tu mano para intercambiar.',
+        });
         setTargetBoardPos({ playerId, r, c });
       }
     }
@@ -225,10 +230,12 @@ export default function GamePage() {
         setTargetBoardPos(null);
       }
     } else {
-      setSelectedHandCard(selectedHandCard?.card.uid === card.uid ? null : { card, index });
+      setSelectedHandCard(
+        selectedHandCard?.card.uid === card.uid ? null : { card, index },
+      );
     }
   };
-  
+
   const handlePassTurn = () => {
     if (gameOver || currentPlayerIndex !== humanPlayerId || turnPhase !== 'ACTION') return;
     dispatch({ type: 'PASS_TURN', payload: { player_id: humanPlayer.id } });
@@ -239,13 +246,19 @@ export default function GamePage() {
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
     if (gameOver || currentPlayerIndex !== humanPlayerId) return false;
     const card = players.find(p => p.id === playerId)?.board[r][c];
-  
+
     if (turnPhase === 'REVEAL_CARD') {
       return playerId === humanPlayer.id && !!card && !card.isFaceUp;
     }
     if (turnPhase === 'ACTION') {
       if (selectedHandCard) {
-        return (selectedHandCard.card.type === 'Personaje' && playerId === humanPlayer.id && !!card && !card.isFaceUp) || (playerId === rivalPlayer.id && !!card && !card.isFaceUp);
+        return (
+          (selectedHandCard.card.type === 'Personaje' &&
+            playerId === humanPlayer.id &&
+            !!card &&
+            !card.isFaceUp) ||
+          (playerId === rivalPlayer.id && !!card && !card.isFaceUp)
+        );
       }
       return playerId === humanPlayer.id && !!card && card.isFaceUp;
     }
@@ -256,7 +269,7 @@ export default function GamePage() {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
     return targetBoardPos ? card.type === 'Personaje' : true;
   };
-  
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 font-body overflow-hidden">
       <GameOverModal
@@ -265,8 +278,8 @@ export default function GamePage() {
         scores={finalScores}
         onClose={() => dispatch({ type: 'RESET_GAME' })}
       />
-      
-      {/* Turn Indicator */}
+
+      {/* Indicador de turno arriba */}
       <AnimatePresence>
         <motion.div
           key={currentPlayerIndex}
@@ -276,9 +289,15 @@ export default function GamePage() {
           transition={{ duration: 0.5 }}
           className="absolute top-4 z-20"
         >
-          <div className="px-6 py-2 rounded-full bg-slate-900/50 border border-slate-700 backdrop-blur-sm shadow-lg">
-            <p className="text-center font-display text-lg tracking-wider"
-              style={{ color: currentPlayerIndex === humanPlayerId ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}
+          <div className="px-6 py-2 rounded-full bg-slate-900/70 border border-slate-700 backdrop-blur-sm shadow-lg">
+            <p
+              className="text-center font-display text-lg tracking-wider"
+              style={{
+                color:
+                  currentPlayerIndex === humanPlayerId
+                    ? 'hsl(var(--primary))'
+                    : 'hsl(var(--destructive))',
+              }}
             >
               {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno del Rival'}
             </p>
@@ -286,107 +305,148 @@ export default function GamePage() {
         </motion.div>
       </AnimatePresence>
 
+      {/* LAYOUT PRINCIPAL: 3 COLUMNAS */}
+      <div className="w-full max-w-6xl flex-1 flex flex-row items-center justify-center gap-8 pt-16 pb-8">
 
-      <div className="w-full h-full flex-grow flex flex-col justify-around items-center relative gap-6">
+        {/* COLUMNA IZQUIERDA: JUGADOR + MANO */}
+        <div className="flex flex-col items-center gap-6 w-56">
+          <PlayerInfo player={humanPlayer} score={humanPlayerScore} isAI={false} />
 
-        {/* Rival Area */}
-        <div className="flex flex-col items-center gap-2 w-full">
-            <PlayerInfo player={rivalPlayer} score={rivalPlayerScore} isAI={true} />
-            <GameBoard 
-              board={rivalPlayer.board} 
-              onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-              isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-              explodingCard={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c} : undefined}
-            />
-        </div>
-        
-        <Swords className="h-10 w-10 text-slate-600 my-[-1rem]"/>
-
-        {/* Player Area */}
-        <div className="flex flex-col items-center gap-2 w-full">
-            <GameBoard 
-              board={humanPlayer.board} 
-              onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-              isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-              explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c} : undefined}
-            />
-            <PlayerInfo player={humanPlayer} score={humanPlayerScore} isAI={false} />
-        </div>
-      </div>
-
-       {/* Bottom Bar */}
-       <div className="fixed bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-background via-background/90 to-transparent flex justify-center items-center">
-            <div className="flex items-center justify-between w-full max-w-6xl px-8">
-              
-              {/* Player Hand */}
-              <div className="flex items-center gap-3">
-                {humanPlayer.hand.map((card, index) => (
-                  <div key={card.uid} className="w-20">
-                    <GameCard 
-                        card={card}
-                        onClick={() => handleHandCardClick(card, index)}
-                        isSelected={selectedHandCard?.card.uid === card.uid}
-                        isSelectable={isHandCardSelectable(card)}
-                    />
-                  </div>
-                ))}
-                {Array.from({ length: 4 - humanPlayer.hand.length }).map((_, index) => (
-                    <div key={`placeholder-${index}`} className="w-20 h-[105px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700" />
-                ))}
-              </div>
-
-              {/* Game Status & Actions */}
-              <div className="flex flex-col items-center gap-2 text-center">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={gameMessage}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="text-slate-400 text-sm h-5"
-                    >
-                      {gameMessage}
-                    </motion.div>
-                  </AnimatePresence>
-                  {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
-                      <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="font-display tracking-wider" 
-                          disabled={gameState.isForcedToPlay} 
-                          onClick={handlePassTurn}>
-                            Pasar Turno
-                        </Button>
-                      </motion.div>
-                  )}
-                  {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
-                      <p className="text-xs text-red-400 font-semibold text-center w-full">Debes jugar o intercambiar una carta.</p>
-                  )}
-              </div>
-              
-              {/* Deck & Discard */}
-              <div className="flex items-end gap-4">
-                  <div className="flex flex-col items-center">
-                      <div className="w-20 relative">
-                          <GameCard card={deck.length > 0 ? { ...deck[deck.length-1], isFaceUp: false } : null} onClick={() => {}} />
-                      </div>
-                      <div className="text-slate-400 text-sm mt-2 flex items-center gap-1.5 font-display"><Layers className="w-4 h-4"/> Mazo: {deck.length}</div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                      <div className="w-20 relative">
-                      {discardPile.length > 0 ? (
-                          <GameCard card={{...discardPile[discardPile.length - 1], isFaceUp: true}} onClick={() => {}} />
-                      ) : (
-                          <div className="w-20 h-[105px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-500">Vacío</div>
-                      )}
-                      </div>
-                      <div className="text-slate-400 text-sm mt-2 flex items-center gap-1.5 font-display"><Archive className="w-4 h-4" />Descarte: {discardPile.length}</div>
-                  </div>
-              </div>
-
+          {/* Mano del jugador */}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-slate-400 font-display tracking-wider uppercase">
+              Tu mano
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {humanPlayer.hand.map((card, index) => (
+                <div key={card.uid} className="w-20">
+                  <GameCard
+                    card={card}
+                    onClick={() => handleHandCardClick(card, index)}
+                    isSelected={selectedHandCard?.card.uid === card.uid}
+                    isSelectable={isHandCardSelectable(card)}
+                  />
+                </div>
+              ))}
+              {Array.from({ length: 4 - humanPlayer.hand.length }).map((_, index) => (
+                <div
+                  key={`placeholder-${index}`}
+                  className="w-20 h-[105px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700"
+                />
+              ))}
             </div>
+          </div>
+
+          {/* Pasar turno */}
+          {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="font-display tracking-wider"
+                disabled={gameState.isForcedToPlay}
+                onClick={handlePassTurn}
+              >
+                Pasar Turno
+              </Button>
+            </motion.div>
+          )}
+          {turnPhase === 'ACTION' &&
+            gameState.isForcedToPlay &&
+            currentPlayerIndex === humanPlayerId && (
+              <p className="text-xs text-red-400 font-semibold text-center w-full">
+                Debes jugar o intercambiar una carta.
+              </p>
+            )}
+        </div>
+
+        {/* COLUMNA CENTRAL: TABLEROS */}
+        <div className="flex flex-col items-center gap-6 flex-none">
+          {/* Tablero rival */}
+          <GameBoard
+            board={rivalPlayer.board}
+            onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+            isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+            explodingCard={
+              explodingCard && explodingCard.playerId === rivalPlayer.id
+                ? { r: explodingCard.r, c: explodingCard.c }
+                : undefined
+            }
+          />
+          <Swords className="h-10 w-10 text-slate-600" />
+          {/* Tu tablero */}
+          <GameBoard
+            board={humanPlayer.board}
+            onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+            isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+            explodingCard={
+              explodingCard && explodingCard.playerId === humanPlayer.id
+                ? { r: explodingCard.r, c: explodingCard.c }
+                : undefined
+            }
+          />
+        </div>
+
+        {/* COLUMNA DERECHA: RIVAL + MAZO/DESCARTE + MENSAJE */}
+        <div className="flex flex-col items-center gap-6 w-56">
+          <PlayerInfo player={rivalPlayer} score={rivalPlayerScore} isAI={true} />
+
+          {/* Mazo y descarte */}
+          <div className="flex items-end gap-4">
+            <div className="flex flex-col items-center">
+              <div className="w-20">
+                <GameCard
+                  card={
+                    deck.length > 0
+                      ? { ...deck[deck.length - 1], isFaceUp: false }
+                      : null
+                  }
+                  onClick={() => {}}
+                />
+              </div>
+              <div className="text-slate-400 text-sm mt-2 flex items-center gap-1.5 font-display">
+                <Layers className="w-4 h-4" /> Mazo: {deck.length}
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-20">
+                {discardPile.length > 0 ? (
+                  <GameCard
+                    card={{
+                      ...discardPile[discardPile.length - 1],
+                      isFaceUp: true,
+                    }}
+                    onClick={() => {}}
+                  />
+                ) : (
+                  <div className="w-20 h-[105px] rounded-lg bg-black/20 border-2 border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-500">
+                    Vacío
+                  </div>
+                )}
+              </div>
+              <div className="text-slate-400 text-sm mt-2 flex items-center gap-1.5 font-display">
+                <Archive className="w-4 h-4" />
+                Descarte: {discardPile.length}
+              </div>
+            </div>
+          </div>
+
+          {/* Mensaje de juego */}
+          <div className="mt-2 w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={gameMessage}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="text-slate-300 text-sm text-center min-h-[1.5rem]"
+              >
+                {gameMessage}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );
