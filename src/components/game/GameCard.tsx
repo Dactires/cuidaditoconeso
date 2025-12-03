@@ -12,6 +12,7 @@ interface GameCardProps {
   isSelected?: boolean;
   isSelectable?: boolean;
   isExploding?: boolean;
+  isMobile?: boolean;
 }
 
 const colorMap: { [key: string]: { bg: string; glow: string; text: string } } = {
@@ -29,6 +30,7 @@ export default function GameCard({
   isSelected = false,
   isSelectable = false,
   isExploding = false,
+  isMobile = false,
 }: GameCardProps) {
   // Slot vacío (por ejemplo casillero sin carta)
   if (!card) {
@@ -53,11 +55,11 @@ export default function GameCard({
     <motion.div
       className={cn(
         'w-full h-full cursor-pointer relative',
-        isSelected && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
+        isSelected && !isMobile && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
       )}
       onClick={onClick}
-      whileHover={isSelectable ? { scale: 1.05, y: -4 } : {}}
-      whileTap={isSelectable ? { scale: 0.96 } : {}}
+      whileHover={isSelectable && !isMobile ? { scale: 1.05, y: -4 } : {}}
+      whileTap={isSelectable && !isMobile ? { scale: 0.96 } : {}}
       animate={baseAnimation}
     >
       {!card.isFaceUp ? (
@@ -75,7 +77,7 @@ export default function GameCard({
       ) : (
         <UICard
           className={cn(
-            'w-full h-full flex flex-col items-center justify-center relative',
+            'w-full h-full flex flex-col items-center justify-center relative aspect-square',
             'rounded-2xl border-[3px] border-black bg-sky-400',
             'shadow-[0_8px_0_#020617]',
             isSelected && 'ring-4 ring-amber-300 ring-offset-4 ring-offset-slate-900',

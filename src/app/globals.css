@@ -443,7 +443,7 @@ main {
 
   /* Cuadrado donde va cada carta (misma medida en mano, mazo y tablero) */
   .comic-card-slot {
-    @apply w-[96px] md:w-[110px] aspect-square;
+    @apply w-full aspect-square;
   }
 
   /* Etiquetas de jugador / turno */
@@ -501,11 +501,6 @@ html, body, button, input, select, textarea {
   transform-style: preserve-3d;
 }
 
-.card-hand-fan:has(.fan-card:hover) .fan-card:not(:hover) {
-  transform: translateY(0);
-}
-
-.fan-card.selected-fan-card,
 .fan-card:hover {
   transform: translateY(-40px) !important;
   z-index: 20;

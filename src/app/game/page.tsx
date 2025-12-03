@@ -225,6 +225,12 @@ export default function GamePage() {
   const handleHandCardClick = (card: CardType, index: number) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return;
 
+    // On mobile, the first click selects the card, a second click on the same card would be needed to "play" it if we implement drag-drop later
+    if (isMobile) {
+        setSelectedHandCard(selectedHandCard?.card.uid === card.uid ? null : { card, index });
+        return;
+    }
+
     if (targetBoardPos) {
       if (targetBoardPos.playerId === humanPlayer.id && card.type === 'Personaje') {
         dispatch({
@@ -276,6 +282,7 @@ export default function GamePage() {
 
   const isHandCardSelectable = (card: CardType) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
+    if (isMobile) return true; // On mobile, any card can be "focused"
     return targetBoardPos ? card.type === 'Personaje' : true;
   };
 
@@ -467,7 +474,7 @@ export default function GamePage() {
   );
 
   const renderMobileView = () => (
-    <div className="h-full w-full flex flex-col p-2 gap-4 relative">
+    <div className="h-full w-full flex flex-col p-2 gap-2 relative">
       {/* Rival Area */}
       <div className='flex flex-col items-center gap-2'>
         <div className="flex items-center justify-between w-full px-2">
@@ -483,7 +490,7 @@ export default function GamePage() {
             <div className='flex gap-1'>
             {rivalPlayer.hand.map((card, index) => (
               <div key={index} className='w-8 h-11'>
-                <GameCard card={{...card, isFaceUp: false}} onClick={() => {}} />
+                <GameCard card={{...card, isFaceUp: false}} onClick={() => {}} isMobile />
               </div>
             ))}
             </div>
@@ -536,29 +543,29 @@ export default function GamePage() {
         <div className="relative w-full max-w-sm h-full flex justify-center items-end card-hand-fan">
             {humanPlayer.hand.map((card, index) => {
                 const totalCards = humanPlayer.hand.length;
-                const fanAngle = Math.min(totalCards * 20, 90);
-                const rotation = (index / (totalCards - 1)) * fanAngle - fanAngle / 2;
-
+                const fanAngle = Math.min(totalCards * 15, 60);
+                const rotation = (index - (totalCards - 1) / 2) * (fanAngle / Math.max(1, totalCards-1));
+                
                 return (
                     <motion.div
                       key={card.uid}
                       className={cn(
                         'absolute origin-bottom fan-card',
-                        selectedHandCard?.card.uid === card.uid && 'selected-fan-card'
                       )}
                       animate={{ 
                         rotate: rotation,
-                        y: selectedHandCard?.card.uid === card.uid ? -40 : 0
+                        y: selectedHandCard?.card.uid === card.uid ? -40 : 0,
+                        zIndex: selectedHandCard?.card.uid === card.uid ? 10 : index,
                       }}
                       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                       onClick={() => handleHandCardClick(card, index)}
                     >
-                      <div className="w-24 aspect-[2.5/3.5]">
+                      <div className="w-24 aspect-square">
                         <GameCard
                             card={card}
                             onClick={() => {}}
-                            isSelected={selectedHandCard?.card.uid === card.uid}
                             isSelectable={isHandCardSelectable(card)}
+                            isMobile
                         />
                       </div>
                     </motion.div>
@@ -626,19 +633,19 @@ export default function GamePage() {
                 animate={{ opacity: 1, scale: 1, transition: {delay: 0.3} }}
                 exit={{ opacity: 0, scale: 0.7 }}
             >
-              <GameCard card={{type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back'}} onClick={()=>{}} />
+              <GameCard card={{type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back'}} onClick={()=>{}} isMobile />
             </motion.div>
             
             {/* Drawn Card */}
             <motion.div
-              className="absolute w-24 h-32"
+              className="absolute w-24 aspect-square"
               initial={{ y: 0, scale: 0.8 }}
               animate={ showDrawAnimation === humanPlayerId ?
                 { y: '200%', x: 0, scale: 0.8, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } } :
                 { y: '-200%', x: '50%', scale: 0.5, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } }
               }
             >
-              <GameCard card={deck[deck.length-1] || null} onClick={()=>{}} />
+              <GameCard card={deck[deck.length-1] || null} onClick={()=>{}} isMobile />
             </motion.div>
           </motion.div>
         )}

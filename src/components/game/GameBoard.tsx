@@ -30,7 +30,7 @@ export default function GameBoard({
   isMobile
 }: GameBoardProps) {
   return (
-    <div className={cn("comic-panel flex items-center justify-center p-2", isMobile ? '!p-2 !shadow-none !border-2' : 'px-4 py-4')}>
+    <div className={cn("comic-panel flex items-center justify-center", isMobile ? 'p-2 !shadow-none !border-2' : 'px-4 py-4')}>
       <div className={cn("comic-grid", isMobile && '!p-1 !gap-1.5')}>
         {board.map((row, r) =>
           row.map((card, c) => {
@@ -59,6 +59,7 @@ export default function GameBoard({
                   isSelected={false} // Selection is handled by parent
                   isSelectable={selectable}
                   isExploding={isExploding}
+                  isMobile={isMobile}
                 />
               </button>
             );
