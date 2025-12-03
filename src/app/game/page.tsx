@@ -149,20 +149,23 @@ export default function GamePage() {
     if (!isUserAuthLoading && !user) {
       router.push('/login');
     }
-  }, [user, isUserAuthLoading, router]);
-
-    useEffect(() => {
-    stopAllMusic();
-    playBattleMusic();
-
-    return () => {
+     if (!isUserAuthLoading && user) {
       stopAllMusic();
+      playBattleMusic();
+    }
+
+     return () => {
+      if (!isUserAuthLoading && user) {
+        stopAllMusic();
+      }
     };
-  }, [playBattleMusic, stopAllMusic]);
+  }, [user, isUserAuthLoading, router, playBattleMusic, stopAllMusic]);
+
 
   // Sound effects trigger for any revealed card
   useEffect(() => {
     if (lastRevealedCard) {
+        // This logic is now purely for sound, not explosion triggering
         if (lastRevealedCard.card.type !== 'Bomba') {
             playFlip();
         }
