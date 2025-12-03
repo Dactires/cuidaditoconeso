@@ -29,49 +29,27 @@ function shuffle<T>(array: T[]): T[] {
 let cardUid = 0;
 const generateCardId = () => `card-${cardUid++}`;
 
-function createDeck(cardDefinitions: GameCardDef[], characterLevels: { [color: string]: number } = {}): Card[] {
+function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     cardUid = 0; // Reset UID counter
     const deck: Card[] = [];
-    
-    // --- Create character cards ---
+
     const characterDefs = cardDefinitions.filter(def => def.kind === 'character');
-    characterDefs.forEach(def => {
-        // Use the level from the input, or default to 1
-        const level = characterLevels[def.color] || 1;
-        const valueDistribution = [0, 0, 0, 0, 0]; // Counts for values 1-5
-
-        // This is a simple way to create a distribution that favors higher levels
-        // Level 1 -> 5 cards of value 1
-        // Level 2 -> 3 cards of value 1, 2 of value 2
-        // Level 3 -> 2x val 1, 2x val 2, 1x val 3
-        // ... and so on.
-        const baseCount = Math.floor(5 / level);
-        for(let i=0; i<level; i++) {
-            valueDistribution[i] = baseCount;
-        }
-        let remainder = 5 % level;
-        for(let i=level-1; i>=0 && remainder > 0; i--) {
-            valueDistribution[i]++;
-            remainder--;
-        }
-
-        valueDistribution.forEach((count, index) => {
-            const value = index + 1;
-            for (let i = 0; i < count; i++) {
-                // All cards of the same color share the same definition (and thus image and ability)
+    
+    for (const def of characterDefs) {
+        for (const value of CHARACTER_VALUES) {
+            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
                 deck.push({
                     uid: generateCardId(),
                     type: 'Personaje',
                     color: def.color,
                     value: value,
                     isFaceUp: false,
-                    imageUrl: def.imageUrl,
-                    ability: def.ability
+                    imageUrl: def.imageUrl, // Se usa la misma imagen para todas las variantes
+                    ability: def.ability,
                 });
             }
-        });
-    });
-
+        }
+    }
   
     // --- Create bomb cards ---
     const bombDef = cardDefinitions.find(def => def.id === 'bomb');
@@ -150,14 +128,7 @@ const triggerAbilities = (draft: GameState, playedCard: Card, trigger: "ON_PLAY_
 // --- CORE GAME LOGIC ---
 
 export function setupGame(numPlayers: number, cardDefinitions: GameCardDef[]): GameState {
-  // For now, all characters are level 1
-  const characterLevels = {
-    'Rojo': 1,
-    'Azul': 1,
-    'Verde': 1,
-    'Amarillo': 1
-  };
-  const deck = createDeck(cardDefinitions, characterLevels);
+  const deck = createDeck(cardDefinitions);
 
   const players: Player[] = Array.from({ length: numPlayers }, (_, i) => ({
     id: i,
