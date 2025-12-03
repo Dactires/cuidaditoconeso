@@ -254,7 +254,7 @@ export default function GamePage() {
             <GameBoard 
               board={currentPlayer.board} 
               onCardClick={(r, c) => handleBoardClick(currentPlayer.id, r, c)}
-              isCardSelectable={(r, c) => isCardSelectable(currentPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(currentPlayer.id, r, c)}
             />
           </div>
 
@@ -319,5 +319,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
