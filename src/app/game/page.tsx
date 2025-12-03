@@ -808,13 +808,15 @@ function GamePageContent() {
 
   return (
     <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
-      <GameOverModal
-        isOpen={gameOver}
-        winner={winner}
-        scores={finalScores}
-        onRestart={resetGame}
-        onExit={() => router.push('/lobby')}
-      />
+      <AlertDialog open={gameOver}>
+        <AlertDialogContent className="comic-card">
+          <GameOverModal
+            state={gameState}
+            onRestart={resetGame}
+            onExit={() => router.push('/lobby')}
+          />
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isMobile ? renderMobileView() : renderDesktopView()}
     </div>
