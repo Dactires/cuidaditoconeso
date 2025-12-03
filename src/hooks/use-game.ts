@@ -67,9 +67,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'CLEAR_RIVAL_MOVE':
       return Game.clearRivalMove(state);
     case 'CLEAR_DRAWN_CARD':
-      return produce(state, draft => {
-        draft.lastDrawnCardId = null;
-      });
+      return Game.clearDrawnCard(state);
     default:
       return state;
   }

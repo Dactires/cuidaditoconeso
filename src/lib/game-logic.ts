@@ -39,8 +39,7 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
   // Create character cards
   for (const color of COLORS) {
     for (const value of CHARACTER_VALUES) {
-        // Correctly find the definition for the current color
-        const defId = cardDefinitions.find(d => d.kind === 'color' && d.label.toLowerCase().includes(color.toLowerCase()))?.id;
+        const defId = cardDefinitions.find(d => d.kind === 'color' && d.shortLabel.toLowerCase() === color.toLowerCase())?.id;
         const def = defId ? cardDefMap.get(defId) : undefined;
         
         for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
@@ -193,9 +192,11 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
   const player = draft.players[playerId];
   if (draft.deck.length > 0) {
     const newCard = draft.deck.pop()!;
+    const drawnCardId = generateCardId(); // generate a temporary unique id for animation
     newCard.isFaceUp = true;
+    newCard.uid = drawnCardId; // assign it for tracking
+    draft.lastDrawnCardId = drawnCardId;
     player.hand.push(newCard);
-    draft.lastDrawnCardId = newCard.uid;
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
     draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;
@@ -339,4 +340,8 @@ export const clearExplosion = produce((draft: GameState) => {
 
 export const clearRivalMove = produce((draft: GameState) => {
   draft.lastRivalMove = null;
+});
+
+export const clearDrawnCard = produce((draft: GameState) => {
+  draft.lastDrawnCardId = null;
 });

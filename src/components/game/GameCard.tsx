@@ -80,8 +80,8 @@ export default function GameCard({
 
   React.useEffect(() => {
     if (card?.isFaceUp && card.type === 'Bomba') {
-      const timer = setTimeout(() => setShowTimer(true), 100);
-      const clearTimer = setTimeout(() => setShowTimer(false), 900);
+      const timer = setTimeout(() => setShowTimer(true), 250); // Show timer after a short delay
+      const clearTimer = setTimeout(() => setShowTimer(false), 900); // Timer lasts for 650ms
       return () => {
         clearTimeout(timer);
         clearTimeout(clearTimer);
@@ -117,6 +117,40 @@ export default function GameCard({
     }
 
     // FRONT OF THE CARD
+
+    // Bomb sequence
+    if (card.type === 'Bomba') {
+      return (
+        <>
+          {card.imageUrl && (
+            <Image src={card.imageUrl} alt="Imagen de una bomba" fill sizes="(max-width: 768px) 10vw, 5vw" className="object-cover" />
+          )}
+           <AnimatePresence>
+            {showTimer && (
+              <motion.div
+                key="timer"
+                className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1 }}
+              >
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.1 }}
+                >
+                  <Clock className="w-1/2 h-1/2 text-amber-300 animate-ping" />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )
+    }
+
+    // Character card
     return (
       <>
         {card.imageUrl ? (
@@ -134,34 +168,6 @@ export default function GameCard({
               {card.value}
             </p>
           </div>
-        )}
-
-        {card.type === 'Bomba' && (
-           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-             <AnimatePresence>
-              {showTimer ? (
-                <motion.div
-                  key="timer"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                >
-                  <Clock className="w-1/2 h-1/2 text-amber-300 animate-ping" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="bomb"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 2, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <BombIcon className="w-2/3 h-2/3 text-white drop-shadow-[0_0_8px_#ef4444]" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-           </div>
         )}
       </>
     );

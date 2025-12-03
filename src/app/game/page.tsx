@@ -237,7 +237,7 @@ export default function GamePage() {
     if (lastDrawnCardId) {
       const timer = setTimeout(() => {
         dispatch({ type: 'CLEAR_DRAWN_CARD' });
-      }, 500); 
+      }, 1000); 
       return () => clearTimeout(timer);
     }
   }, [lastDrawnCardId, dispatch]);
@@ -535,19 +535,22 @@ export default function GamePage() {
                   <motion.div className="relative comic-card-slot">
                     {deck.length > 0 && <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} cardBackImageUrl={cardBackImageUrl} />}
                      <AnimatePresence>
-                        {lastDrawnCardId && (
-                          <motion.div
-                            key={lastDrawnCardId}
-                            className="absolute inset-0"
-                            initial={{ scale: 0.6, y: 0, opacity: 1 }}
-                            animate={{ scale: 1.05, y: -80, opacity: 1 }}
-                            exit={{ opacity: 0, scale: 0.8, y: -120 }}
-                            transition={{ duration: 0.45, ease: [0.18, 0.89, 0.32, 1.28] }}
-                          >
-                            <GameCard card={{ type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back-drawn' }} onClick={()=>{}} isInHand cardBackImageUrl={cardBackImageUrl} />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {lastDrawnCardId && (
+                        <motion.div
+                          key="drawing-card"
+                          layoutId={`card-${lastDrawnCardId}`}
+                          className="absolute inset-0 z-50"
+                          initial={{ x: 0, y: 0 }}
+                          animate={{ x: -250, y: 280, scale: 0.9 }}
+                          transition={{
+                            duration: 0.7,
+                            ease: [0.3, 0, 0.4, 1],
+                          }}
+                        >
+                          <GameCard card={{ ...humanPlayer.hand[humanPlayer.hand.length -1], uid: lastDrawnCardId, isFaceUp: false }} onClick={()=>{}} isInHand cardBackImageUrl={cardBackImageUrl} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                   <span className="text-[11px] text-slate-200/70 font-mono">
                     {deck.length} cartas
