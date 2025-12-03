@@ -23,26 +23,33 @@ const LobbyButton = ({
   label,
   onClick,
   disabled = false,
+  variant = 'primary',
   className = '',
 }: {
   icon: React.ElementType;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  variant?: 'primary' | 'secondary' | 'logout';
   className?: string;
 }) => {
   const Icon = icon;
+  
+  const variants = {
+    primary: 'comic-btn-primary',
+    secondary: 'comic-btn-secondary',
+    logout: 'bg-red-500 hover:bg-red-600 text-white',
+  }
+
   return (
-    <motion.div whileHover={{ scale: disabled ? 1 : 1.05 }} whileTap={{ scale: disabled ? 1 : 0.95 }}>
-      <Button
-        onClick={onClick}
-        disabled={disabled}
-        className={`w-full h-24 font-display flex-col gap-1 text-lg tracking-wider comic-badge-lg ${className}`}
-      >
-        <Icon className="h-8 w-8" />
-        <span>{label}</span>
-      </Button>
-    </motion.div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`comic-btn w-full h-24 text-lg flex-col gap-1.5 ${variants[variant]} ${className}`}
+    >
+      <Icon className="h-8 w-8" />
+      <span>{label}</span>
+    </button>
   );
 };
 
@@ -64,8 +71,8 @@ export default function LobbyPage() {
 
   if (isUserLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-full bg-background">
-        <p className="text-foreground text-2xl font-display animate-pulse">
+      <div className="flex items-center justify-center h-full">
+        <p className="comic-title text-2xl animate-pulse">
           Cargando Sala...
         </p>
       </div>
@@ -74,46 +81,11 @@ export default function LobbyPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4">
-      <style jsx global>{`
-        .comic-badge-lg {
-          @apply rounded-2xl px-4 py-2 bg-amber-400 text-black font-display uppercase tracking-widest shadow-[0_6px_0_rgba(0,0,0,0.5)];
-          box-shadow:
-            0 6px 0 rgba(0, 0, 0, 0.5),
-            0 0 0 4px #000;
-          border: 4px solid white;
-          transition: all 0.1s ease-in-out;
-        }
-        .comic-badge-lg:active {
-          transform: translateY(4px);
-          box-shadow:
-            0 2px 0 rgba(0, 0, 0, 0.5),
-            0 0 0 4px #000;
-        }
-        .comic-badge-lg:disabled {
-            background-color: #6b7280;
-            color: #d1d5db;
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow:
-                0 6px 0 rgba(0, 0, 0, 0.5),
-                0 0 0 4px #000;
-        }
-        .bg-play { background-color: #4ade80; }
-        .bg-play:hover:not(:disabled) { background-color: #6ee7b7; }
-
-        .bg-secondary-action { background-color: #60a5fa; }
-        .bg-secondary-action:hover:not(:disabled) { background-color: #93c5fd; }
-        
-        .bg-logout { background-color: #f87171; }
-        .bg-logout:hover:not(:disabled) { background-color: #fca5a5; }
-
-      `}</style>
       <div className="w-full max-w-4xl text-center">
-        <h1 className="text-6xl font-display text-white drop-shadow-[5px_5px_0_rgba(0,0,0,0.8)] mb-4">
+        <h1 className="comic-login-title mb-4">
           Board Bombers
         </h1>
-        <p className="text-amber-300 font-semibold text-lg mb-10">
+        <p className="comic-login-subtitle mb-10">
           Bienvenido, {user.displayName || user.email}
         </p>
 
@@ -123,11 +95,11 @@ export default function LobbyPage() {
               icon={Swords}
               label="Jugar"
               onClick={() => router.push('/game')}
-              className="bg-play h-32 text-2xl"
+              className="h-32 text-2xl"
             />
           </div>
-          <LobbyButton icon={User} label="Perfil" onClick={() => {}} disabled className="bg-secondary-action"/>
-          <LobbyButton icon={Trophy} label="Ranking" onClick={() => {}} disabled className="bg-secondary-action"/>
+          <LobbyButton icon={User} label="Perfil" onClick={() => {}} disabled />
+          <LobbyButton icon={Trophy} label="Ranking" onClick={() => {}} disabled />
           <LobbyButton icon={Users} label="Amigos" onClick={() => {}} disabled />
           <LobbyButton icon={Shield} label="Club" onClick={() => {}} disabled />
           <LobbyButton icon={Store} label="Tienda" onClick={() => {}} disabled />
@@ -135,8 +107,8 @@ export default function LobbyPage() {
         </div>
 
         <div className="mt-12 flex justify-center gap-6">
-            <Button variant="ghost" onClick={() => {}} disabled className="text-slate-400 font-display flex items-center gap-2"><Settings/>Ajustes</Button>
-            <Button variant="ghost" onClick={handleLogout} className="text-amber-300 font-display flex items-center gap-2 hover:text-amber-200"><LogOut/>Cerrar Sesión</Button>
+            <button disabled onClick={() => {}} className="comic-btn comic-btn-secondary disabled:opacity-50"><Settings/>Ajustes</button>
+            <button onClick={handleLogout} className="comic-btn bg-red-600 text-white border-black hover:bg-red-700"><LogOut/>Cerrar Sesión</button>
         </div>
       </div>
     </div>
