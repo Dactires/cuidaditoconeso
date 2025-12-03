@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "UserAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserAccount",
+      "type": "object",
+      "description": "Stores user account information, including email and authentication details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user account."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "googleId": {
+          "type": "string",
+          "description": "User's Google ID (if the user signed up with Google)."
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserAccount",
+          "schema": {
+            "$ref": "#/backend/entities/UserAccount"
+          },
+          "description": "Stores user account information. Includes denormalized user ID in each document for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, obtained from Firebase Authentication."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/games/{gameId}",
+        "definition": {
+          "entityName": "game",
+          "schema": {
+            "$ref": "#/backend/entities/game"
+          },
+          "description": "Stores game session data. Includes the 'players' array within each game document for authorization independence, containing each player's userId, board, and hand information.",
+          "params": [
+            {
+              "name": "gameId",
+              "description": "Unique identifier for the game session."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This design prioritizes security and scalability for the 'Board Bombers' game. User authentication is handled via email/password and Google Sign-In, managed by Firebase Authentication. The core data structure focuses on isolating user data and game state, which is critical for maintaining data integrity and simplifying security rules.\n\n1.  **User Accounts:** The `/users/{userId}` collection stores user-specific data, enabling easy retrieval and management of individual accounts. Path-based ownership (`/users/{userId}`) ensures that only the authenticated user can access their data.\n\n2.  **Game Sessions:** Game sessions are stored in the `/games/{gameId}` collection. This allows multiple games to be played concurrently and facilitates managing game state transitions. Authorization Independence is achieved through denormalization. The `players` array within each `/games/{gameId}` document stores the `userId` and other relevant player information (e.g., `board`, `hand`). Security rules can directly verify if a `request.auth.uid` is present in the `players` array to determine authorization without needing to perform expensive `get()` operations to retrieve player data from the `/users/{userId}` collection.\n\n3.  **QAPs (Rules Are Not Filters):** The structure supports secure list operations (QAPs) because authorization is determined directly from the data stored within each document. For instance, when listing games available to a user, the security rules can efficiently check the `players` array against the authenticated user's ID without complex filtering.\n\n4.  **Invariants:** The structure supports the integrity of ownership and timestamps. Timestamps can be added to the `/games/{gameId}` documents to track game creation and modification times. This helps in auditing and maintaining data consistency.\n\nIn summary, this design promotes secure and scalable rules, leveraging Authorization Independence, Structural Segregation, and Access Modeling to create a robust and maintainable data structure for the 'Board Bombers' game."
+  }
+}
