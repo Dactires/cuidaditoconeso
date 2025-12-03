@@ -246,12 +246,11 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 
 export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
     const player = draft.players[playerId];
-    // Find the card from the board to make sure we have the correct one
     const explodingCard = player.board[r][c];
 
     if (!explodingCard || explodingCard.type !== 'Bomba') return;
 
-    // Set the exploding card info, including the card data itself
+    // Set the exploding card info, which now includes the card data itself for the animation
     draft.explodingCard = { playerId, r, c, card: { ...explodingCard } };
     draft.lastRevealedBomb = null; // Clear the trigger
 
@@ -260,11 +259,12 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
     // The center card (the bomb) is always replaced
     coordsToReplace.add(`${r},${c}`);
 
-    // Check adjacent cards
+    // Check adjacent cards (up, down, left, right)
     const coordsToCheck = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
     for (const [ar, ac] of coordsToCheck) {
         if (ar >= 0 && ar < BOARD_SIZE && ac >= 0 && ac < BOARD_SIZE) {
             const adjCard = player.board[ar][ac];
+            // Only face-up cards are destroyed by the blast
             if (adjCard && adjCard.isFaceUp) {
                 coordsToReplace.add(`${ar},${ac}`);
             }
@@ -286,6 +286,7 @@ export const triggerExplosion = produce((draft: GameState, playerId: number, r: 
         }
     });
     
+    // Recalculate score after explosion and refilling
     player.score = getBoardScore(player.board);
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
