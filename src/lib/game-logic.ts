@@ -1,3 +1,4 @@
+
 import { GameState, Player, Card } from './types';
 import {
   COLORS,
@@ -38,8 +39,10 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
   // Create character cards
   for (const color of COLORS) {
     for (const value of CHARACTER_VALUES) {
-        const defId = `color-${color.toLowerCase()}`;
-        const def = cardDefMap.get(defId);
+        // Correctly find the definition for the current color
+        const defId = cardDefinitions.find(d => d.kind === 'color' && d.label.toLowerCase().includes(color.toLowerCase()))?.id;
+        const def = defId ? cardDefMap.get(defId) : undefined;
+        
         for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
           deck.push({
             uid: generateCardId(),
