@@ -12,10 +12,10 @@ interface GameBoardProps {
 
 export default function GameBoard({ board, onCardClick, isCardSelectable = () => false, explodingCard }: GameBoardProps) {
   return (
-    <div className={`grid grid-cols-3 gap-3 p-3 rounded-lg bg-black/20 border-2 border-dashed border-white/20`}>
+    <div className={`grid grid-cols-3 gap-4 p-4 rounded-xl bg-black/20 shadow-inner`}>
       {board.map((row, r) =>
         row.map((card, c) => (
-          <div key={`${r}-${c}`} className="relative w-32 aspect-square">
+          <div key={`${r}-${c}`} className="relative w-36 aspect-[2/3]">
             <GameCard
               card={card}
               onClick={() => onCardClick(r, c)}

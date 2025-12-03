@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource/press-start-2p": "^5.0.18",
     "@genkit-ai/google-genai": "^1.20.0",
     "@genkit-ai/next": "^1.20.0",
     "@hookform/resolvers": "^4.1.3",
@@ -42,6 +43,7 @@
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.9.1",
+    "framer-motion": "^11.2.10",
     "genkit": "^1.20.0",
     "immer": "^10.1.1",
     "lucide-react": "^0.475.0",
@@ -54,6 +56,7 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "use-sound": "^4.0.1",
     "zod": "^3.24.2"
   },
   "devDependencies": {
