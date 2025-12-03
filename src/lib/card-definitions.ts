@@ -1,6 +1,12 @@
 
 export type CardKind = "character" | "bomb" | "hero" | "power" | "back";
 
+export type CardAbility = {
+  name: string;
+  description: string;
+  json: string;
+};
+
 export type GameCardDef = {
   id: string;
   kind: CardKind;
@@ -10,16 +16,27 @@ export type GameCardDef = {
   colorClass: string;
   ribbonClass: string;
   textColor?: string;
-  value: number; // For characters, this is a base value or can be ignored if values are 1-5
+  value: number;
   description: string;
   imageUrl?: string;
+  ability?: CardAbility;
 };
 
 const characterDescriptions = {
   rojo: "Los personajes rojos son conocidos por su agresividad y poder de ataque directo. Ideales para estrategias ofensivas.",
   azul: "Los personajes azules son maestros de la estrategia y el control, a menudo manipulando el tablero a su favor.",
   verde: "Los personajes verdes se centran en el crecimiento y la defensa, acumulando poder de forma sostenida.",
-  amarillo: "Los personajes amarillos son versátiles y traen un elemento de sorpresa e ingenio al juego.",
+  amarillo: "Al jugar esta carta, mezcla aleatoriamente todas las cartas del tablero del rival, cambiando completamente sus posiciones.",
+};
+
+const defaultYellowAbility: CardAbility = {
+  name: "Caos Cromático",
+  description: "Al jugar un personaje amarillo en tu tablero, se barajan todas las cartas (boca arriba y boca abajo) del tablero del oponente.",
+  json: JSON.stringify({
+    "trigger": "ON_PLAY_OWN_BOARD",
+    "target": "RIVAL_BOARD",
+    "action": "SHUFFLE_ALL_CARDS"
+  }, null, 2)
 };
 
 export const CARD_DEFINITIONS: GameCardDef[] = [
@@ -81,6 +98,7 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     textColor: 'text-slate-900',
     value: 0,
     description: characterDescriptions.amarillo,
+    ability: defaultYellowAbility,
   },
 
   // --- BOMBAS Y PODERES ---
@@ -117,16 +135,5 @@ export const CARD_DEFINITIONS: GameCardDef[] = [
     ribbonClass: "bg-purple-700",
     value: 0,
     description: "Esta carta es un poder básico. El sistema de poderes está en construcción.",
-  },
-  {
-    id: "power2",
-    kind: "power",
-    label: "Poder 2",
-    shortLabel: "Poder",
-    color: "Indigo",
-    colorClass: "bg-indigo-500",
-    ribbonClass: "bg-indigo-700",
-    value: 0,
-    description: "Segundo slot de Poder del mazo. Más adelante vas a poder cambiar qué poder usás en cada espacio.",
   },
 ];
