@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { Press_Start_2P, Inter } from 'next/font/google';
 import '@fontsource/press-start-2p';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Board Bombers',
@@ -29,8 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full overflow-hidden">
       <body className={cn('antialiased h-full bg-background font-sans', pressStart2P.variable, inter.variable)}>
-        <main className="h-full">{children}</main>
-        <Toaster />
+        <FirebaseClientProvider>
+          <main className="h-full">{children}</main>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
