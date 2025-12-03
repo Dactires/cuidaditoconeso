@@ -139,10 +139,10 @@ function AdminCard({ card }: { card: GameCardDef }) {
                     </Button>
                 )}
                 
-                {selectedFile && (
+                {selectedFile && imagePreview && (
                     <div className="space-y-2">
                          <div className="border rounded-md p-2 flex items-center gap-2">
-                            <Image src={imagePreview!} alt="Previsualización" width={40} height={40} className="rounded" />
+                            <Image src={imagePreview} alt="Previsualización" width={40} height={40} className="rounded" />
                             <div className="flex-grow text-xs truncate">
                                 <p className="font-semibold">{selectedFile.name}</p>
                                 <p className="text-muted-foreground">{Math.round(selectedFile.size / 1024)} KB</p>
