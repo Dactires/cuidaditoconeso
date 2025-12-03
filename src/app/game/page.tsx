@@ -806,9 +806,11 @@ function GamePageContent() {
     </div>
   );
 
+  const showGameOver = gameOver && gamePhase === 'playing';
+
   return (
     <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
-      <AlertDialog open={gameOver}>
+      <AlertDialog open={showGameOver}>
         <AlertDialogContent className="comic-card">
           <GameOverModal
             state={gameState}
