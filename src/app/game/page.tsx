@@ -579,7 +579,7 @@ export default function GamePage() {
   );
 
   const renderMobileView = () => (
-    <div className={cn("h-full w-full flex flex-col p-2 gap-2 relative", explodingCard && "screen-flash")}>
+    <div className={cn("h-full w-full flex flex-col p-2 pb-2 gap-2 relative", explodingCard && "screen-flash")}>
       <LayoutGroup id="boardbombers-layout-mobile">
       {/* Rival Area */}
       <div className='flex flex-col items-center gap-2'>
@@ -707,7 +707,6 @@ export default function GamePage() {
           </motion.div>
         ))}
       </div>
-      <div className="h-4 shrink-0" />
 
       <div className="absolute top-2 right-2 z-20">
          <AlertDialog>
