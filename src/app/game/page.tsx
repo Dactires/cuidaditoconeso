@@ -112,7 +112,7 @@ export default function GamePage() {
   const router = useRouter();
   const { cardDefs, cardBackImageUrl, loading: areCardDefsLoading } = useCardDefinitionsWithImages();
   const { gameState, dispatch, initialized, resetGame } = useGame(2, cardDefs);
-  const { playFlip, playBomb, playDeal } = useGameSounds();
+  const { playFlip, playBomb } = useGameSounds();
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
@@ -162,9 +162,6 @@ export default function GamePage() {
   
     const performAiAction = (action: GameAction, delay = 1500) => {
       setTimeout(() => {
-        if (action.type === 'START_TURN') {
-          playDeal();
-        }
         dispatch(action);
       }, delay); 
     };
@@ -231,19 +228,18 @@ export default function GamePage() {
        }
     }
   
-  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay, playDeal]);
+  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay]);
 
   // Human player auto-draw
   useEffect(() => {
     if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN') return;
 
-    playDeal();
     const timer = setTimeout(() => {
       dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, playDeal]);
+  }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId]);
   
   // Clear drawn card animation state
   useEffect(() => {
@@ -285,7 +281,7 @@ export default function GamePage() {
     if (explodingCard) {
       const timer = setTimeout(() => {
         dispatch({ type: 'CLEAR_EXPLOSION' });
-      }, 1000); // Corresponds to animation duration
+      }, 900); // Corresponds to animation duration
       return () => clearTimeout(timer);
     }
   }, [explodingCard, dispatch]);

@@ -29,7 +29,6 @@ function shuffle<T>(array: T[]): T[] {
 let cardUid = 0;
 const generateCardId = () => `card-${cardUid++}`;
 
-
 function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     cardUid = 0; // Reset UID counter for deterministic generation
     const deck: Card[] = [];
@@ -254,11 +253,11 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 
     card.isFaceUp = true;
     draft.lastRevealedCard = { playerId, r, c, card: { ...card } }; // Make a copy
+    draft.explodingCard = null; // Ensure no explosion is active yet
 
     if (card.type === 'Bomba') {
         draft.lastRevealedBomb = { playerId, r, c, cardUid: card.uid };
         draft.gameMessage = `¡BOOM! El Jugador ${playerId + 1} reveló una bomba.`;
-        draft.explodingCard = null; // Do not explode yet
     } else {
         const newScore = getBoardScore(player.board);
         const scoreChange = newScore - player.score;
@@ -272,9 +271,9 @@ export const revealCard = produce((draft: GameState, playerId: number, r: number
 
 export const triggerExplosion = produce((draft: GameState, playerId: number, r: number, c: number) => {
     const player = draft.players[playerId];
-    draft.explodingCard = { playerId, r, c };
     applyExplosion(draft, player, r, c);
     draft.lastRevealedBomb = null; // Clear the bomb trigger
+    draft.explodingCard = { playerId, r, c }; // Set exploding card AFTER applying logic
     draft.gameMessage = `La bomba explotó. Elige tu próxima acción.`;
     checkEndGame(draft);
 });
