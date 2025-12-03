@@ -30,8 +30,8 @@ export default function GameBoard({
   isMobile
 }: GameBoardProps) {
   return (
-    <div className={cn("comic-panel flex items-center justify-center", isMobile ? 'p-1 !shadow-none !border-2 w-full max-w-xs' : 'px-4 py-4')}>
-      <div className={cn("comic-grid", isMobile && '!p-0 !gap-1')}>
+    <div className={cn("comic-panel flex items-center justify-center", isMobile ? 'p-2 !shadow-none !border-2 w-full max-w-xs' : 'px-4 py-4')}>
+      <div className={cn("comic-grid", isMobile && '!p-0 !gap-1.5')}>
         {board.map((row, r) =>
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;

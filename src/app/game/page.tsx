@@ -206,10 +206,13 @@ export default function GamePage() {
   const handleBoardClick = (playerId: number, r: number, c: number) => {
     if (gameOver || currentPlayerIndex !== humanPlayerId) return;
 
+    if (selectedHandCard) {
+       setTargetBoardPos({ playerId, r, c });
+       return;
+    }
+
     if (turnPhase === 'REVEAL_CARD' && playerId === humanPlayer.id) {
       dispatch({ type: 'REVEAL_CARD', payload: { player_id: playerId, r, c } });
-    } else if (turnPhase === 'ACTION' && selectedHandCard) {
-      setTargetBoardPos({ playerId, r, c });
     } else if (turnPhase === 'ACTION' && !selectedHandCard && playerId === humanPlayer.id) {
       const card = humanPlayer.board[r][c];
       if (card && card.isFaceUp) {
@@ -225,24 +228,11 @@ export default function GamePage() {
   const handleHandCardClick = (card: CardType, index: number) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return;
 
-    if (targetBoardPos) {
-      if (targetBoardPos.playerId === humanPlayer.id && card.type === 'Personaje') {
-        dispatch({
-          type: 'SWAP_CARD',
-          payload: {
-            player_id: humanPlayer.id,
-            board_r: targetBoardPos.r,
-            board_c: targetBoardPos.c,
-            card_in_hand: card,
-          },
-        });
-        setTargetBoardPos(null);
-      }
-    } else {
-      setSelectedHandCard(
-        selectedHandCard?.card.uid === card.uid ? null : { card, index },
-      );
-    }
+    // On mobile, this will select/deselect for targeting.
+    // On desktop, this could be extended for drag-and-drop.
+    setSelectedHandCard(
+      selectedHandCard?.card.uid === card.uid ? null : { card, index },
+    );
   };
 
   const handlePassTurn = () => {
@@ -261,13 +251,7 @@ export default function GamePage() {
     }
     if (turnPhase === 'ACTION') {
       if (selectedHandCard) {
-        return (
-          (selectedHandCard.card.type === 'Personaje' &&
-            playerId === humanPlayer.id &&
-            !!card &&
-            !card.isFaceUp) ||
-          (playerId === rivalPlayer.id && !!card && !card.isFaceUp)
-        );
+        return !!card && !card.isFaceUp;
       }
       return playerId === humanPlayer.id && !!card && card.isFaceUp;
     }
@@ -276,9 +260,6 @@ export default function GamePage() {
 
   const isHandCardSelectable = (card: CardType) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
-    if (targetBoardPos) {
-      return card.type === 'Personaje';
-    }
     return true;
   };
 
@@ -362,17 +343,6 @@ export default function GamePage() {
               </div>
   
               <div className="mt-2">
-                {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full font-display tracking-[0.25em] uppercase text-xs"
-                    disabled={gameState.isForcedToPlay}
-                    onClick={handlePassTurn}
-                  >
-                    Pasar turno
-                  </Button>
-                )}
                 {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
                   <p className="mt-1 text-[11px] text-amber-300 text-center">
                     Debes jugar o intercambiar una carta.
@@ -514,16 +484,11 @@ export default function GamePage() {
         <div className="flex items-center justify-between w-full px-2">
             <div className='w-1/3' />
             <div className='w-1/3 flex justify-center'>
-             {turnPhase === 'ACTION' && currentPlayerIndex === humanPlayerId && (
-                    <Button
-                        size="sm"
-                        className="comic-btn comic-btn-secondary !py-1 !px-3 !text-xs"
-                        disabled={gameState.isForcedToPlay}
-                        onClick={handlePassTurn}
-                    >
-                        Pasar
-                    </Button>
-                )}
+             {turnPhase === 'ACTION' && gameState.isForcedToPlay && currentPlayerIndex === humanPlayerId && (
+                <p className="mt-1 text-[11px] text-amber-300 text-center">
+                  Debes jugar una carta.
+                </p>
+              )}
             </div>
             <div className="w-1/3 flex items-center justify-end gap-2">
                 <div className="flex flex-col text-right">
