@@ -140,6 +140,17 @@ function GamePageContent() {
   const { playBattleMusic, stopAllMusic } = useMusicPlayer();
   
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
+  
+  useEffect(() => {
+    console.log('%c[GAME UI] gameOver cambió', 'color:#22c55e;font-weight:bold;', {
+      gameOver,
+      winner,
+      finalScores,
+      turnPhase,
+      gamePhase,
+    });
+  }, [gameOver, winner, finalScores, turnPhase, gamePhase]);
+
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const humanPlayer = players?.[humanPlayerId];
@@ -806,11 +817,22 @@ function GamePageContent() {
     </div>
   );
 
-  const showGameOver = gameOver && gamePhase === 'playing';
+  console.log('%c[GAME UI] render GamePageContent', 'color:#38bdf8;', {
+    gameOver,
+    winner,
+    finalScores,
+    gamePhase,
+    turnPhase,
+  });
 
   return (
     <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto">
-      <AlertDialog open={showGameOver}>
+      <AlertDialog
+        open={gameOver}
+        onOpenChange={(open) => {
+          console.log('%c[ALERT DIALOG] onOpenChange', 'color:#f97316;', { open, gameOver });
+        }}
+      >
         <AlertDialogContent className="comic-card">
           <GameOverModal
             state={gameState}

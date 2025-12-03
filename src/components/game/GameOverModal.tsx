@@ -18,6 +18,18 @@ interface GameOverModalProps {
 }
 
 export default function GameOverModal({ state, onRestart, onExit }: GameOverModalProps) {
+  console.log('%c[GAME OVER MODAL] render', 'color:#eab308;font-weight:bold;', {
+    gameOver: state.gameOver,
+    winner: state.winner,
+    finalScores: state.finalScores,
+    gameMessage: state.gameMessage,
+  });
+  
+  if (!state.gameOver) {
+    console.log('[GAME OVER MODAL] state.gameOver es false, no se muestra el modal');
+    return null;
+  }
+
   const { winner, finalScores, gameMessage } = state;
 
   const getWinnerText = () => {
@@ -29,6 +41,8 @@ export default function GameOverModal({ state, onRestart, onExit }: GameOverModa
   };
 
   const sortedScores = [...finalScores].sort((a, b) => b.score - a.score);
+
+  console.log('%c[GAME OVER MODAL] mostrando modal', 'color:#22c55e;font-weight:bold;');
 
   return (
     <motion.div
