@@ -13,7 +13,7 @@ import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
 import { Button } from '@/components/ui/button';
-import { User, Bot, Swords, LogOut } from 'lucide-react';
+import { User, Bot, Swords, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -496,23 +496,18 @@ export default function GamePage() {
       </div>
 
       <div className="flex-grow flex items-center justify-center relative">
-        <Swords className="h-8 w-8 text-slate-600" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
-          <span className="comic-turn-chip !px-3 !py-1 !text-xs">
-            {currentPlayerIndex === humanPlayerId ? 'Tu turno' : 'Turno del rival'}
-          </span>
-        </div>
+        <Swords className="h-6 w-6 text-slate-700" />
       </div>
 
       {/* Player Area */}
       <div className='flex flex-col items-center gap-2'>
-         <div className="flex items-center justify-between w-full px-2">
+        <div className="flex items-center justify-between w-full px-2">
             <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-sky-500 border-2 border-black flex items-center justify-center">
                     <User className="h-5 w-5 text-slate-900" />
                 </div>
                 <div className="flex flex-col">
-                    <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">Jugador 1 (Tú)</span>
+                    <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">{user.displayName || 'Jugador'}</span>
                     <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span></span>
                 </div>
             </div>
@@ -537,51 +532,54 @@ export default function GamePage() {
       </div>
       
       {/* Player Hand */}
-      <AnimatePresence>
-        <div className="w-full h-28 flex justify-center items-end pb-2">
-          <div className="relative w-48 h-28 card-hand-fan">
-            {humanPlayer.hand.map((card, index) => (
-                <motion.div
-                  key={card.uid}
-                  className="absolute bottom-0 w-24"
-                  style={{
-                      transformOrigin: 'bottom center',
-                  }}
-                  initial={{ opacity: 0, y: 50, rotate: 0 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    rotate: (index - (humanPlayer.hand.length - 1) / 2) * 15,
-                  }}
-                  exit={{ opacity: 0, y: 30 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  onClick={() => handleHandCardClick(card, index)}
-                >
-                    <GameCard
-                        card={card}
-                        onClick={() => handleHandCardClick(card, index)}
-                        isSelected={selectedHandCard?.card.uid === card.uid}
-                        isSelectable={isHandCardSelectable(card)}
-                    />
-                </motion.div>
-            ))}
-          </div>
+      <div className="w-full h-28 flex justify-center items-end pb-2">
+        <div className="relative w-48 h-28 card-hand-fan">
+            {humanPlayer.hand.map((card, index) => {
+                const rotation = (index - (humanPlayer.hand.length - 1) / 2) * 15;
+                const translationY = Math.abs(index - (humanPlayer.hand.length - 1) / 2) * 5;
+                return (
+                    <motion.div
+                      key={card.uid}
+                      className="absolute bottom-0 w-24 origin-bottom"
+                      initial={{ opacity: 0, y: 50, rotate: 0 }}
+                      animate={{
+                        opacity: 1,
+                        y: selectedHandCard?.card.uid === card.uid ? -20 : translationY,
+                        rotate: rotation,
+                        x: `calc(-50% + ${index * 20}px)`,
+                      }}
+                      exit={{ opacity: 0, y: 30 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      onClick={() => handleHandCardClick(card, index)}
+                      style={{
+                          left: '50%',
+                          zIndex: selectedHandCard?.card.uid === card.uid ? 10 : index,
+                      }}
+                    >
+                        <GameCard
+                            card={card}
+                            onClick={() => {}}
+                            isSelected={selectedHandCard?.card.uid === card.uid}
+                            isSelectable={isHandCardSelectable(card)}
+                        />
+                    </motion.div>
+                );
+            })}
         </div>
-      </AnimatePresence>
+      </div>
 
-      <div className="absolute bottom-2 right-2 z-20">
+      <div className="absolute top-2 right-2 z-20">
          <AlertDialog>
           <AlertDialogTrigger asChild>
-            <button className="comic-btn bg-red-600 !text-white hover:bg-red-700 !px-3 !py-1 !text-xs h-auto">
-              <LogOut className="h-3 w-3" />
-              Rendirse
+            <button className="comic-btn bg-slate-800/80 !text-white hover:bg-slate-700 !p-0 h-9 w-9 !rounded-full">
+              <Settings className="h-5 w-5" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent className="comic-card">
             <AlertDialogHeader>
-              <AlertDialogTitle className="comic-title text-amber-300">¿Rendirse?</AlertDialogTitle>
+              <AlertDialogTitle className="comic-title text-amber-300">Ajustes</AlertDialogTitle>
               <AlertDialogDescription className="text-slate-300">
-                Si abandonas la partida, contará como una derrota.
+                ¿Estás seguro que deseas abandonar la partida? Esta acción contará como una derrota.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -589,8 +587,8 @@ export default function GamePage() {
                 <button className="comic-btn comic-btn-secondary">Cancelar</button>
               </AlertDialogCancel>
               <AlertDialogAction asChild>
-                <button onClick={() => router.push('/lobby')} className="comic-btn comic-btn-primary">
-                  Confirmar
+                <button onClick={() => router.push('/lobby')} className="comic-btn bg-red-600 !text-white hover:bg-red-700">
+                  Rendirse
                 </button>
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -603,18 +601,40 @@ export default function GamePage() {
           <motion.div
             className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: {duration: 0.2} }}
+            exit={{ opacity: 0, transition: {delay: 0.8, duration: 0.3} }}
           >
-            <div className="w-32 h-44">
+            {/* Turn indicator */}
+            {showDrawAnimation === humanPlayerId && (
+                 <motion.div
+                    className="absolute"
+                    initial={{ scale: 0.5, opacity: 0}}
+                    animate={{ scale: 1, opacity: 1, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
+                    exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
+                 >
+                    <span className="comic-turn-chip !px-6 !py-2 !text-lg">
+                        Tu Turno
+                    </span>
+                 </motion.div>
+            )}
+           
+            {/* Deck */}
+            <motion.div
+                className="w-32 h-44 absolute"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1, transition: {delay: 0.3} }}
+                exit={{ opacity: 0, scale: 0.7 }}
+            >
               <GameCard card={{type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back'}} onClick={()=>{}} />
-            </div>
+            </motion.div>
+            
+            {/* Drawn Card */}
             <motion.div
               className="absolute w-24 h-32"
-              initial={{ y: 0, scale: 1 }}
+              initial={{ y: 0, scale: 0.8 }}
               animate={ showDrawAnimation === humanPlayerId ?
-                { y: '200%', x: 0, scale: 0.8, transition: { duration: 0.8, ease: 'easeInOut' } } :
-                { y: '-200%', x: '50%', scale: 0.5, transition: { duration: 0.8, ease: 'easeInOut' } }
+                { y: '200%', x: 0, scale: 0.8, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } } :
+                { y: '-200%', x: '50%', scale: 0.5, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } }
               }
             >
               <GameCard card={deck[deck.length-1] || null} onClick={()=>{}} />
@@ -639,5 +659,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

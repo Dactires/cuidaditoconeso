@@ -493,23 +493,14 @@ html, body, button, input, select, textarea {
 }
 
 .card-hand-fan > * {
-  transition: transform 0.2s ease-out;
+  transition: transform 0.3s ease-out;
 }
 
-.card-hand-fan:hover > * {
-  transform: translateY(-20px) !important;
+.card-hand-fan:hover .fan-card:not(:hover) {
+  transform: translateY(-20px);
 }
 
-.card-hand-fan > *:hover {
+.card-hand-fan .fan-card:hover {
   transform: translateY(-40px) !important;
+  z-index: 20;
 }
-
-.card-hand-fan > *:hover ~ * {
-  transform: translateX(40px) translateY(-20px) !important;
-}
-
-.card-hand-fan > *:not(:first-child) {
-  margin-left: -60px;
-}
-
-    

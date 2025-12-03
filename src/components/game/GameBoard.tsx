@@ -45,7 +45,7 @@ export default function GameBoard({
                 type="button"
                 className={cn(
                   'comic-card-slot',
-                  isMobile && '!w-20 !h-auto',
+                  isMobile && '!w-20 !h-20 aspect-square',
                   'focus:outline-none',
                   selectable && 'cursor-pointer',
                   !selectable && 'cursor-default'
@@ -68,5 +68,3 @@ export default function GameBoard({
     </div>
   );
 }
-
-    
