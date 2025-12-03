@@ -20,53 +20,58 @@ const colorMap: { [key: string]: string } = {
 };
 
 export default function GameCard({ card, onClick, isSelected = false, isSelectable = false }: GameCardProps) {
+  const isFaceUp = !!card && card.isFaceUp;
+
   const cardBack = (
-    <div className="absolute w-full h-full bg-primary rounded-lg backface-hidden flex items-center justify-center p-1 border-2 border-primary-foreground/50">
+    <div className="w-full h-full bg-primary rounded-lg flex items-center justify-center p-1 border-2 border-primary-foreground/50">
       <div className="w-full h-full rounded-md border-2 border-primary-foreground/20 border-dashed flex items-center justify-center">
-        <span className="text-primary-foreground font-bold text-sm -rotate-45 opacity-70">BOMBERS</span>
+        <span className="text-primary-foreground font-bold text-sm -rotate-45 opacity-70">
+          BOMBERS
+        </span>
       </div>
     </div>
   );
 
   const cardFront = (
-    <div className="absolute w-full h-full backface-hidden [transform:rotateY(180deg)]">
-      {card ? (
-        <UICard
-          className={cn(
-            'w-full h-full flex flex-col items-center justify-center border-2 border-white/50 text-white',
-            card.type === 'Personaje' && card.color ? colorMap[card.color] : 'bg-gray-800'
-          )}
-        >
-          <CardHeader className="p-0 absolute top-1 right-1">
-             <p className="text-xs font-bold">{card.type === 'Bomba' ? 'BOMBA' : card.color}</p>
-          </CardHeader>
-           <CardTitle className="text-4xl md:text-5xl font-bold">
-              {card.type === 'Bomba' ? <BombIcon className="w-10 h-10" /> : card.value}
-            </CardTitle>
-          <CardContent className="p-1 absolute bottom-0">
-            <p className="text-xs font-semibold uppercase">{card.type}</p>
-          </CardContent>
-        </UICard>
-      ) : (
-        <div className="w-full h-full rounded-lg bg-black/20 border border-dashed border-white/20" />
+    <UICard
+      className={cn(
+        'w-full h-full flex flex-col items-center justify-center border-2 border-white/50 text-white rounded-lg',
+        card?.type === 'Personaje' && card?.color ? colorMap[card.color] : 'bg-gray-800'
       )}
-    </div>
+    >
+      <CardHeader className="p-0 absolute top-1 right-1">
+        <p className="text-xs font-bold">
+          {card?.type === 'Bomba' ? 'BOMBA' : card?.color}
+        </p>
+      </CardHeader>
+      <CardTitle className="text-4xl md:text-5xl font-bold">
+        {card?.type === 'Bomba'
+          ? <BombIcon className="w-10 h-10" />
+          : card?.value}
+      </CardTitle>
+      <CardContent className="p-1 absolute bottom-0">
+        <p className="text-xs font-semibold uppercase">{card?.type}</p>
+      </CardContent>
+    </UICard>
   );
 
   return (
-    <div className="absolute inset-0 [perspective:1000px] aspect-square" onClick={onClick}>
-      <div
-        className={cn(
-          'relative w-full h-full cursor-pointer rounded-lg shadow-lg transition-transform duration-700 [transform-style:preserve-3d]',
-          card?.isFaceUp && '[transform:rotateY(180deg)]',
-          isSelected && 'ring-4 ring-accent ring-offset-2 ring-offset-background scale-110 z-10',
-          isSelectable && 'animate-pulse ring-2 ring-accent',
-          !card && 'cursor-default'
-        )}
-      >
-        {cardBack}
-        {cardFront}
-      </div>
+    <div
+      className={cn(
+        'w-full h-full aspect-square cursor-pointer rounded-lg shadow-lg',
+        isSelected && 'ring-4 ring-accent ring-offset-2 ring-offset-background scale-110 z-10',
+        isSelectable && 'animate-pulse ring-2 ring-accent',
+        !card && 'cursor-default'
+      )}
+      onClick={onClick}
+    >
+      {!card ? (
+        <div className="w-full h-full rounded-lg bg-black/20 border border-dashed border-white/20" />
+      ) : isFaceUp ? (
+        cardFront
+      ) : (
+        cardBack
+      )}
     </div>
   );
 }
