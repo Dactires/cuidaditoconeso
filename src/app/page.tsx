@@ -25,14 +25,19 @@ type BoardSelection = {
 } | null;
 
 export default function GamePage() {
-  const { gameState, dispatch } = useGame(2);
+  const { gameState, dispatch } = useGame(2, false); // Do not initialize game on server
   const { toast } = useToast();
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
+  const [isGameReady, setIsGameReady] = useState(false);
+
+  useEffect(() => {
+    dispatch({ type: 'RESET_GAME' });
+    setIsGameReady(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage } = gameState;
-  const currentPlayer = players[currentPlayerIndex];
-  const rivalPlayer = players[(currentPlayerIndex + 1) % players.length];
 
   useEffect(() => {
     if (targetBoardPos && selectedHandCard) {
@@ -53,7 +58,7 @@ export default function GamePage() {
       setSelectedHandCard(null);
       setTargetBoardPos(null);
     }
-  }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer.id]);
+  }, [targetBoardPos, selectedHandCard, dispatch, gameState.players, currentPlayerIndex]);
   
   // AI Score Explanation Effect
   useEffect(() => {
@@ -80,6 +85,17 @@ export default function GamePage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.lastRevealedCard, toast]);
+
+  if (!isGameReady || !players || players.length === 0) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <p>Loading Game...</p>
+        </div>
+    );
+  }
+
+  const currentPlayer = players[currentPlayerIndex];
+  const rivalPlayer = players[(currentPlayerIndex + 1) % players.length];
 
 
   const handleBoardClick = (playerId: number, r: number, c: number) => {

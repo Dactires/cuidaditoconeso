@@ -15,6 +15,26 @@ export type GameAction =
   | { type: 'RESET_GAME' }
   | { type: 'SET_MESSAGE'; payload: string | null };
 
+const getInitialState = (numPlayers: number): GameState => ({
+  players: Array.from({ length: numPlayers }, (_, i) => ({
+    id: i,
+    hand: [],
+    board: Array(3).fill(null).map(() => Array(3).fill(null)),
+    score: 0,
+  })),
+  deck: [],
+  discardPile: [],
+  currentPlayerIndex: 0,
+  gameOver: false,
+  winner: null,
+  finalScores: [],
+  isForcedToPlay: false,
+  gameMessage: 'Loading game...',
+  turnPhase: 'START_TURN',
+  finalTurnCounter: -1,
+  lastRevealedCard: null,
+});
+
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   return produce(state, draft => {
     switch (action.type) {
@@ -41,8 +61,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
   });
 };
 
-export function useGame(numPlayers: number) {
-  const [gameState, dispatch] = useReducer(gameReducer, Game.setupGame(numPlayers));
+export function useGame(numPlayers: number, initialize = true) {
+  const [gameState, dispatch] = useReducer(
+    gameReducer,
+    initialize ? Game.setupGame(numPlayers) : getInitialState(numPlayers)
+  );
 
   return { gameState, dispatch };
 }
