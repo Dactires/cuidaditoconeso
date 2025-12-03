@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGame, GameAction } from '@/hooks/use-game';
 import type { Card as CardType, Player } from '@/lib/types';
-import { getScoreChangeExplanation } from '@/app/actions/game';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameSounds } from '@/hooks/use-game-sounds';
@@ -144,32 +143,6 @@ export default function GamePage() {
       setTargetBoardPos(null);
     }
   }, [targetBoardPos, selectedHandCard, dispatch, currentPlayer]);
-
-  // AI score analysis toast
-  useEffect(() => {
-    if (lastRevealedCard?.type === 'Personaje' && lastRevealedCard.isFaceUp && currentPlayer) {
-      const boardState = players[currentPlayerIndex].board.map(row => 
-        row.map(card => card ? {
-          type: card.type,
-          color: card.color,
-          value: card.value,
-          is_face_up: card.isFaceUp
-        } : null)
-      );
-
-      getScoreChangeExplanation({ playerId: currentPlayerIndex, board: boardState })
-        .then(result => {
-          if (result) {
-            toast({
-              title: `Análisis de IA: Puntuación ${result.scoreChange > 0 ? '+' : ''}${result.scoreChange}`,
-              description: result.explanation,
-              duration: 7000,
-            });
-          }
-        })
-        .catch(console.error);
-    }
-  }, [lastRevealedCard, toast, currentPlayerIndex, players, currentPlayer]);
 
   // Clear explosion animation state
   useEffect(() => {
