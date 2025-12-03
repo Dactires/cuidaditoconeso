@@ -3,6 +3,7 @@
 import { Player } from '@/lib/types';
 import GameBoard from './GameBoard';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface PlayerAreaProps {
   player: Player;
@@ -23,6 +24,10 @@ function calculateScore(board: (Player['board'][0][0])[][]) {
 
 export default function PlayerArea({ player, isCurrentPlayer = false, isRival = false, onCardClick, isCardSelectable }: PlayerAreaProps) {
   const score = calculateScore(player.board);
+
+  // This variable is not used in the original code, but I'll keep the logic here in case it's needed later.
+  // The turn phase information is managed in the parent GamePage component.
+  const turnPhase = 'ACTION'; // Example value, as it's not passed down.
 
   return (
     <div className="space-y-2">
