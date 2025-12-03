@@ -67,8 +67,8 @@ export default function GameCard({
             <div className="relative w-full h-full rounded-xl bg-sky-400 border-[3px] border-black overflow-hidden">
                 <div className="absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_1px_1px,#38bdf8_1px,transparent_0)] bg-[length:8px_8px]" />
                 <div className="relative h-full w-full flex flex-col items-center justify-center gap-1">
-                    <BombIcon className="w-8 h-8 drop-shadow-[0_3px_0_#020617]" />
-                    <span className="font-display text-xs tracking-[0.25em] uppercase text-slate-900 drop-shadow-[0_2px_0_#f9fafb]">
+                    <BombIcon className={cn("drop-shadow-[0_3px_0_#020617]", isMobile ? "w-6 h-6" : "w-8 h-8")} />
+                    <span className={cn("font-display tracking-[0.25em] uppercase text-slate-900 drop-shadow-[0_2px_0_#f9fafb]", isMobile ? "text-[8px]" : "text-xs")}>
                         Board Bombers
                     </span>
                 </div>
@@ -84,20 +84,20 @@ export default function GameCard({
             cardStyling?.bg
           )}
         >
-          <div className="absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white shadow-[0_4px_0_#020617]">
-            <p className="text-xs font-display tracking-[0.2em] uppercase">
+          <div className={cn("absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white shadow-[0_4px_0_#020617]", isMobile && "px-1 py-0.5 -top-1 -left-1")}>
+            <p className={cn("font-display tracking-[0.2em] uppercase", isMobile ? "text-[8px]" : "text-xs")}>
               {card?.type === 'Bomba' ? 'Bomba' : card?.value}
             </p>
           </div>
 
-          <CardTitle className="font-display text-6xl md:text-7xl font-black drop-shadow-[0_4px_0_#020617]">
+          <CardTitle className={cn("font-display font-black drop-shadow-[0_4px_0_#020617]", isMobile ? "text-5xl" : "text-6xl md:text-7xl")}>
             {card?.type === 'Bomba'
-              ? <BombIcon className="w-16 h-16" />
+              ? <BombIcon className={cn(isMobile ? "w-12 h-12" : "w-16 h-16")} />
               : card?.value}
           </CardTitle>
 
-          <CardContent className="px-2 py-0.5 absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 rounded-full border-[2px] border-white">
-            <p className="text-[10px] font-display tracking-[0.25em] uppercase text-amber-300">
+          <CardContent className={cn("px-2 py-0.5 absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 rounded-full border-[2px] border-white", isMobile && "px-1.5 py-0 -bottom-1")}>
+            <p className={cn("font-display tracking-[0.25em] uppercase text-amber-300", isMobile ? "text-[7px]" : "text-[10px]")}>
               {card?.type}
             </p>
           </CardContent>

@@ -225,12 +225,6 @@ export default function GamePage() {
   const handleHandCardClick = (card: CardType, index: number) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return;
 
-    // On mobile, the first click selects the card, a second click on the same card would be needed to "play" it if we implement drag-drop later
-    if (isMobile) {
-        setSelectedHandCard(selectedHandCard?.card.uid === card.uid ? null : { card, index });
-        return;
-    }
-
     if (targetBoardPos) {
       if (targetBoardPos.playerId === humanPlayer.id && card.type === 'Personaje') {
         dispatch({
@@ -282,8 +276,10 @@ export default function GamePage() {
 
   const isHandCardSelectable = (card: CardType) => {
     if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
-    if (isMobile) return true; // On mobile, any card can be "focused"
-    return targetBoardPos ? card.type === 'Personaje' : true;
+    if (targetBoardPos) {
+      return card.type === 'Personaje';
+    }
+    return true;
   };
 
   const renderDesktopView = () => (
