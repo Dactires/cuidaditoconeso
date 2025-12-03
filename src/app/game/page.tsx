@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
+import GameLoadingScreen from '@/components/game/GameLoadingScreen';
 import { User, Bot, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -137,20 +138,21 @@ export default function GamePage() {
   // Stable state for animations to prevent race conditions
   const { playBattleMusic, stopAllMusic } = useMusicPlayer();
 
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation, refillingSlots } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
-  const currentPlayer = players?.[currentPlayerIndex];
   const humanPlayer = players?.[humanPlayerId];
   const rivalPlayer = players?.[aiPlayerId];
+  const currentPlayer = players?.[currentPlayerIndex];
   
   useEffect(() => {
-    if (!isUserAuthLoading && user) {
+    if (!isUserAuthLoading && !user) {
+      router.push('/login');
+      return;
+    }
+     if (!isUserAuthLoading && user && initialized) {
       stopAllMusic();
       playBattleMusic();
-    }
-     if (!isUserAuthLoading && !user) {
-      router.push('/login');
     }
 
      return () => {
@@ -158,7 +160,7 @@ export default function GamePage() {
         stopAllMusic();
       }
     };
-  }, [user, isUserAuthLoading, router, playBattleMusic, stopAllMusic]);
+  }, [user, isUserAuthLoading, router, playBattleMusic, stopAllMusic, initialized]);
 
 
   // Sound effects trigger for any revealed card
@@ -174,25 +176,12 @@ export default function GamePage() {
   // When a bomb is revealed, first show it, then trigger explosion
   useEffect(() => {
       if (!explodingCard) return;
-      playFlip(); // Play flip sound for the bomb reveal
+      playBomb(); // Play bomb sound with the explosion
       const timer = setTimeout(() => {
-          playBomb(); // Play bomb sound with the explosion
           dispatch({ type: 'CLEAR_EXPLOSION' });
       }, 650); // Delay to show the bomb card art before it resolves
       return () => clearTimeout(timer);
   }, [explodingCard, dispatch, playBomb, playFlip]);
-  
-  // Refill animation controller
-  useEffect(() => {
-    if (refillingSlots && refillingSlots.length > 0) {
-      setShowDeckAnimation(true);
-      const totalAnimationTime = (refillingSlots.length * 100) + 500; // 0.1s stagger + 0.5s duration
-      const timer = setTimeout(() => {
-        setShowDeckAnimation(false);
-      }, totalAnimationTime);
-      return () => clearTimeout(timer);
-    }
-  }, [refillingSlots]);
 
 
   // AI Logic Trigger
@@ -328,13 +317,7 @@ export default function GamePage() {
   }, [lastRivalMove, dispatch]);
 
   if (isUserAuthLoading || areCardDefsLoading || !user || !initialized || !humanPlayer || !rivalPlayer || !currentPlayer || isMobile === undefined) {
-    return (
-      <div className="flex items-center justify-center h-full bg-background">
-        <p className="text-foreground text-2xl font-display animate-pulse">
-          Cargando Juego...
-        </p>
-      </div>
-    );
+    return <GameLoadingScreen cardBackImageUrl={cardBackImageUrl} />;
   }
 
   const humanPlayerScore = getBoardScore(humanPlayer.board);
@@ -584,7 +567,7 @@ export default function GamePage() {
                   <span className="comic-section-title">Mazo</span>
                    <div className="relative comic-card-slot">
                     <AnimatePresence>
-                      {(showDrawAnimation || showDeckAnimation) && humanPlayer.deck.length > 0 && (
+                      {showDrawAnimation && humanPlayer.deck.length > 0 && (
                         <motion.div
                           key="deck"
                           initial={{ opacity: 0, y: -10, scale: 0.9 }}

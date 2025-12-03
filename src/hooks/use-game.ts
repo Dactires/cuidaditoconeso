@@ -90,15 +90,20 @@ export function useGame(numPlayers: number, cardDefs: GameCardDef[] | null) {
     const [initialized, setInitialized] = useState(false);
   
     useEffect(() => {
-      if (!initialized && cardDefs) {
-        dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers, cardDefs } });
-        setInitialized(true);
+      if (cardDefs) {
+        // Delay initialization to allow loading screen to show
+        const timer = setTimeout(() => {
+            dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers, cardDefs } });
+            setInitialized(true);
+        }, 3000); // 3-second loading screen
+        
+        return () => clearTimeout(timer);
       }
-    }, [initialized, numPlayers, cardDefs]);
+    }, [numPlayers, cardDefs]);
   
     const resetGame = () => {
         if (cardDefs) {
-            dispatch({ type: 'INITIALIZE_GAME', payload: { numPlayers, cardDefs } });
+            setInitialized(false); // This will trigger the re-initialization effect
         }
     }
 
