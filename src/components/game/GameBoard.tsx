@@ -36,7 +36,13 @@ export default function GameBoard({
         isMobile ? "p-2" : "p-3"
       )}
     >
-      <div className={cn("comic-grid max-w-[360px] w-full", isMobile && '!p-0 !gap-1.5')}>
+      <div
+        className={cn(
+          "grid grid-cols-3 place-items-center",
+          isMobile ? "gap-2" : "gap-3",
+          "w-full max-w-[min(320px,85vw)]"
+        )}
+      >
         {board.map((row, r) =>
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;

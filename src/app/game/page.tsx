@@ -419,7 +419,7 @@ export default function GamePage() {
             </div>
           </div>
   
-          <div className="flex flex-col items-center justify-start gap-8 pt-4">
+          <div className="flex flex-col items-center justify-start gap-4 pt-2">
              <div
               className={cn(
                 "comic-board-panel transition-shadow duration-200",
