@@ -406,8 +406,6 @@ const checkEndGame = (draft: GameState) => {
 function nextTurn(state: GameState): GameState {
   if (state.gameOver) return state;
 
-  state.sfxUrl = null;
-
   if (state.finalTurnCounter > 0) {
     state.finalTurnCounter--;
   }
@@ -601,7 +599,9 @@ export const playCardRivalBoard = produce((draft: GameState, playerId: number, c
     const newBoardCard = { ...playedCard, isFaceUp: false };
     rival.board[r][c] = newBoardCard;
     
-    draft.sfxUrl = null; // No sound for this action by default
+    if (playedCard.ability?.soundUrl) {
+      draft.sfxUrl = playedCard.ability.soundUrl;
+    }
     draft.lastRivalMove = { playerId: rival.id, r, c };
     
     return nextTurn(draft);
@@ -671,4 +671,8 @@ export const hideTempReveal = produce((
     card.isFaceUp = false;
   }
   draft.tempReveal = null;
+});
+
+export const setSfxUrl = produce((draft: GameState, url: string | null) => {
+    draft.sfxUrl = url;
 });

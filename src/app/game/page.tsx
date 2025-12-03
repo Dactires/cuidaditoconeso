@@ -183,8 +183,10 @@ export default function GamePage() {
     if (sfxUrl && sfxPlayerRef.current) {
         sfxPlayerRef.current.src = sfxUrl;
         sfxPlayerRef.current.play().catch(e => console.log("SFX play error:", e));
+        // Reset sfxUrl in game state after playing to prevent re-triggering
+        dispatch({ type: 'SET_SFX_URL', payload: null });
     }
-  }, [sfxUrl]);
+  }, [sfxUrl, dispatch]);
 
 
   // When a bomb is revealed, first show it, then trigger explosion

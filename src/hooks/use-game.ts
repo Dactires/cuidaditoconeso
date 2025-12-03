@@ -22,7 +22,8 @@ export type GameAction =
   | { type: 'CLEAR_RIVAL_MOVE' }
   | { type: 'CLEAR_DRAWN_CARD' }
   | { type: 'TRIGGER_EXPLOSION'; payload: { playerId: number; r: number; c: number } }
-  | { type: 'HIDE_TEMP_REVEAL'; payload: { playerId: number; r: number; c: number; cardUid: string } };
+  | { type: 'HIDE_TEMP_REVEAL'; payload: { playerId: number; r: number; c: number; cardUid: string } }
+  | { type: 'SET_SFX_URL'; payload: string | null };
 
 const getInitialState = (numPlayers: number): GameState => ({
   players: [],
@@ -77,6 +78,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return Game.clearDrawnCard(state);
     case 'HIDE_TEMP_REVEAL':
         return Game.hideTempReveal(state, action.payload);
+    case 'SET_SFX_URL':
+        return Game.setSfxUrl(state, action.payload);
     default:
       return state;
   }
