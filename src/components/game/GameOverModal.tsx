@@ -47,7 +47,7 @@ export default function GameOverModal({ isOpen, winner, scores, onClose }: GameO
         <div className="my-4">
           <h3 className="font-bold text-center mb-2 text-yellow-400">Puntajes Finales:</h3>
           <ul className="space-y-1 text-center">
-            {scores.sort((a,b) => b.score - a.score).map(({ id, score }) => (
+            {[...scores].sort((a,b) => b.score - a.score).map(({ id, score }) => (
               <li key={id} className="text-white/80">
                 {id === 0 ? "Jugador 1 (Tú)" : `Jugador ${id + 1}`}: <span className="font-bold text-white">{score} puntos</span>
               </li>
