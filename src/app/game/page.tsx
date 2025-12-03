@@ -29,6 +29,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { CARD_DEFINITIONS, GameCardDef } from '@/lib/card-definitions';
 import { collection, getDocs } from 'firebase/firestore';
+import { MAX_HAND_SIZE } from '@/lib/constants';
 
 
 type Selection = {
@@ -219,7 +220,7 @@ export default function GamePage() {
         }
       }
 
-      if (rivalPlayer.hand.length >= 4) {
+      if (rivalPlayer.hand.length >= MAX_HAND_SIZE) {
         const cardToPlay = rivalPlayer.hand.find(c => c.type === 'Personaje');
         if (cardToPlay) {
             const availableSpots: {r: number, c: number}[] = [];
@@ -466,7 +467,7 @@ export default function GamePage() {
                     />
                   </div>
                 ))}
-                {Array.from({ length: Math.max(0, 4 - humanPlayer.hand.length) }).map((_, index) => (
+                {Array.from({ length: Math.max(0, MAX_HAND_SIZE - humanPlayer.hand.length) }).map((_, index) => (
                   <div
                     key={`placeholder-${index}`}
                     className="comic-card-slot rounded-xl border-2 border-dashed border-slate-700/70 bg-slate-900/40"
@@ -751,6 +752,12 @@ export default function GamePage() {
                 cardBackImageUrl={cardBackImageUrl}
               />
           </motion.div>
+        ))}
+        {Array.from({ length: Math.max(0, MAX_HAND_SIZE - humanPlayer.hand.length) }).map((_, index) => (
+            <div
+                key={`placeholder-hand-${index}`}
+                className="w-1/4 max-w-[80px] aspect-[5/7] rounded-lg border-2 border-dashed border-slate-700/70 bg-slate-900/40"
+            />
         ))}
       </div>
       <div className="h-4" />

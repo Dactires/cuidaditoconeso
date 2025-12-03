@@ -6,6 +6,7 @@ import * as Game from '@/lib/game-logic';
 import type { GameState, Card, Player } from '@/lib/types';
 import { produce } from 'immer';
 import { GameCardDef } from '@/lib/card-definitions';
+import { MAX_HAND_SIZE } from '@/lib/constants';
 
 export type GameAction =
   | { type: 'START_TURN'; payload: { player_id: number } }
