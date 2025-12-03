@@ -36,15 +36,18 @@ function createDeck(cardDefinitions: GameCardDef[]): Card[] {
     // Create character cards
     cardDefinitions.forEach(def => {
         if (def.kind === 'character') {
-            for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
-                deck.push({
-                  uid: generateCardId(),
-                  type: 'Personaje',
-                  color: def.color,
-                  value: def.value,
-                  isFaceUp: false,
-                  imageUrl: def.imageUrl,
-                });
+            const baseCardDef = cardDefMap.get(`character-${def.color.toLowerCase()}-${def.value}`);
+            if (baseCardDef) {
+                for (let i = 0; i < CARDS_PER_VALUE_COLOR; i++) {
+                    deck.push({
+                        uid: generateCardId(),
+                        type: 'Personaje',
+                        color: def.color,
+                        value: def.value,
+                        isFaceUp: false,
+                        imageUrl: baseCardDef.imageUrl,
+                    });
+                }
             }
         }
     });

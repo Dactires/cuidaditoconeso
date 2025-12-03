@@ -27,6 +27,7 @@ function AdminCard({ card }: { card: GameCardDef }) {
   useEffect(() => {
     // Cargar la imagen actual de la carta desde Firestore
     const fetchImage = async () => {
+      if (!firestore) return;
       const docRef = doc(firestore, 'card-images', card.id);
       const docSnap = await getDoc(docRef);
 
@@ -58,6 +59,8 @@ function AdminCard({ card }: { card: GameCardDef }) {
       });
       return;
     }
+
+    if (!firestore || !storage) return;
 
     setIsUploading(true);
     const storageRef = ref(
