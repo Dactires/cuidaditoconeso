@@ -213,7 +213,7 @@ export default function MobileLobby({
   };
 
   return (
-    <div className="relative h-screen w-full max-w-md mx-auto bg-[radial-gradient(circle_at_1px_1px,#0b1120_1px,transparent_0)] bg-[length:22px_22px] overflow-hidden">
+    <div className="relative h-dvh w-full max-w-md mx-auto bg-[radial-gradient(circle_at_1px_1px,#0b1120_1px,transparent_0)] bg-[length:22px_22px] overflow-hidden">
       <div className="flex flex-col h-full pb-20">
         {/* HEADER */}
         <header className="px-3 pt-2 pb-1 flex flex-col gap-2">
