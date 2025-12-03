@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { Card } from '@/lib/types';
 import { BombIcon } from '@/components/icons/BombIcon';
 import { Card as UICard, CardContent, CardTitle } from '@/components/ui/card';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 
 interface GameCardProps {
   card: Card | null;
@@ -15,6 +15,8 @@ interface GameCardProps {
   isRivalMove?: boolean;
   isMobile?: boolean;
   isDimmed?: boolean;
+  isInHand?: boolean;
+  isDisabled?: boolean;
 }
 
 const colorMap: { [key: string]: { bg: string; glow: string; text: string } } = {
@@ -26,6 +28,42 @@ const colorMap: { [key: string]: { bg: string; glow: string; text: string } } = 
 
 const bombColor = { bg: 'bg-orange-800', glow: 'shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]', text: 'text-orange-200' };
 
+const cardVariants = {
+  idle: {
+    scale: 1,
+    y: 0,
+    boxShadow: "0px 6px 0px rgba(0,0,0,0.75)",
+    filter: "drop-shadow(0 0 0 rgba(56,189,248,0))",
+    rotate: 0,
+  },
+  hover: {
+    scale: 1.06,
+    y: -10,
+    boxShadow: "0px 12px 0px rgba(0,0,0,0.85)",
+    transition: { type: "spring", stiffness: 350, damping: 18 },
+  },
+  pressed: {
+    scale: 0.97,
+    y: 0,
+    boxShadow: "0px 3px 0px rgba(0,0,0,0.85)",
+    transition: { type: "spring", stiffness: 450, damping: 20 },
+  },
+  selected: {
+    scale: 1.08,
+    y: -18,
+    boxShadow: "0px 14px 0px rgba(0,0,0,0.9)",
+    filter: "drop-shadow(0 0 12px rgba(56,189,248,0.9))",
+    transition: { type: "spring", stiffness: 320, damping: 18 },
+  },
+  disabled: {
+    scale: 0.98,
+    opacity: 0.45,
+    filter: "grayscale(0.3)",
+    boxShadow: "0px 2px 0px rgba(0,0,0,0.6)",
+  },
+};
+
+
 export default function GameCard({
   card,
   onClick,
@@ -35,7 +73,15 @@ export default function GameCard({
   isRivalMove = false,
   isMobile = false,
   isDimmed = false,
+  isInHand = false,
+  isDisabled = false,
 }: GameCardProps) {
+
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-40, 40], [8, -8]);
+  const rotateY = useTransform(x, [-40, 40], [-8, 8]);
+
   // Slot vacío (por ejemplo casillero sin carta)
   if (!card) {
     return (
@@ -49,32 +95,43 @@ export default function GameCard({
   const cardStyling =
     card.type === 'Personaje' && card.color ? colorMap[card.color] : bombColor;
 
-  const baseAnimation = isExploding
-    ? {
-        scale: [1, 1.2, 0.8, 0],
-        opacity: [1, 1, 0.8, 0],
-        rotate: [0, 5, -5, 0],
-        transition: { duration: 0.6, ease: 'easeOut' },
-      }
-    : { scale: 1, opacity: 1 };
+  const animationClass = isRivalMove ? 'animate-rival-play' : isExploding ? 'animate-explode' : '';
 
   return (
     <motion.div
+      layout
+      layoutId={`card-${card.uid}`}
+      variants={cardVariants}
+      initial="idle"
+      animate={
+        isDisabled
+          ? "disabled"
+          : isSelected
+          ? "selected"
+          : "idle"
+      }
+      whileHover={!isMobile && !isDisabled && !isSelected ? "hover" : undefined}
+      whileTap={!isDisabled ? "pressed" : undefined}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      style={!isMobile ? { rotateX, rotateY } : {}}
+      onMouseMove={!isMobile ? (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        x.set(e.clientX - rect.left - rect.width / 2);
+        y.set(e.clientY - rect.top - rect.height / 2);
+      } : undefined}
+      onMouseLeave={!isMobile ? () => {
+        x.set(0);
+        y.set(0);
+      } : undefined}
       className={cn(
-        'w-full h-full relative aspect-square transition-all',
+        'w-full h-full relative aspect-square',
         isSelectable && !isDimmed && 'cursor-pointer',
-        isSelected && !isMobile && 'ring-4 ring-amber-300 ring-offset-2 ring-offset-slate-900',
-        isSelected && isMobile && 'ring-2 ring-amber-300 rounded-2xl',
-        isSelectable && !isDimmed && !card.isFaceUp && "ring-2 ring-amber-400/80 ring-inset",
-        isRivalMove && 'animate-rival-play'
+        animationClass,
       )}
       onClick={onClick}
-      whileHover={isSelectable && !isMobile ? { scale: 1.05, y: -4 } : {}}
-      whileTap={isSelectable && !isMobile ? { scale: 0.96 } : {}}
-      animate={baseAnimation}
     >
       {!card.isFaceUp ? (
-        <div className="w-full h-full rounded-2xl bg-[#0f172a] p-1 border-[3px] border-black shadow-[0_8px_0_#020617]">
+        <div className="w-full h-full rounded-2xl bg-[#0f172a] p-1 border-[3px] border-black shadow-[0_6px_0px_rgba(0,0,0,0.75)]">
             <div className="relative w-full h-full rounded-xl bg-sky-400 border-[3px] border-black overflow-hidden">
                 <div className="absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_1px_1px,#38bdf8_1px,transparent_0)] bg-[length:8px_8px]" />
                 <div className="relative h-full w-full flex flex-col items-center justify-center gap-1">
@@ -90,11 +147,10 @@ export default function GameCard({
           className={cn(
             'w-full h-full flex flex-col items-center justify-center relative aspect-square',
             'rounded-2xl border-[3px] border-black bg-sky-400',
-            'shadow-[0_8px_0_#020617]',
             cardStyling?.bg
           )}
         >
-          <div className={cn("absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white shadow-[0_4px_0_#020617]", isMobile && "px-1 py-0.5 -top-1 -left-1")}>
+          <div className={cn("absolute -top-2 -left-2 px-2 py-1 rounded-full bg-black text-white border-[2px] border-white", isMobile && "px-1 py-0.5 -top-1 -left-1")}>
             <p className={cn("font-display tracking-[0.2em] uppercase", isMobile ? "text-[8px]" : "text-xs")}>
               {card?.type === 'Bomba' ? 'Bomba' : card?.value}
             </p>

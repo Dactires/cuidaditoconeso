@@ -2,9 +2,9 @@
 import useSound from 'use-sound';
 
 export const useGameSounds = () => {
-  const [playFlip] = useSound('/sounds/flip.mp3', { volume: 0.4 });
-  const [playBomb] = useSound('/sounds/bomb.mp3', { volume: 0.5 });
-  const [playDeal] = useSound('/sounds/deal.mp3', { volume: 0.3 });
+  const [playFlip] = useSound('/sfx/flip.mp3', { volume: 0.35 });
+  const [playBomb] = useSound('/sfx/explosion.mp3', { volume: 0.5 });
+  const [playDeal] = useSound('/sfx/draw.mp3', { volume: 0.4 });
 
   return { playFlip, playBomb, playDeal };
 };

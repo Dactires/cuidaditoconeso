@@ -112,6 +112,7 @@ export function setupGame(numPlayers: number): GameState {
     lastRevealedCard: null,
     explodingCard: null,
     lastRivalMove: null,
+    lastDrawnCardId: null,
   };
 }
 
@@ -182,6 +183,7 @@ export const drawCard = produce((draft: GameState, playerId: number) => {
     const newCard = draft.deck.pop()!;
     newCard.isFaceUp = true;
     player.hand.push(newCard);
+    draft.lastDrawnCardId = newCard.uid;
     draft.gameMessage = `Jugador ${playerId + 1} robó una carta. Revela una carta de tu tablero.`;
   } else {
     draft.gameMessage = `El mazo está vacío. Revela una carta de tu tablero.`;

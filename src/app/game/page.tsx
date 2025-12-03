@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useGame, GameAction } from '@/hooks/use-game';
 import type { Card as CardType, Player } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useGameSounds } from '@/hooks/use-game-sounds';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -12,8 +12,7 @@ import { useRouter } from 'next/navigation';
 import GameBoard from '@/components/game/GameBoard';
 import GameCard from '@/components/game/GameCard';
 import GameOverModal from '@/components/game/GameOverModal';
-import { Button } from '@/components/ui/button';
-import { User, Bot, Swords, LogOut, Settings } from 'lucide-react';
+import { User, Bot, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -49,6 +48,29 @@ function getBoardScore(board: (CardType | null)[][]): number {
   }, 0);
 }
 
+const turnChipVariants = {
+  hidden: { scale: 0.4, opacity: 0, y: -20 },
+  visible: {
+    scale: [1, 1.05, 1],
+    opacity: 1,
+    y: -40,
+    transition: {
+      duration: 0.5,
+      times: [0, 0.5, 1],
+      type: "spring",
+      stiffness: 260,
+      damping: 16,
+    },
+  },
+  exit: {
+      scale: 0.5,
+      opacity: 0,
+      y: -10,
+      transition: { duration: 0.2, ease: 'easeIn' }
+  }
+};
+
+
 export default function GamePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -58,10 +80,9 @@ export default function GamePage() {
   const [selectedHandCard, setSelectedHandCard] = useState<Selection>(null);
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
   const isMobile = useIsMobile();
+  const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
 
-  const [showDrawAnimation, setShowDrawAnimation] = useState<number | null>(null);
-
-  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRivalMove } = gameState;
+  const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, deck, discardPile, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId } = gameState;
   const humanPlayerId = 0;
   const aiPlayerId = 1;
   const currentPlayer = players?.[currentPlayerIndex];
@@ -92,7 +113,7 @@ export default function GamePage() {
     const performAiAction = (action: GameAction, delay = 1500) => {
       setTimeout(() => {
         if (action.type === 'START_TURN') {
-          setShowDrawAnimation(aiPlayerId);
+          playDeal();
         }
         dispatch(action);
       }, delay); 
@@ -131,6 +152,8 @@ export default function GamePage() {
         if (playerBoardSpots.length > 0) {
           const targetSpot = playerBoardSpots[Math.floor(Math.random() * playerBoardSpots.length)];
           performAiAction({ type: 'PLAY_CARD_RIVAL', payload: { player_id: aiPlayerId, card_in_hand: bombCard, target_r: targetSpot.r, target_c: targetSpot.c } });
+          setRivalJustPlayed(true);
+          setTimeout(() => setRivalJustPlayed(false), 400);
           return;
         }
       }
@@ -158,27 +181,19 @@ export default function GamePage() {
        }
     }
   
-  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay]);
+  }, [currentPlayerIndex, turnPhase, rivalPlayer, humanPlayer, dispatch, gameOver, initialized, gameState.isForcedToPlay, playDeal]);
 
   // Human player auto-draw
   useEffect(() => {
     if (gameOver || !initialized || currentPlayerIndex !== humanPlayerId || turnPhase !== 'START_TURN') return;
 
-    setShowDrawAnimation(humanPlayerId);
+    playDeal();
     const timer = setTimeout(() => {
       dispatch({ type: 'START_TURN', payload: { player_id: humanPlayerId } });
-      playDeal();
     }, 500);
 
     return () => clearTimeout(timer);
   }, [currentPlayerIndex, turnPhase, dispatch, gameOver, initialized, humanPlayerId, playDeal]);
-
-  useEffect(() => {
-    if (showDrawAnimation !== null) {
-      const timer = setTimeout(() => setShowDrawAnimation(null), 1500); // Animation duration
-      return () => clearTimeout(timer);
-    }
-  }, [showDrawAnimation]);
 
   // Handle card playing logic
   useEffect(() => {
@@ -196,6 +211,10 @@ export default function GamePage() {
           target_c: targetBoardPos.c,
         },
       });
+      if (actionType === 'PLAY_CARD_RIVAL') {
+        setRivalJustPlayed(true);
+        setTimeout(() => setRivalJustPlayed(false), 400);
+      }
       setSelectedHandCard(null);
       setTargetBoardPos(null);
     }
@@ -233,9 +252,10 @@ export default function GamePage() {
 
   const humanPlayerScore = getBoardScore(humanPlayer.board);
   const rivalPlayerScore = getBoardScore(rivalPlayer.board);
+  const isHumanTurn = currentPlayerIndex === humanPlayerId;
 
   const handleBoardClick = (playerId: number, r: number, c: number) => {
-    if (gameOver || currentPlayerIndex !== humanPlayerId) return;
+    if (gameOver || !isHumanTurn) return;
 
     if (selectedHandCard) {
        setTargetBoardPos({ playerId, r, c });
@@ -243,20 +263,19 @@ export default function GamePage() {
     }
 
     if (turnPhase === 'REVEAL_CARD' && playerId === humanPlayer.id) {
+      playFlip();
       dispatch({ type: 'REVEAL_CARD', payload: { player_id: playerId, r, c } });
     }
   };
 
   const handleHandCardClick = (card: CardType, index: number) => {
-    if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return;
+    if (gameOver || turnPhase !== 'ACTION' || !isHumanTurn) return;
 
     setSelectedHandCard(
       selectedHandCard?.card.uid === card.uid ? null : { card, index },
     );
   };
   
-  const isHumanTurn = currentPlayerIndex === humanPlayerId;
-
   const isBoardCardSelectable = (playerId: number, r: number, c: number) => {
     if (gameOver || !isHumanTurn) return false;
     const player = players.find(p => p.id === playerId);
@@ -279,8 +298,7 @@ export default function GamePage() {
   };
 
   const isHandCardSelectable = (card: CardType) => {
-    if (gameOver || turnPhase !== 'ACTION' || currentPlayerIndex !== humanPlayerId) return false;
-    return true;
+    return !gameOver && turnPhase === 'ACTION' && isHumanTurn;
   };
   
   const handlePassTurn = () => {
@@ -289,7 +307,8 @@ export default function GamePage() {
   }
 
   const renderDesktopView = () => (
-    <div className="comic-arena">
+    <div className={cn("comic-arena", explodingCard && "screen-flash")}>
+      <LayoutGroup id="boardbombers-layout">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
@@ -325,24 +344,18 @@ export default function GamePage() {
         </AlertDialog>
 
         <AnimatePresence>
-          {showDrawAnimation === humanPlayerId && (
+          {turnPhase === 'START_TURN' && currentPlayerIndex === humanPlayerId && (
             <motion.div
-              className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: {duration: 0.2} }}
-              exit={{ opacity: 0, transition: {delay: 0.8, duration: 0.3} }}
+              key={currentPlayerIndex}
+              variants={turnChipVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="absolute top-1/3 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
             >
-              <motion.div
-                  className="absolute z-20"
-                  style={{ top: '30%' }}
-                  initial={{ scale: 0.5, opacity: 0}}
-                  animate={{ scale: 1, opacity: 1, y: -80, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
-                  exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
-              >
-                  <span className="comic-turn-chip !px-6 !py-2 !text-lg">
-                      Tu Turno
-                  </span>
-              </motion.div>
+              <span className="comic-turn-chip !px-6 !py-2 !text-lg">
+                Tu Turno
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -350,7 +363,7 @@ export default function GamePage() {
         <div className="comic-arena-inner">
           <div className={cn(
             "flex flex-col gap-4 h-full transition-opacity duration-300",
-            isHumanTurn && turnPhase === 'ACTION' ? 'opacity-100' : 'opacity-60'
+            turnPhase === 'ACTION' && isHumanTurn ? 'opacity-100' : 'opacity-60'
           )}>
             <div className="comic-panel px-4 py-3 flex items-center gap-3">
               <div className="h-11 w-11 rounded-full bg-sky-500 border-[3px] border-black flex items-center justify-center">
@@ -375,8 +388,9 @@ export default function GamePage() {
                       card={card}
                       onClick={() => handleHandCardClick(card, index)}
                       isSelected={selectedHandCard?.card.uid === card.uid}
-                      isSelectable={isHandCardSelectable(card)}
-                      isDimmed={!isHumanTurn || turnPhase !== 'ACTION'}
+                      isDisabled={!isHandCardSelectable(card)}
+                      isInHand
+                      isMobile={false}
                     />
                   </div>
                 ))}
@@ -389,7 +403,7 @@ export default function GamePage() {
               </div>
   
               <div className="mt-2 flex items-center justify-center gap-2">
-                {turnPhase === 'ACTION' && !isHumanTurn && !gameState.isForcedToPlay && (
+                {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
                     <button onClick={handlePassTurn} className="comic-btn comic-btn-secondary !text-xs !py-1 !px-3">
                       Pasar Turno
                     </button>
@@ -404,33 +418,44 @@ export default function GamePage() {
           </div>
   
           <div className="flex flex-col items-center justify-center gap-8">
-            <GameBoard
-              board={rivalPlayer.board}
-              onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-              isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-              explodingCard={
-                explodingCard && explodingCard.playerId === rivalPlayer.id
-                  ? { r: explodingCard.r, c: explodingCard.c }
-                  : undefined
-              }
-              isDimmed={isHumanTurn && turnPhase !== 'REVEAL_CARD' && !selectedHandCard}
-              lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
-            />
-
+            <div className={cn(
+              "comic-panel transition-shadow duration-200",
+              !isHumanTurn && "ring-4 ring-red-500/70 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
+            )}>
+              <GameBoard
+                board={rivalPlayer.board}
+                onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+                isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+                explodingCardInfo={
+                  explodingCard && explodingCard.playerId === rivalPlayer.id
+                    ? { r: explodingCard.r, c: explodingCard.c }
+                    : undefined
+                }
+                isDimmed={isHumanTurn && !selectedHandCard}
+                lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+              />
+            </div>
+            
             <div className="h-2" />
 
-            <GameBoard
-              board={humanPlayer.board}
-              onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-              isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-              explodingCard={
-                explodingCard && explodingCard.playerId === humanPlayer.id
-                  ? { r: explodingCard.r, c: explodingCard.c }
-                  : undefined
-              }
-              isDimmed={!isHumanTurn && turnPhase !== 'REVEAL_CARD'}
-              lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
-            />
+            <div className={cn(
+              "comic-panel transition-shadow duration-200",
+              rivalJustPlayed && "board-hit",
+              isHumanTurn && "ring-4 ring-sky-400/70 shadow-[0_0_40px_rgba(56,189,248,0.6)]"
+            )}>
+              <GameBoard
+                board={humanPlayer.board}
+                onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+                isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+                explodingCardInfo={
+                  explodingCard && explodingCard.playerId === humanPlayer.id
+                    ? { r: explodingCard.r, c: explodingCard.c }
+                    : undefined
+                }
+                isDimmed={!isHumanTurn}
+                lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+              />
+            </div>
           </div>
   
           <div className="flex flex-col gap-4 h-full">
@@ -452,12 +477,23 @@ export default function GamePage() {
               <div className="flex justify-between items-start gap-3">
                 <div className="flex flex-col items-center gap-2">
                   <span className="comic-section-title">Mazo</span>
-                  <div className="comic-card-slot">
-                    <GameCard
-                      card={deck.length > 0 ? { ...deck[deck.length - 1], isFaceUp: false } : null}
-                      onClick={() => {}}
-                    />
-                  </div>
+                  <motion.div className="relative comic-card-slot">
+                    {deck.length > 0 && <GameCard card={{ ...deck[deck.length - 1], isFaceUp: false, uid: 'deck-back' }} onClick={() => {}} />}
+                     <AnimatePresence>
+                        {lastDrawnCardId && (
+                          <motion.div
+                            key={lastDrawnCardId}
+                            className="absolute inset-0"
+                            initial={{ scale: 0.6, y: 0, opacity: 1 }}
+                            animate={{ scale: 1.05, y: -80, opacity: 1 }}
+                            exit={{ opacity: 0, scale: 0.8, y: -120 }}
+                            transition={{ duration: 0.45, ease: [0.18, 0.89, 0.32, 1.28] }}
+                          >
+                            <GameCard card={{ type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back-drawn' }} onClick={()=>{}} isInHand />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                  </motion.div>
                   <span className="text-[11px] text-slate-200/70 font-mono">
                     {deck.length} cartas
                   </span>
@@ -491,11 +527,13 @@ export default function GamePage() {
             </div>
           </div>
         </div>
-      </div>
+      </LayoutGroup>
+    </div>
   );
 
   const renderMobileView = () => (
-    <div className="h-full w-full flex flex-col p-2 gap-2 relative">
+    <div className={cn("h-full w-full flex flex-col p-2 gap-2 relative", explodingCard && "screen-flash")}>
+      <LayoutGroup id="boardbombers-layout-mobile">
       {/* Rival Area */}
       <div className='flex flex-col items-center gap-2'>
         <div className="flex items-center justify-between w-full px-2">
@@ -516,37 +554,70 @@ export default function GamePage() {
             ))}
             </div>
         </div>
-        <GameBoard
-            board={rivalPlayer.board}
-            onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-            isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-            explodingCard={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
-            isMobile
-            isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
-            lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
-        />
+        <div className={cn(
+          "comic-panel transition-shadow duration-200 w-full",
+          !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+        )}>
+          <GameBoard
+              board={rivalPlayer.board}
+              onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+              explodingCardInfo={explodingCard && explodingCard.playerId === rivalPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+              isMobile
+              isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
+              lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+          />
+        </div>
       </div>
 
-      <div className="flex-grow flex items-center justify-center relative" />
+      <div className="flex-grow flex items-center justify-center relative">
+          <AnimatePresence>
+            {turnPhase === 'START_TURN' && (
+              <motion.div
+                key={currentPlayerIndex}
+                variants={turnChipVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+              >
+                <span className="comic-turn-chip">
+                  {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno Rival'}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+      </div>
 
       {/* Player Area */}
       <div className='flex flex-col items-center gap-2'>
-        <GameBoard
-            board={humanPlayer.board}
-            onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-            isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-            explodingCard={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
-            isMobile
-            isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
-            lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
-        />
+        <div className={cn(
+            "comic-panel transition-shadow duration-200 w-full",
+            rivalJustPlayed && "board-hit",
+            isHumanTurn && "ring-2 ring-sky-400/70 shadow-[0_0_20px_rgba(56,189,248,0.5)]"
+          )}>
+          <GameBoard
+              board={humanPlayer.board}
+              onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+              explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? { r: explodingCard.r, c: explodingCard.c } : undefined}
+              isMobile
+              isDimmed={!isHumanTurn || (turnPhase === 'ACTION' && !selectedHandCard)}
+              lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+          />
+        </div>
          <div className="flex items-center justify-between w-full px-2 h-10">
           <div className='w-1/3 flex justify-start'>
-              {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
-                  <p className="mt-1 text-[11px] text-amber-300 text-center">
-                    Debes jugar una carta.
-                  </p>
-                )}
+            {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
+                <button onClick={handlePassTurn} className="comic-btn comic-btn-secondary !text-xs !py-1 !px-3">
+                  Pasar
+                </button>
+            )}
+            {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
+                <p className="mt-1 text-[11px] text-amber-300 text-center">
+                  Debes jugar una carta.
+                </p>
+              )}
             </div>
             <div className="w-1/3 flex justify-center" />
             <div className="w-1/3 flex items-center justify-end gap-2">
@@ -563,32 +634,25 @@ export default function GamePage() {
       
       {/* Player Hand */}
       <div className={cn(
-        "w-full flex justify-center items-end gap-1 px-1 h-28 shrink-0 transition-opacity duration-300",
-        isHumanTurn && turnPhase === 'ACTION' ? 'opacity-100' : 'opacity-60'
+        "w-full flex justify-center items-end gap-1 px-1 h-28 shrink-0",
       )}>
         {humanPlayer.hand.map((card, index) => (
-          <div
+          <motion.div
             key={card.uid}
             className="w-1/4 max-w-[80px]"
             onClick={() => handleHandCardClick(card, index)}
           >
-            <motion.div
-              animate={{ y: selectedHandCard?.card.uid === card.uid ? -20 : 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            >
               <GameCard
                 card={card}
-                onClick={() => {}} // Click is handled by the parent div
+                onClick={() => {}}
                 isSelected={selectedHandCard?.card.uid === card.uid}
-                isSelectable={isHandCardSelectable(card)}
+                isDisabled={!isHandCardSelectable(card)}
+                isInHand
                 isMobile
-                isDimmed={!isHumanTurn || turnPhase !== 'ACTION'}
               />
-            </motion.div>
-          </div>
+          </motion.div>
         ))}
       </div>
-
 
       <div className="absolute top-2 right-2 z-20">
          <AlertDialog>
@@ -619,54 +683,7 @@ export default function GamePage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
-       <AnimatePresence>
-        {showDrawAnimation !== null && (
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: {duration: 0.2} }}
-            exit={{ opacity: 0, transition: {delay: 0.8, duration: 0.3} }}
-          >
-            {/* Turn indicator */}
-            {showDrawAnimation === humanPlayerId && (
-                 <motion.div
-                    className="absolute z-20"
-                    style={{ top: '35%' }}
-                    initial={{ scale: 0.5, opacity: 0}}
-                    animate={{ scale: 1, opacity: 1, y: -80, transition: { delay: 0.1, duration: 0.3, ease: 'backOut'} }}
-                    exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2, ease: 'easeIn'} }}
-                 >
-                    <span className="comic-turn-chip !px-6 !py-2 !text-lg">
-                        Tu Turno
-                    </span>
-                 </motion.div>
-            )}
-           
-            {/* Deck */}
-            <motion.div
-                className="w-32 h-44 absolute z-10"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1, transition: {delay: 0.3} }}
-                exit={{ opacity: 0, scale: 0.7 }}
-            >
-              <GameCard card={{type: 'Bomba', isFaceUp: false, color: null, value: null, uid: 'deck-back'}} onClick={()=>{}} isMobile />
-            </motion.div>
-            
-            {/* Drawn Card */}
-            <motion.div
-              className="absolute w-24 aspect-square"
-              initial={{ y: 0, scale: 0.8 }}
-              animate={ showDrawAnimation === humanPlayerId ?
-                { y: '200%', x: 0, scale: 0.8, zIndex: 15, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } } :
-                { y: '-200%', x: '50%', scale: 0.5, zIndex: 15, transition: { delay: 0.5, duration: 0.8, ease: 'easeInOut' } }
-              }
-            >
-              <GameCard card={deck[deck.length-1] || null} onClick={()=>{}} isMobile />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </LayoutGroup>
     </div>
   );
 

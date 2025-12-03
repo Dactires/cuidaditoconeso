@@ -11,7 +11,7 @@ interface GameBoardProps {
   board: (Card | null)[][];
   onCardClick?: (r: number, c: number) => void;
   isCardSelectable?: (r: number, c: number) => boolean;
-  explodingCard?: Pos;
+  explodingCardInfo?: Pos;
   isMobile?: boolean;
   isDimmed?: boolean;
   lastRivalMove?: Pos;
@@ -24,52 +24,50 @@ export default function GameBoard({
   board,
   onCardClick,
   isCardSelectable,
-  explodingCard,
+  explodingCardInfo,
   isMobile,
   isDimmed,
   lastRivalMove,
 }: GameBoardProps) {
   return (
     <div className={cn(
-        "comic-panel flex items-center justify-center transition-opacity duration-300",
-        isMobile ? 'p-2 !shadow-none !border-2 w-full max-w-xs' : 'px-4 py-4',
-        isDimmed && 'opacity-50'
-      )}>
+      "flex items-center justify-center transition-opacity duration-300",
+      isMobile ? 'p-2 w-full max-w-xs' : 'px-4 py-4',
+      isDimmed && 'opacity-50'
+    )}>
       <div className={cn("comic-grid", isMobile && '!p-0 !gap-1.5')}>
         {board.map((row, r) =>
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
             const selectable = isCardSelectable?.(r, c) ?? false;
             const isExploding =
-              !!explodingCard && explodingCard.r === r && explodingCard.c === c;
+              !!explodingCardInfo && explodingCardInfo.r === r && explodingCardInfo.c === c;
             const isRivalMove =
               !!lastRivalMove && lastRivalMove.r === r && lastRivalMove.c === c;
 
             return (
-              <button
+              <div
                 key={key}
-                type="button"
                 className={cn(
                   'comic-card-slot',
                    isMobile && '!w-full !h-auto',
                   'focus:outline-none',
                   selectable && 'cursor-pointer',
-                  !selectable && 'cursor-default'
+                  !selectable && 'cursor-default',
+                  isExploding && 'shockwave'
                 )}
-                onClick={() => selectable && onCardClick?.(r, c)}
-                disabled={!selectable || isDimmed}
+                
               >
                 <GameCard
                   card={card}
-                  onClick={() => {}}
-                  isSelected={false} // Selection is handled by parent
+                  onClick={() => selectable && onCardClick?.(r, c)}
                   isSelectable={selectable}
                   isExploding={isExploding}
                   isRivalMove={isRivalMove}
                   isMobile={isMobile}
-                  isDimmed={isDimmed}
+                  isDisabled={isDimmed}
                 />
-              </button>
+              </div>
             );
           })
         )}

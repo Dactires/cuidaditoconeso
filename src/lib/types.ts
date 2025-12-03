@@ -28,4 +28,5 @@ export interface GameState {
   lastRevealedCard: Card | null;
   explodingCard: { r: number; c: number; playerId: number } | null;
   lastRivalMove: { r: number; c: number; playerId: number } | null;
+  lastDrawnCardId: string | null;
 }
