@@ -165,7 +165,10 @@ function GamePageContent() {
   
   useEffect(() => {
     let eventText: string | null = null;
-    if (gameMessage) {
+    
+    if (explodingCard) {
+        eventText = '¡BOMBA!';
+    } else if (gameMessage) {
       if (gameMessage.includes('Plantaste una bomba')) {
         eventText = 'Bomba Plantada';
       } else if (gameMessage.includes('El tablero del rival ha sido barajado')) {
@@ -175,11 +178,6 @@ function GamePageContent() {
       }
     }
     
-    // Specifically handle bomb explosion event
-    if (explodingCard) {
-        eventText = '¡BOMBA!';
-    }
-
     if (eventText) {
       const eventId = Date.now() + Math.random();
       setGameEvent({ id: eventId, text: eventText });
@@ -780,7 +778,7 @@ function GamePageContent() {
         </div>
         
         {/* Middle Area */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
             <AnimatePresence>
                 {turnPhase === 'START_TURN' && (
                 <motion.div
@@ -805,7 +803,6 @@ function GamePageContent() {
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="z-50 pointer-events-none"
                     >
                         <span className="game-event-chip">{gameEvent.text}</span>
                     </motion.div>
@@ -926,7 +923,7 @@ function GamePageContent() {
   );
 
   return (
-    <div className="min-h-screen flex items-start justify-center p-2 font-body overflow-y-auto relative">
+    <div className="min-h-screen flex items-start justify-center p-2 font-body relative">
       {/* Overlay de fin de partida SIN AlertDialog */}
       {gameOver && (
         <GameOverModal
@@ -956,3 +953,6 @@ export default function GamePage() {
     
 
 
+
+
+    
