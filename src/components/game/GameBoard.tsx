@@ -38,7 +38,8 @@ export default function GameBoard({
 }: GameBoardProps) {
   const boardRef = React.useRef<HTMLDivElement>(null);
   const [previousBoard, setPreviousBoard] = useState<(Card | null)[][]>(board);
-  const [refillingCards, setRefillingCards] = useState<Set<string>>(new Set());
+  const [destroyedCards, setDestroyedCards] = useState<Map<string, Card>>(new Map());
+
   const [rivalMoveFocus, setRivalMoveFocus] = useState<Pos | null>(null);
 
   useEffect(() => {
@@ -52,32 +53,34 @@ export default function GameBoard({
   }, [lastRivalMove]);
 
   useEffect(() => {
-    const newRefilling = new Set<string>();
-    
+    const newlyDestroyed = new Map<string, Card>();
+
+    // Detect destroyed cards
     for (let r = 0; r < board.length; r++) {
-      for (let c = 0; c < board[r].length; c++) {
-        const prevCard = previousBoard[r]?.[c];
-        const newCard = board[r]?.[c];
-        
-        // A new card appeared in a previously empty/exploding slot
-        if (newCard && !prevCard) {
-            newRefilling.add(newCard.uid);
+        for (let c = 0; c < board[r].length; c++) {
+            const prevCard = previousBoard[r]?.[c];
+            const currentCard = board[r]?.[c];
+            if (prevCard && !currentCard) {
+                // A card that was here is now gone. Mark it for destruction animation.
+                newlyDestroyed.set(`${r}-${c}`, prevCard);
+            }
         }
-      }
     }
 
-    if (newRefilling.size > 0) {
-      setRefillingCards(newRefilling);
-      // Clean up the refilling status after the animation duration
-      const timer = setTimeout(() => {
-        setRefillingCards(new Set());
-      }, 1000); // Animation duration + buffer
-      return () => clearTimeout(timer);
+    if (newlyDestroyed.size > 0) {
+        setDestroyedCards(newlyDestroyed);
+        const timer = setTimeout(() => {
+            setDestroyedCards(new Map());
+        }, 500); // Animation duration
+        return () => clearTimeout(timer);
+    }
+    
+    // Update previous board state for the next render only if no cards were destroyed
+    // This gives the destroyed cards a chance to animate out
+    if (newlyDestroyed.size === 0) {
+      setPreviousBoard(board);
     }
 
-    // Update previous board state for the next render
-    // Use a deep copy to avoid reference issues
-    setPreviousBoard(JSON.parse(JSON.stringify(board)));
   }, [board]);
 
 
@@ -102,15 +105,19 @@ export default function GameBoard({
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
             const selectable = isCardSelectable?.(r, c) ?? false;
-            const isExplodingSlot =
+            
+            // Check if this slot contains the exploding bomb from the game state
+            const isBombExplosionCenter =
               !!explodingCardInfo && explodingCardInfo.playerId === playerId && explodingCardInfo.r === r && explodingCardInfo.c === c;
+
+            // Check if this slot just had a card destroyed by an ability
+            const destroyedCard = destroyedCards.get(`${r}-${c}`);
+            
+            const isExplodingSlot = isBombExplosionCenter || !!destroyedCard;
+            
+            const cardToRender = isBombExplosionCenter ? explodingCardInfo.card : (destroyedCard || card);
             
             const isRivalMoveFocus = rivalMoveFocus?.r === r && rivalMoveFocus?.c === c;
-
-            // If a card is exploding in this slot, we render the exploding card temporarily,
-            // even if the board data for this slot is already null.
-            const cardToRender = isExplodingSlot ? explodingCardInfo.card : card;
-            const isRefilling = card ? refillingCards.has(card.uid) : false;
 
             return (
               <div
@@ -134,8 +141,6 @@ export default function GameBoard({
                   isMobile={isMobile}
                   isDisabled={isDimmed}
                   cardBackImageUrl={cardBackImageUrl}
-                  isRefilling={isRefilling}
-                  refillIndex={r * 3 + c} // Pass index for animation delay
                 />
               </div>
             );

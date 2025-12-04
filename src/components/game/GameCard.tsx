@@ -94,7 +94,7 @@ export default function GameCard({
   refillIndex = 0,
 }: GameCardProps) {
 
-  const cardToRender = isExploding && explodingCardInfo ? explodingCardInfo.card : card;
+  const cardToRender = card;
   const showFace = cardToRender?.isFaceUp ?? false;
 
   const initialAnimation = isRefilling
