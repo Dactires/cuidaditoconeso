@@ -577,7 +577,7 @@ function GamePageContent() {
              <div
               className={cn(
                 "comic-board-panel transition-shadow duration-200",
-                rivalJustPlayed && "board-hit",
+                rivalJustPlayed && "animate-rival-focus-pulse",
                 !isHumanTurn && "ring-4 ring-red-500/70 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
               )}
             >
@@ -602,7 +602,6 @@ function GamePageContent() {
             <div
               className={cn(
                 "comic-board-panel transition-shadow duration-200",
-                rivalJustPlayed && "board-hit",
                 isHumanTurn && "ring-4 ring-sky-400/70 shadow-[0_0_40px_rgba(56,189,248,0.6)]"
               )}
             >
@@ -721,6 +720,22 @@ function GamePageContent() {
             </motion.div>
         )}
       </LayoutGroup>
+      
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+        <AnimatePresence>
+            {gameEvent && (
+                <motion.div
+                    key={gameEvent.id}
+                    variants={gameEventVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                >
+                    <span className="game-event-chip">{gameEvent.text}</span>
+                </motion.div>
+            )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 
@@ -747,7 +762,7 @@ function GamePageContent() {
         <div
           className={cn(
             "comic-board-panel transition-shadow duration-200 w-full",
-            rivalJustPlayed && "board-hit",
+            rivalJustPlayed && "animate-rival-focus-pulse",
             !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
           )}
         >
@@ -939,4 +954,5 @@ export default function GamePage() {
     
 
     
+
 

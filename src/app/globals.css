@@ -172,30 +172,18 @@
     z-index: 50;
   }
 
-  @keyframes board-hit {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-4px); }
-    40% { transform: translateX(4px); }
-    60% { transform: translateX(-3px); }
-    80% { transform: translateX(2px); }
-  }
-  
-  .board-hit {
-    animation: board-hit 0.35s ease-out;
-  }
-
   @keyframes rival-focus-pulse {
     0%, 100% {
-      box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.7);
+      box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.7), 0 10px 0 #020617;
     }
     50% {
-      box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+      box-shadow: 0 0 0 8px rgba(239, 68, 68, 0), 0 10px 0 #020617;
     }
   }
 
   .animate-rival-focus-pulse {
     animation: rival-focus-pulse 1.2s ease-in-out 1;
-    border: 2px solid rgba(239, 68, 68, 0.8);
+    border-color: rgba(239, 68, 68, 0.8);
   }
 
   .card-flipper {
