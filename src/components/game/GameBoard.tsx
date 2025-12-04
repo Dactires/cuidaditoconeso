@@ -37,8 +37,9 @@ export default function GameBoard({
   cardBackImageUrl,
 }: GameBoardProps) {
   const boardRef = React.useRef<HTMLDivElement>(null);
-  const [previousBoard, setPreviousBoard] = useState<(Card | null)[][]>(board);
+  const [previousBoard, setPreviousBoard] = useState<(Card | null)[][] | null>(null);
   const [destroyedCards, setDestroyedCards] = useState<Map<string, Card>>(new Map());
+  const [refillingCards, setRefillingCards] = useState<Map<string, Card>>(new Map());
 
   const [rivalMoveFocus, setRivalMoveFocus] = useState<Pos | null>(null);
 
@@ -53,35 +54,49 @@ export default function GameBoard({
   }, [lastRivalMove]);
 
   useEffect(() => {
-    const newlyDestroyed = new Map<string, Card>();
+    if (!previousBoard) {
+        setPreviousBoard(board);
+        return;
+    }
 
-    // Detect destroyed cards
+    const newlyDestroyed = new Map<string, Card>();
+    const newlyRefilled = new Map<string, Card>();
+
     for (let r = 0; r < board.length; r++) {
-        for (let c = 0; c < board[r].length; c++) {
-            const prevCard = previousBoard[r]?.[c];
-            const currentCard = board[r]?.[c];
-            if (prevCard && !currentCard) {
-                // A card that was here is now gone. Mark it for destruction animation.
-                newlyDestroyed.set(`${r}-${c}`, prevCard);
-            }
+      for (let c = 0; c < board[r].length; c++) {
+        const prevCard = previousBoard[r]?.[c];
+        const currentCard = board[r]?.[c];
+
+        if (prevCard && !currentCard) {
+          // A card was here, now it's gone -> DESTRUCTION
+          newlyDestroyed.set(`${r}-${c}`, prevCard);
+        } else if (!prevCard && currentCard) {
+          // A slot was empty, now has a card -> REFILL
+          newlyRefilled.set(`${r}-${c}`, currentCard);
         }
+      }
     }
 
     if (newlyDestroyed.size > 0) {
-        setDestroyedCards(newlyDestroyed);
-        const timer = setTimeout(() => {
-            setDestroyedCards(new Map());
-        }, 500); // Animation duration
-        return () => clearTimeout(timer);
+      setDestroyedCards(newlyDestroyed);
+      // Give animation time to play before cleaning up
+      const timer = setTimeout(() => {
+        setDestroyedCards(new Map());
+      }, 500);
+      return () => clearTimeout(timer);
     }
     
-    // Update previous board state for the next render only if no cards were destroyed
-    // This gives the destroyed cards a chance to animate out
-    if (newlyDestroyed.size === 0) {
-      setPreviousBoard(board);
+    if (newlyRefilled.size > 0) {
+        setRefillingCards(newlyRefilled);
+        const timer = setTimeout(() => {
+            setRefillingCards(new Map());
+        }, 800); // Animation duration
+        return () => clearTimeout(timer);
     }
 
-  }, [board]);
+    setPreviousBoard(board);
+
+  }, [board, previousBoard]);
 
 
   return (
@@ -95,33 +110,36 @@ export default function GameBoard({
         ref={boardRef}
         className={cn(
           "grid grid-cols-3 place-items-center",
-          isMobile ? "gap-2" : "gap-3",
+          isMobile ? "gap-1.5" : "gap-3",
           isMobile
-            ? "w-full max-w-[min(340px,92vw)]"
+            ? "w-full"
             : "w-full max-w-[min(320px,82vw)]"
         )}
       >
         {board.map((row, r) =>
           row.map((card, c) => {
-            const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
+            const key = `${r}-${c}`;
             const selectable = isCardSelectable?.(r, c) ?? false;
             
-            // Check if this slot contains the exploding bomb from the game state
             const isBombExplosionCenter =
               !!explodingCardInfo && explodingCardInfo.playerId === playerId && explodingCardInfo.r === r && explodingCardInfo.c === c;
 
-            // Check if this slot just had a card destroyed by an ability
-            const destroyedCard = destroyedCards.get(`${r}-${c}`);
+            const destroyedCard = destroyedCards.get(key);
+            const isRefilling = refillingCards.has(key);
+            const cardForRefill = refillingCards.get(key);
             
             const isExplodingSlot = isBombExplosionCenter || !!destroyedCard;
             
-            const cardToRender = isBombExplosionCenter ? explodingCardInfo.card : (destroyedCard || card);
+            // Render the live card, unless a destruction or refill is happening on this slot
+            let cardToRender = card;
+            if(isExplodingSlot) cardToRender = destroyedCard || (isBombExplosionCenter ? explodingCardInfo.card : null);
+            if(isRefilling) cardToRender = cardForRefill || null;
             
             const isRivalMoveFocus = rivalMoveFocus?.r === r && rivalMoveFocus?.c === c;
 
             return (
               <div
-                key={key}
+                key={`${key}-${cardToRender?.uid ?? 'empty'}`}
                 className={cn(
                   'comic-card-slot',
                    isMobile && '!w-full !h-auto',
@@ -141,6 +159,8 @@ export default function GameBoard({
                   isMobile={isMobile}
                   isDisabled={isDimmed}
                   cardBackImageUrl={cardBackImageUrl}
+                  isRefilling={isRefilling}
+                  refillIndex={(r * 3 + c)}
                 />
               </div>
             );

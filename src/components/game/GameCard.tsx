@@ -89,7 +89,6 @@ export default function GameCard({
   isInHand = false,
   isDisabled = false,
   cardBackImageUrl,
-  explodingCardInfo,
   isRefilling = false,
   refillIndex = 0,
 }: GameCardProps) {
