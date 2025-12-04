@@ -35,8 +35,6 @@
     --input: 215 28% 17%;
     --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
-
     --chart-1: 217 91% 60%;
     --chart-2: 41 96% 54%;
     --chart-3: 160 60% 45%;
@@ -147,6 +145,16 @@
 
   .animate-rival-play {
     animation: rival-play 0.9s ease-out;
+  }
+
+  @keyframes new-bomb-flash {
+    0%, 100% { box-shadow: 0 4px 0 #0a0a0a, 0 0 0 0 transparent; }
+    20%, 60% { box-shadow: 0 4px 0 #0a0a0a, 0 0 12px 3px rgba(239, 68, 68, 0.8); }
+    40%, 80% { box-shadow: 0 4px 0 #0a0a0a, 0 0 0 0 transparent; }
+  }
+
+  .animate-new-bomb-flash > div {
+    animation: new-bomb-flash 2.5s ease-out;
   }
 
   @keyframes screen-flash {

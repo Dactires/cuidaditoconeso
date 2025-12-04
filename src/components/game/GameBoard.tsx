@@ -66,8 +66,10 @@ export default function GameBoard({
 
     // Update previous board state for the next render
     // Use a deep copy to avoid reference issues
-    setPreviousBoard(JSON.parse(JSON.stringify(board)));
-  }, [board]);
+    if (JSON.stringify(board) !== JSON.stringify(previousBoard)) {
+        setPreviousBoard(JSON.parse(JSON.stringify(board)));
+    }
+  }, [board, previousBoard]);
 
 
   return (
@@ -98,6 +100,7 @@ export default function GameBoard({
             // even if the board data for this slot is already null.
             const cardToRender = isExplodingSlot ? explodingCardInfo.card : card;
             const isRefilling = card ? refillingCards.has(card.uid) : false;
+            const isNewlyPlacedBomb = !!(lastRivalMove && lastRivalMove.r === r && lastRivalMove.c === c);
 
             return (
               <div
@@ -120,6 +123,7 @@ export default function GameBoard({
                   cardBackImageUrl={cardBackImageUrl}
                   isRefilling={isRefilling}
                   refillIndex={r * 3 + c} // Pass index for animation delay
+                  isNewlyPlacedBomb={isNewlyPlacedBomb}
                 />
               </div>
             );

@@ -23,6 +23,7 @@ interface GameCardProps {
   explodingCardInfo?: { r: number; c: number; playerId: number; card: Card } | null;
   isRefilling?: boolean;
   refillIndex?: number;
+  isNewlyPlacedBomb?: boolean;
 }
 
 const cardVariants = {
@@ -92,6 +93,7 @@ export default function GameCard({
   explodingCardInfo,
   isRefilling = false,
   refillIndex = 0,
+  isNewlyPlacedBomb = false,
 }: GameCardProps) {
 
   const cardToRender = isExploding && explodingCardInfo ? explodingCardInfo.card : card;
@@ -118,7 +120,7 @@ export default function GameCard({
   }
 
   const finalCard = cardToRender;
-  const animationClass = isRivalMove ? 'animate-rival-play' : isExploding ? 'animate-explode' : '';
+  const animationClass = isRivalMove ? 'animate-rival-play' : isExploding ? 'animate-explode' : isNewlyPlacedBomb ? 'animate-new-bomb-flash' : '';
   const glowClass = finalCard.isFaceUp && finalCard.type === 'Personaje' ? getGlowColor(finalCard.color) : '';
 
   const renderCardFace = (isFront: boolean) => {
