@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cuidaito Con Eso</string>
+    <string name="title_activity_main">Cuidaito Con Eso</string>
+    <string name="package_name">com.agustin.cuidaitoconeso</string>
+    <string name="custom_url_scheme">com.agustin.cuidaitoconeso</string>
+</resources>
