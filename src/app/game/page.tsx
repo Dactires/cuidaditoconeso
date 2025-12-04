@@ -164,28 +164,31 @@ function GamePageContent() {
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
   
   useEffect(() => {
+    let eventText: string | null = null;
     if (gameMessage) {
-      let eventText: string | null = null;
       if (gameMessage.includes('Plantaste una bomba')) {
         eventText = 'Bomba Plantada';
       } else if (gameMessage.includes('El tablero del rival ha sido barajado')) {
         eventText = 'Tablero Mezclado';
-      } else if (gameMessage.includes('reveló una bomba')) {
-        eventText = '¡BOMBA!';
       } else if (gameMessage.includes('Descartaste una carta')) {
         eventText = 'Carta Descartada';
       }
-
-      if (eventText) {
-        const eventId = Date.now();
-        setGameEvent({ id: eventId, text: eventText });
-        const timer = setTimeout(() => {
-          setGameEvent(prev => (prev?.id === eventId ? null : prev));
-        }, 2500);
-        return () => clearTimeout(timer);
-      }
     }
-  }, [gameMessage]);
+    
+    // Specifically handle bomb explosion event
+    if (explodingCard) {
+        eventText = '¡BOMBA!';
+    }
+
+    if (eventText) {
+      const eventId = Date.now() + Math.random();
+      setGameEvent({ id: eventId, text: eventText });
+      const timer = setTimeout(() => {
+        setGameEvent(prev => (prev?.id === eventId ? null : prev));
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameMessage, explodingCard]);
 
   useEffect(() => {
     console.log('%c[GAME UI] gameOver cambió', 'color:#22c55e;font-weight:bold;', {
@@ -762,7 +765,7 @@ function GamePageContent() {
         </div>
         
         {/* Middle Area */}
-        <div className="flex-grow flex items-center justify-center relative w-full">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <AnimatePresence>
                 {turnPhase === 'START_TURN' && (
                 <motion.div
@@ -771,7 +774,7 @@ function GamePageContent() {
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+                    className="z-50 pointer-events-none"
                 >
                     <span className="comic-turn-chip">
                     {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno Rival'}
@@ -787,7 +790,7 @@ function GamePageContent() {
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+                        className="z-50 pointer-events-none"
                     >
                         <span className="game-event-chip">{gameEvent.text}</span>
                     </motion.div>
@@ -936,3 +939,4 @@ export default function GamePage() {
     
 
     
+
