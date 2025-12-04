@@ -725,17 +725,17 @@ function GamePageContent() {
     <div className={cn("h-full w-full flex flex-row p-2 pb-2 gap-1 relative", explodingCard && "screen-flash")}>
       <LayoutGroup id="boardbombers-layout-mobile">
         {/* Columna Izquierda: Mazo Rival */}
-        <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-4">
+        <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-2">
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
-                <div className="relative w-full aspect-square comic-card-slot rounded-xl border-2 border-slate-700/70 bg-slate-900/40">
+                <div className="relative flex items-center justify-center h-24 w-24">
                     {rivalPlayer.deck.length > 0 && <GameCard card={{...rivalPlayer.deck[0], isFaceUp:false}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.deck.length}</span>
             </div>
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Descarte</span>
-                <div className="relative w-full aspect-square comic-card-slot rounded-xl border-2 border-slate-700/70 bg-slate-900/40">
+                <div className="relative flex items-center justify-center h-24 w-24">
                     {rivalPlayer.discardPile.length > 0 && <GameCard card={{...rivalPlayer.discardPile[rivalPlayer.discardPile.length - 1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.discardPile.length}</span>
@@ -895,10 +895,10 @@ function GamePageContent() {
         </div>
 
         {/* Columna Derecha: Mazo Jugador */}
-        <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-4">
+        <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-2">
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
-              <div id="player-deck-source" className="relative w-full aspect-square comic-card-slot rounded-xl border-2 border-slate-700/70 bg-slate-900/40">
+              <div id="player-deck-source" className="relative flex items-center justify-center h-24 w-24">
                 <AnimatePresence>
                     {humanPlayer.deck.length > 0 && (
                         <motion.div
@@ -918,7 +918,7 @@ function GamePageContent() {
             </div>
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Descarte</span>
-                <div className="relative w-full aspect-square comic-card-slot rounded-xl border-2 border-slate-700/70 bg-slate-900/40">
+                <div className="relative flex items-center justify-center h-24 w-24">
                     {humanPlayer.discardPile.length > 0 && <GameCard card={{...humanPlayer.discardPile[humanPlayer.discardPile.length - 1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">{humanPlayer.discardPile.length}</span>
@@ -1005,5 +1005,7 @@ export default function GamePage() {
     </SfxProvider>
   )
 }
+
+    
 
     
