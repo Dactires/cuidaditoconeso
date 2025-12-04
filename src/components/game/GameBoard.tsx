@@ -39,6 +39,17 @@ export default function GameBoard({
   const boardRef = React.useRef<HTMLDivElement>(null);
   const [previousBoard, setPreviousBoard] = useState<(Card | null)[][]>(board);
   const [refillingCards, setRefillingCards] = useState<Set<string>>(new Set());
+  const [rivalMoveFocus, setRivalMoveFocus] = useState<Pos | null>(null);
+
+  useEffect(() => {
+    if (lastRivalMove) {
+      setRivalMoveFocus(lastRivalMove);
+      const timer = setTimeout(() => {
+        setRivalMoveFocus(null);
+      }, 1500); // Duration of the focus effect
+      return () => clearTimeout(timer);
+    }
+  }, [lastRivalMove]);
 
   useEffect(() => {
     const newRefilling = new Set<string>();
@@ -67,7 +78,7 @@ export default function GameBoard({
     // Update previous board state for the next render
     // Use a deep copy to avoid reference issues
     setPreviousBoard(JSON.parse(JSON.stringify(board)));
-  }, [board]);
+  }, [board, previousBoard]);
 
 
   return (
@@ -93,6 +104,8 @@ export default function GameBoard({
             const selectable = isCardSelectable?.(r, c) ?? false;
             const isExplodingSlot =
               !!explodingCardInfo && explodingCardInfo.playerId === playerId && explodingCardInfo.r === r && explodingCardInfo.c === c;
+            
+            const isRivalMoveFocus = rivalMoveFocus?.r === r && rivalMoveFocus?.c === c;
 
             // If a card is exploding in this slot, we render the exploding card temporarily,
             // even if the board data for this slot is already null.
@@ -105,11 +118,14 @@ export default function GameBoard({
                 className={cn(
                   'comic-card-slot',
                    isMobile && '!w-full !h-auto',
-                  'focus:outline-none',
+                  'focus:outline-none relative',
                   selectable && 'cursor-pointer',
                   !selectable && 'cursor-default'
                 )}
               >
+                {isRivalMoveFocus && (
+                    <div className="absolute inset-0 rounded-2xl animate-rival-focus-pulse z-10 pointer-events-none" />
+                )}
                 <GameCard
                   card={cardToRender}
                   onClick={() => selectable && onCardClick?.(r, c)}

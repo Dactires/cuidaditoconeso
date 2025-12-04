@@ -176,6 +176,22 @@
     animation: board-hit 0.35s ease-out;
   }
 
+  @keyframes rival-focus-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.7);
+      opacity: 0.8;
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+      opacity: 0.5;
+    }
+  }
+
+  .animate-rival-focus-pulse {
+    animation: rival-focus-pulse 1.2s ease-in-out 1;
+    border: 2px solid rgba(239, 68, 68, 0.8);
+  }
+
   .card-flipper {
     transform-style: preserve-3d;
     perspective: 1000px;
@@ -542,6 +558,19 @@ main {
       text-slate-900
       font-display text-[10px] md:text-xs
       tracking-[0.25em] uppercase;
+  }
+
+  /* Chip para notificaciones de eventos del juego */
+  .game-event-chip {
+    @apply px-4 py-2
+      rounded-lg
+      bg-slate-900/80
+      border-2 border-amber-300
+      shadow-[0_5px_0_#020617]
+      text-white
+      font-display text-lg
+      tracking-[0.2em] uppercase
+      -rotate-6;
   }
 
   /* Texto de secciones ("Tu mano", "Mazo", etc) */

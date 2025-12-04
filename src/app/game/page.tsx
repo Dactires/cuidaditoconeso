@@ -77,6 +77,27 @@ const turnChipVariants = {
   }
 };
 
+const gameEventVariants = {
+    hidden: { scale: 0.8, opacity: 0, x: -50 },
+    visible: {
+      scale: 1,
+      opacity: 1,
+      x: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 260,
+        damping: 15,
+      },
+    },
+    exit: {
+      scale: 0.8,
+      opacity: 0,
+      x: 50,
+      transition: { duration: 0.3, ease: 'easeOut' },
+    },
+};
+
+
 const useCardDefinitionsWithImages = () => {
     const firestore = useFirestore();
     const [cardDefs, setCardDefs] = useState<GameCardDef[] | null>(null);
@@ -134,6 +155,7 @@ function GamePageContent() {
   const [targetBoardPos, setTargetBoardPos] = useState<BoardSelection>(null);
   const isMobile = useIsMobile();
   const [rivalJustPlayed, setRivalJustPlayed] = useState(false);
+  const [gameEvent, setGameEvent] = useState<{ id: number; text: string } | null>(null);
 
   const [gamePhase, setGamePhase] = useState<'loading' | 'matchup' | 'playing'>('loading');
 
@@ -141,6 +163,27 @@ function GamePageContent() {
   
   const { players, currentPlayerIndex, turnPhase, gameOver, winner, finalScores, gameMessage, explodingCard, lastRevealedCard, lastRivalMove, lastDrawnCardId, showDrawAnimation } = gameState;
   
+  useEffect(() => {
+    if (gameMessage) {
+      let eventText: string | null = null;
+      if (gameMessage.includes('Plantaste una bomba')) {
+        eventText = 'Bomba Plantada';
+      } else if (gameMessage.includes('El tablero del rival ha sido barajado')) {
+        eventText = 'Tablero Mezclado';
+      } else if (gameMessage.includes('reveló una bomba')) {
+        eventText = '¡BOMBA!';
+      } else if (gameMessage.includes('Descartaste una carta')) {
+        eventText = 'Carta Descartada';
+      }
+
+      if (eventText) {
+        setGameEvent({ id: Date.now(), text: eventText });
+        const timer = setTimeout(() => setGameEvent(null), 2500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [gameMessage]);
+
   useEffect(() => {
     console.log('%c[GAME UI] gameOver cambió', 'color:#22c55e;font-weight:bold;', {
       gameOver,
@@ -703,6 +746,21 @@ function GamePageContent() {
               </motion.div>
             )}
           </AnimatePresence>
+          {/* Game Event Notification */}
+          <AnimatePresence>
+                {gameEvent && (
+                    <motion.div
+                        key={gameEvent.id}
+                        variants={gameEventVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="absolute top-1/2 left-4 z-50 pointer-events-none"
+                    >
+                        <span className="game-event-chip">{gameEvent.text}</span>
+                    </motion.div>
+                )}
+           </AnimatePresence>
       </div>
 
       {/* Player Area */}
