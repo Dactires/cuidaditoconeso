@@ -78,7 +78,7 @@ export default function GameBoard({
     // Update previous board state for the next render
     // Use a deep copy to avoid reference issues
     setPreviousBoard(JSON.parse(JSON.stringify(board)));
-  }, [board, previousBoard]);
+  }, [board]);
 
 
   return (
