@@ -1,5 +1,6 @@
 
 
+
 import { CardAbility } from "./card-definitions";
 
 export interface Card {
@@ -30,7 +31,7 @@ export interface GameState {
   finalScores: { id: number; score: number }[];
   isForcedToPlay: boolean;
   gameMessage: string | null;
-  turnPhase: 'START_TURN' | 'REVEAL_CARD' | 'ACTION' | 'GAME_OVER';
+  turnPhase: 'START_TURN' | 'REVEAL_CARD' | 'ACTION' | 'GAME_OVER' | 'REFILLING';
   finalTurnCounter: number;
   lastRevealedCard: { playerId: number; r: number; c: number; card: Card } | null;
   explodingCard: { r: number; c: number; playerId: number; card: Card } | null;
