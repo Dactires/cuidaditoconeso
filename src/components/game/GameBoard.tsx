@@ -70,7 +70,7 @@ export default function GameBoard({
         if (prevCard && !currentCard) {
           // A card was here, now it's gone -> DESTRUCTION
           newlyDestroyed.set(`${r}-${c}`, prevCard);
-        } else if (!prevCard && currentCard) {
+        } else if (!prevCard && currentCard && !currentCard.isFaceUp) {
           // A slot was empty, now has a card -> REFILL
           newlyRefilled.set(`${r}-${c}`, currentCard);
         }
@@ -96,7 +96,7 @@ export default function GameBoard({
 
     setPreviousBoard(board);
 
-  }, [board, previousBoard]);
+  }, [board]);
 
 
   return (

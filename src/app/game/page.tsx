@@ -60,7 +60,7 @@ const turnChipVariants = {
   visible: {
     scale: [1, 1.05, 1],
     opacity: 1,
-    y: -40,
+    y: 0,
     transition: {
       duration: 0.5,
       times: [0, 0.5, 1],
@@ -72,7 +72,7 @@ const turnChipVariants = {
   exit: {
       scale: 0.5,
       opacity: 0,
-      y: -10,
+      y: 10,
       transition: { duration: 0.2, ease: 'easeIn' }
   }
 };
@@ -481,17 +481,17 @@ function GamePageContent() {
         </AlertDialog>
 
         <AnimatePresence>
-          {turnPhase === 'START_TURN' && currentPlayerIndex === humanPlayerId && (
+          {turnPhase === 'START_TURN' && (
             <motion.div
               key={currentPlayerIndex}
               variants={turnChipVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
             >
               <span className="comic-turn-chip !px-6 !py-2 !text-lg">
-                Tu Turno
+                 {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno Rival'}
               </span>
             </motion.div>
           )}
@@ -722,15 +722,13 @@ function GamePageContent() {
     <div className={cn("h-full w-full flex flex-col p-2 pb-2 gap-2 relative", explodingCard && "screen-flash")}>
       <LayoutGroup id="boardbombers-layout-mobile">
       {/* Rival Area */}
-      <div className='flex items-center gap-2'>
-        <div className="flex flex-col items-center gap-1 w-14 shrink-0">
-          <div className="relative w-full aspect-square">
-            {rivalPlayer.deck.length > 0 && <GameCard card={{...rivalPlayer.deck[0], isFaceUp:false}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
+      <div className='flex items-start justify-center gap-2'>
+        <div className="w-14 shrink-0 flex flex-col items-center gap-1">
+          <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
+          <div className="relative w-full aspect-square comic-card-slot rounded-xl border-2 border-slate-700/70 bg-slate-900/40">
+             {rivalPlayer.deck.length > 0 && <GameCard card={{...rivalPlayer.deck[0], isFaceUp:false}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
           </div>
           <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.deck.length}</span>
-          <div className="relative w-full aspect-square">
-            {rivalPlayer.discardPile.length > 0 && <GameCard card={{...rivalPlayer.discardPile[rivalPlayer.discardPile.length-1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
-          </div>
         </div>
         <div className="flex-grow flex flex-col items-center gap-2">
             <div className="flex items-center justify-between w-full px-2">
@@ -771,6 +769,7 @@ function GamePageContent() {
         </div>
       </div>
 
+      {/* Middle Area */}
       <div className="flex-grow flex items-center justify-center relative">
           <AnimatePresence>
             {turnPhase === 'START_TURN' && (
@@ -788,7 +787,6 @@ function GamePageContent() {
               </motion.div>
             )}
           </AnimatePresence>
-          {/* Game Event Notification */}
           <AnimatePresence>
                 {gameEvent && (
                     <motion.div
@@ -806,12 +804,11 @@ function GamePageContent() {
       </div>
 
       {/* Player Area */}
-      <div className='flex items-center gap-2'>
+      <div className='flex items-start justify-center gap-2'>
         <div className="flex-grow flex flex-col items-center gap-2">
             <div
               className={cn(
                 "comic-board-panel transition-shadow duration-200 w-full",
-                rivalJustPlayed && "board-hit",
                 isHumanTurn && "ring-2 ring-sky-400/70 shadow-[0_0_20px_rgba(56,189,248,0.5)]"
               )}
             >
@@ -823,7 +820,6 @@ function GamePageContent() {
                   explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? explodingCard : undefined}
                   isMobile
                   isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
-                  lastRivalMove={lastRivalMove && lastRivalMove.playerId === humanPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
                   cardBackImageUrl={cardBackImageUrl}
               />
             </div>
@@ -854,8 +850,9 @@ function GamePageContent() {
                 </div>
               </div>
         </div>
-        <div className="flex flex-col items-center gap-1 w-14 shrink-0">
-          <div className="relative w-full aspect-square">
+        <div className="w-14 shrink-0 flex flex-col items-center gap-1">
+          <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
+          <div id="player-deck-source" className="relative w-full aspect-square comic-card-slot rounded-xl border-2 border-slate-700/70 bg-slate-900/40">
             <AnimatePresence>
                 {humanPlayer.deck.length > 0 && (
                     <motion.div
@@ -872,9 +869,6 @@ function GamePageContent() {
             </AnimatePresence>
           </div>
           <span className="text-[10px] text-slate-400 font-mono">{humanPlayer.deck.length}</span>
-          <div className="relative w-full aspect-square">
-            {humanPlayer.discardPile.length > 0 && <GameCard card={{...humanPlayer.discardPile[humanPlayer.discardPile.length-1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
-          </div>
         </div>
       </div>
       
@@ -918,17 +912,14 @@ function GamePageContent() {
             layoutId={`card-${lastDrawnCardId}`}
             className="absolute z-[100]"
             style={{
-                top: 'calc(100% - 150px)',
-                right: '10px',
+                top: 'calc(100% - 210px)',
+                right: '25px',
                 width: '60px', 
             }}
-            initial={{
-                y: 0,
-                x: 0,
-            }}
+            initial={{ y: 0, x: 0 }}
             animate={{
-                x: -120,
-                y: 50,
+                x: `-${(humanPlayer.hand.length -1) * 65}px`,
+                y: 120,
                 scale: 1,
             }}
             transition={{
@@ -996,5 +987,3 @@ export default function GamePage() {
     </SfxProvider>
   )
 }
-
-    

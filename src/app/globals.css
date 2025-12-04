@@ -179,11 +179,9 @@
   @keyframes rival-focus-pulse {
     0%, 100% {
       box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.7);
-      opacity: 0.8;
     }
     50% {
       box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
-      opacity: 0.5;
     }
   }
 

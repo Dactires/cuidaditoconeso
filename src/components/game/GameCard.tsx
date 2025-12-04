@@ -48,8 +48,8 @@ const cardVariants = {
     transition: { type: "spring", stiffness: 320, damping: 18 },
   },
   disabled: {
-    scale: 0.98,
-    opacity: 0.45,
+    scale: 1,
+    opacity: 0.6,
     filter: "grayscale(0.3)",
   },
   refill: (i: number) => ({
@@ -98,10 +98,10 @@ export default function GameCard({
 
   const initialAnimation = isRefilling
     ? {
-        x: isMobile ? 80 : 250, // Come from the right (deck side)
-        y: isMobile ? -50 : -100,
+        x: isMobile ? -80 : -250, // Come from the left (deck side for rival)
+        y: isMobile ? 50 : 100,
         scale: 0.5,
-        rotate: 30,
+        rotate: -30,
         opacity: 0,
       }
     : { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 };
