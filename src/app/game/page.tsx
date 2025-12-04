@@ -722,232 +722,157 @@ function GamePageContent() {
   );
 
   const renderMobileView = () => (
-    <div className={cn("h-full w-full flex flex-row p-2 pb-2 gap-1 relative", explodingCard && "screen-flash")}>
+    <div className={cn("h-full w-full flex flex-col p-2 gap-2 relative", explodingCard && "screen-flash")}>
       <LayoutGroup id="boardbombers-layout-mobile">
-        {/* Columna Izquierda: Mazo Rival */}
-        <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-2">
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
-                <div className="relative flex items-center justify-center h-18 w-18">
-                    {rivalPlayer.deck.length > 0 && <GameCard card={{...rivalPlayer.deck[0], isFaceUp:false}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
+
+        <div className="flex items-center justify-between w-full px-2">
+            <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-black flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-slate-900" />
                 </div>
-                <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.deck.length}</span>
+                <div className="flex flex-col">
+                    <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">Rival (IA)</span>
+                    <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{rivalPlayerScore}</span></span>
+                </div>
             </div>
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Descarte</span>
-                <div className="relative flex items-center justify-center h-18 w-18">
-                    {rivalPlayer.discardPile.length > 0 && <GameCard card={{...rivalPlayer.discardPile[rivalPlayer.discardPile.length - 1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.discardPile.length}</span>
+            <div className="flex items-center gap-1">
+              <span className="px-2 py-1 rounded-full bg-slate-800/80 border-[2px] border-black text-[11px] text-slate-200/90 font-mono">
+                Mano: {rivalPlayer.hand.length}
+              </span>
             </div>
         </div>
+        <div
+          className={cn(
+            "comic-board-panel transition-shadow duration-200 w-full",
+            rivalJustPlayed && "board-hit",
+            !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+          )}
+        >
+          <GameBoard
+              board={rivalPlayer.board}
+              playerId={rivalPlayer.id}
+              onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
+              explodingCardInfo={explodingCard && explodingCard.playerId === rivalPlayer.id ? explodingCard : undefined}
+              isMobile
+              isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
+              lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
+              cardBackImageUrl={cardBackImageUrl}
+          />
+        </div>
         
-        {/* Columna Central: Tableros y Mano */}
-        <div className="flex-grow flex flex-col items-center gap-2">
-            <div className="flex items-center justify-between w-full px-2">
-                <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-red-500 border-2 border-black flex items-center justify-center">
-                        <Bot className="h-5 w-5 text-slate-900" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">Rival (IA)</span>
-                        <span className="text-xs text-slate-200/70">Puntaje: <span className="font-semibold text-white">{rivalPlayerScore}</span></span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="px-2 py-1 rounded-full bg-slate-800/80 border-[2px] border-black text-[11px] text-slate-200/90 font-mono">
-                    Mano: {rivalPlayer.hand.length}
-                  </span>
-                </div>
-            </div>
-            <div
-              className={cn(
-                "comic-board-panel transition-shadow duration-200 w-full",
-                rivalJustPlayed && "board-hit",
-                !isHumanTurn && "ring-2 ring-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-              )}
-            >
-              <GameBoard
-                  board={rivalPlayer.board}
-                  playerId={rivalPlayer.id}
-                  onCardClick={(r, c) => handleBoardClick(rivalPlayer.id, r, c)}
-                  isCardSelectable={(r, c) => isBoardCardSelectable(rivalPlayer.id, r, c)}
-                  explodingCardInfo={explodingCard && explodingCard.playerId === rivalPlayer.id ? explodingCard : undefined}
-                  isMobile
-                  isDimmed={isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard}
-                  lastRivalMove={lastRivalMove && lastRivalMove.playerId === rivalPlayer.id ? { r: lastRivalMove.r, c: lastRivalMove.c } : undefined}
-                  cardBackImageUrl={cardBackImageUrl}
-              />
-            </div>
-            
-            {/* Middle Area */}
-            <div className="flex-grow flex items-center justify-center relative w-full">
-                <AnimatePresence>
-                    {turnPhase === 'START_TURN' && (
+        {/* Middle Area */}
+        <div className="flex-grow flex items-center justify-center relative w-full">
+            <AnimatePresence>
+                {turnPhase === 'START_TURN' && (
+                <motion.div
+                    key={currentPlayerIndex}
+                    variants={turnChipVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+                >
+                    <span className="comic-turn-chip">
+                    {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno Rival'}
+                    </span>
+                </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {gameEvent && (
                     <motion.div
-                        key={currentPlayerIndex}
-                        variants={turnChipVariants}
+                        key={gameEvent.id}
+                        variants={gameEventVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
                     >
-                        <span className="comic-turn-chip">
-                        {currentPlayerIndex === humanPlayerId ? 'Tu Turno' : 'Turno Rival'}
-                        </span>
+                        <span className="game-event-chip">{gameEvent.text}</span>
                     </motion.div>
-                    )}
-                </AnimatePresence>
-                <AnimatePresence>
-                    {gameEvent && (
-                        <motion.div
-                            key={gameEvent.id}
-                            variants={gameEventVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
-                        >
-                            <span className="game-event-chip">{gameEvent.text}</span>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                )}
+            </AnimatePresence>
+        </div>
+        
+        <div
+          className={cn(
+            "comic-board-panel transition-shadow duration-200 w-full",
+            isHumanTurn && "ring-2 ring-sky-400/70 shadow-[0_0_20px_rgba(56,189,248,0.5)]"
+          )}
+        >
+          <GameBoard
+              board={humanPlayer.board}
+              playerId={humanPlayer.id}
+              onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
+              isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
+              explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? explodingCard : undefined}
+              isMobile
+              isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
+              cardBackImageUrl={cardBackImageUrl}
+          />
+        </div>
+        <div className="flex items-center justify-between w-full px-2 h-8">
+            <div className="flex flex-col">
+              <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">
+                {user.displayName || 'Jugador'}
+              </span>
+              <span className="text-[11px] text-slate-200/70">
+                Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span>
+              </span>
             </div>
-            
-            <div
-              className={cn(
-                "comic-board-panel transition-shadow duration-200 w-full",
-                isHumanTurn && "ring-2 ring-sky-400/70 shadow-[0_0_20px_rgba(56,189,248,0.5)]"
-              )}
-            >
-              <GameBoard
-                  board={humanPlayer.board}
-                  playerId={humanPlayer.id}
-                  onCardClick={(r, c) => handleBoardClick(humanPlayer.id, r, c)}
-                  isCardSelectable={(r, c) => isBoardCardSelectable(humanPlayer.id, r, c)}
-                  explodingCardInfo={explodingCard && explodingCard.playerId === humanPlayer.id ? explodingCard : undefined}
-                  isMobile
-                  isDimmed={!isHumanTurn || (isHumanTurn && turnPhase === 'ACTION' && !selectedHandCard)}
-                  cardBackImageUrl={cardBackImageUrl}
-              />
-            </div>
-            <div className="flex items-center justify-between w-full px-2 h-8">
-                <div className="flex flex-col">
-                  <span className="font-display tracking-widest text-[10px] uppercase text-slate-200/80">
-                    {user.displayName || 'Jugador'}
-                  </span>
-                  <span className="text-[11px] text-slate-200/70">
-                    Puntaje: <span className="font-semibold text-white">{humanPlayerScore}</span>
-                  </span>
-                </div>
-    
-                <div className="flex items-center justify-end gap-2">
-                  {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
-                    <button
-                      onClick={handlePassTurn}
-                      className="comic-btn comic-btn-secondary !text-[11px] !py-1 !px-3"
-                    >
-                      Pasar
-                    </button>
-                  )}
-                  {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
-                    <p className="text-[11px] text-amber-300 text-right">
-                      Debes jugar una carta.
-                    </p>
-                  )}
-                </div>
-            </div>
-            
-            {/* Player Hand */}
-            <div className={cn(
-              "w-full flex justify-center items-end gap-1 px-1 shrink-0",
-            )}>
-              <AnimatePresence>
-              {humanPlayer.hand.map((card, index) => (
-                <motion.div
-                  layout
-                  key={card.uid}
-                  className="w-1/4 max-w-[80px]"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0, transition: { delay: index * 0.1 } }}
-                  exit={{ opacity: 0, y: 20 }}
-                  onClick={() => handleHandCardClick(card, index)}
+
+            <div className="flex items-center justify-end gap-2">
+              {turnPhase === 'ACTION' && isHumanTurn && !gameState.isForcedToPlay && (
+                <button
+                  onClick={handlePassTurn}
+                  className="comic-btn comic-btn-secondary !text-[11px] !py-1 !px-3"
                 >
-                    <GameCard
-                      card={card}
-                      onClick={() => {}}
-                      isSelected={selectedHandCard?.card.uid === card.uid}
-                      isDisabled={!isHandCardSelectable(card)}
-                      isInHand
-                      isMobile
-                      cardBackImageUrl={cardBackImageUrl}
-                    />
-                </motion.div>
-              ))}
-              </AnimatePresence>
-              {Array.from({ length: Math.max(0, MAX_HAND_SIZE - humanPlayer.hand.length) }).map((_, index) => (
-                  <div
-                      key={`placeholder-hand-${index}`}
-                      className="w-1/4 max-w-[80px] aspect-[5/7] rounded-lg border-2 border-dashed border-slate-700/70 bg-slate-900/40"
-                  />
-              ))}
+                  Pasar
+                </button>
+              )}
+              {turnPhase === 'ACTION' && isHumanTurn && gameState.isForcedToPlay && (
+                <p className="text-[11px] text-amber-300 text-right">
+                  Debes jugar una carta.
+                </p>
+              )}
             </div>
         </div>
-
-        {/* Columna Derecha: Mazo Jugador */}
-        <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-2">
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
-              <div id="player-deck-source" className="relative flex items-center justify-center h-18 w-18">
-                <AnimatePresence>
-                    {humanPlayer.deck.length > 0 && (
-                        <motion.div
-                            key={`deck-card-${humanPlayer.deck.length}`}
-                            className="absolute inset-0"
-                            initial={{ scale: 0.9, y: -5 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <GameCard card={{...humanPlayer.deck[0], isFaceUp:false}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">{humanPlayer.deck.length}</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Descarte</span>
-                <div className="relative flex items-center justify-center h-18 w-18">
-                    {humanPlayer.discardPile.length > 0 && <GameCard card={{...humanPlayer.discardPile[humanPlayer.discardPile.length - 1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">{humanPlayer.discardPile.length}</span>
-            </div>
+        
+        {/* Player Hand */}
+        <div className={cn(
+          "w-full flex justify-center items-end gap-1 px-1 shrink-0",
+        )}>
+          <AnimatePresence>
+          {humanPlayer.hand.map((card, index) => (
+            <motion.div
+              layout
+              key={card.uid}
+              className="w-1/4 max-w-[80px]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: index * 0.1 } }}
+              exit={{ opacity: 0, y: 20 }}
+              onClick={() => handleHandCardClick(card, index)}
+            >
+                <GameCard
+                  card={card}
+                  onClick={() => {}}
+                  isSelected={selectedHandCard?.card.uid === card.uid}
+                  isDisabled={!isHandCardSelectable(card)}
+                  isInHand
+                  isMobile
+                  cardBackImageUrl={cardBackImageUrl}
+                />
+            </motion.div>
+          ))}
+          </AnimatePresence>
+          {Array.from({ length: Math.max(0, MAX_HAND_SIZE - humanPlayer.hand.length) }).map((_, index) => (
+              <div
+                  key={`placeholder-hand-${index}`}
+                  className="w-1/4 max-w-[80px] aspect-[5/7] rounded-lg border-2 border-dashed border-slate-700/70 bg-slate-900/40"
+              />
+          ))}
         </div>
-
-        {showDrawAnimation && lastDrawnCardId && (
-          <motion.div
-              layoutId={`card-${lastDrawnCardId}`}
-              className="absolute z-[100]"
-              style={{
-                  top: '50%',
-                  right: 'calc(5px)',
-                  width: '60px', 
-              }}
-              initial={{ y: "-50%", x: 0, scale: 1 }}
-              animate={{
-                  x: `calc(-50vw + 30px)`,
-                  y: `calc(50vh - 50px)`,
-                  scale: 1,
-              }}
-              transition={{
-                  duration: 0.6,
-                  ease: [0.32, 0, 0.67, 0],
-              }}
-          >
-              <GameCard card={{...humanPlayer.hand.find(c => c.uid === lastDrawnCardId)!, isFaceUp: false}} onClick={()=>{}} isInHand isMobile cardBackImageUrl={cardBackImageUrl} />
-          </motion.div>
-        )}
 
         <div className="absolute top-2 right-2 z-20">
             <AlertDialog>
