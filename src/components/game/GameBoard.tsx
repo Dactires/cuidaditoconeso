@@ -38,11 +38,12 @@ export default function GameBoard({
 }: GameBoardProps) {
   const boardRef = React.useRef<HTMLDivElement>(null);
   const [previousBoard, setPreviousBoard] = useState<(Card | null)[][]>(board);
-  const [refillingCards, setRefillingCards] = useState<Set<string>>(new Set());
+  const [destroyedCards, setDestroyedCards] = useState<Map<string, Card>>(new Map());
 
   useEffect(() => {
     const newRefilling = new Set<string>();
-    
+    const newDestroyed = new Map<string, Card>();
+
     for (let r = 0; r < board.length; r++) {
       for (let c = 0; c < board[r].length; c++) {
         const prevCard = previousBoard[r]?.[c];
@@ -52,17 +53,23 @@ export default function GameBoard({
         if (newCard && !prevCard) {
             newRefilling.add(newCard.uid);
         }
+
+        // A card that was there is now gone (destroyed)
+        if (prevCard && !newCard) {
+            newDestroyed.set(`${r}-${c}`, prevCard);
+        }
       }
     }
-
-    if (newRefilling.size > 0) {
-      setRefillingCards(newRefilling);
-      // Clean up the refilling status after the animation duration
+    
+    if (newDestroyed.size > 0) {
+      setDestroyedCards(newDestroyed);
+      // Clean up the destroyed status after the animation duration
       const timer = setTimeout(() => {
-        setRefillingCards(new Set());
-      }, 1000); // Animation duration + buffer
+        setDestroyedCards(new Map());
+      }, 600); // Animation duration
       return () => clearTimeout(timer);
     }
+
 
     // Update previous board state for the next render
     // Use a deep copy to avoid reference issues
@@ -93,13 +100,16 @@ export default function GameBoard({
           row.map((card, c) => {
             const key = `${r}-${c}-${card?.uid ?? 'empty'}`;
             const selectable = isCardSelectable?.(r, c) ?? false;
+            
+            const destroyedCard = destroyedCards.get(`${r}-${c}`);
+            
             const isExplodingSlot =
               !!explodingCardInfo && explodingCardInfo.playerId === playerId && explodingCardInfo.r === r && explodingCardInfo.c === c;
 
             // If a card is exploding in this slot, we render the exploding card temporarily,
             // even if the board data for this slot is already null.
-            const cardToRender = isExplodingSlot ? explodingCardInfo.card : card;
-            const isRefilling = card ? refillingCards.has(card.uid) : false;
+            const cardToRender = isExplodingSlot ? explodingCardInfo.card : (destroyedCard || card);
+            const isRefilling = card ? false : false; // Simplified for now
             const isNewlyPlacedBomb = !!(lastRivalMove && lastRivalMove.r === r && lastRivalMove.c === c);
 
             return (
@@ -117,7 +127,7 @@ export default function GameBoard({
                   card={cardToRender}
                   onClick={() => selectable && onCardClick?.(r, c)}
                   isSelectable={selectable}
-                  isExploding={isExplodingSlot}
+                  isExploding={isExplodingSlot || !!destroyedCard}
                   isMobile={isMobile}
                   isDisabled={isDimmed}
                   cardBackImageUrl={cardBackImageUrl}
