@@ -728,14 +728,14 @@ function GamePageContent() {
         <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-2">
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
-                <div className="relative flex items-center justify-center h-24 w-24">
+                <div className="relative flex items-center justify-center h-18 w-18">
                     {rivalPlayer.deck.length > 0 && <GameCard card={{...rivalPlayer.deck[0], isFaceUp:false}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.deck.length}</span>
             </div>
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Descarte</span>
-                <div className="relative flex items-center justify-center h-24 w-24">
+                <div className="relative flex items-center justify-center h-18 w-18">
                     {rivalPlayer.discardPile.length > 0 && <GameCard card={{...rivalPlayer.discardPile[rivalPlayer.discardPile.length - 1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">{rivalPlayer.discardPile.length}</span>
@@ -898,7 +898,7 @@ function GamePageContent() {
         <div className="w-14 shrink-0 flex flex-col items-center justify-center gap-2">
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Mazo</span>
-              <div id="player-deck-source" className="relative flex items-center justify-center h-24 w-24">
+              <div id="player-deck-source" className="relative flex items-center justify-center h-18 w-18">
                 <AnimatePresence>
                     {humanPlayer.deck.length > 0 && (
                         <motion.div
@@ -918,7 +918,7 @@ function GamePageContent() {
             </div>
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] uppercase font-display tracking-widest text-slate-400">Descarte</span>
-                <div className="relative flex items-center justify-center h-24 w-24">
+                <div className="relative flex items-center justify-center h-18 w-18">
                     {humanPlayer.discardPile.length > 0 && <GameCard card={{...humanPlayer.discardPile[humanPlayer.discardPile.length - 1], isFaceUp:true}} onClick={()=>{}} cardBackImageUrl={cardBackImageUrl} isMobile />}
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">{humanPlayer.discardPile.length}</span>
@@ -1005,6 +1005,8 @@ export default function GamePage() {
     </SfxProvider>
   )
 }
+
+    
 
     
 
