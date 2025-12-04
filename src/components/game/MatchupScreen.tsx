@@ -117,6 +117,10 @@ export default function MatchupScreen({
       exit="exit"
       className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center p-4 comic-arena overflow-hidden"
     >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900/50 to-background to-70% opacity-80" />
+        <div className="absolute inset-0 background-pan opacity-20" />
+
+
       <div className="w-full max-w-4xl grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:gap-8">
         {/* Player */}
         <motion.div variants={itemVariants('left')} className="flex flex-col items-center gap-4">
